@@ -7,25 +7,18 @@ import { Switch } from "@/components/ui/switch";
 import { Check, Sparkles } from "lucide-react";
 import { toast } from "sonner";
 import { cn } from "@/lib/utils";
+import { useT } from "@/lib/i18n";
 
-const treatments = [
-  { id: "deep-release", label: "Home-Office Deep Release", meta: "60 Min. · CHF 100.–" },
-  { id: "thai-stretch-oil", label: "Traditional Thai Stretch · Mit Öl", meta: "75 Min. · CHF 120.–" },
-  { id: "thai-stretch-nooil", label: "Traditional Thai Stretch · Ohne Öl", meta: "75 Min. · CHF 100.–" },
-  { id: "zuzwiler", label: "Sport Massage", meta: "90 Min. · CHF 140.–" },
-];
-
-function nextDays(n: number) {
+function nextDays(n: number, weekdayLabels: readonly string[], locale: string) {
   const out: { key: string; label: string; weekday: string; day: string }[] = [];
   const today = new Date();
-  const wd = ["So", "Mo", "Di", "Mi", "Do", "Fr", "Sa"];
   for (let i = 0; i < n; i++) {
     const d = new Date(today);
     d.setDate(today.getDate() + i);
     out.push({
       key: d.toISOString().slice(0, 10),
-      label: d.toLocaleDateString("de-CH", { day: "2-digit", month: "short" }),
-      weekday: wd[d.getDay()],
+      label: d.toLocaleDateString(locale, { day: "2-digit", month: "short" }),
+      weekday: weekdayLabels[d.getDay()],
       day: String(d.getDate()),
     });
   }
@@ -43,24 +36,29 @@ export function BookingModal({
   onOpenChange: (v: boolean) => void;
   initialTreatment?: string;
 }) {
-  const [treatment, setTreatment] = useState(initialTreatment ?? "deep-release");
+  const t = useT();
+  const treatments = t.booking.treatments;
+  const [treatment, setTreatment] = useState(initialTreatment ?? treatments[0].id);
   const [day, setDay] = useState<string | null>(null);
   const [time, setTime] = useState<string | null>(null);
   const [silent, setSilent] = useState(true);
   const [name, setName] = useState("");
   const [email, setEmail] = useState("");
 
-  const days = useMemo(() => nextDays(10), []);
-  const current = treatments.find((t) => t.id === treatment) ?? treatments[0];
+  const days = useMemo(
+    () => nextDays(10, t.booking.weekdays, t.booking.locale),
+    [t.booking.weekdays, t.booking.locale]
+  );
+  const current = treatments.find((x) => x.id === treatment) ?? treatments[0];
 
   function submit(e: React.FormEvent) {
     e.preventDefault();
     if (!day || !time || !name || !email) {
-      toast.error("Bitte alle Felder ausfüllen.");
+      toast.error(t.booking.errAll);
       return;
     }
-    toast.success("Termin-Anfrage gesendet", {
-      description: `${current.label} · ${day} · ${time}${silent ? " · Silent Treatment" : ""}`,
+    toast.success(t.booking.success, {
+      description: `${current.label} · ${day} · ${time}${silent ? " · " + t.booking.silent : ""}`,
     });
     onOpenChange(false);
     setDay(null);
@@ -76,42 +74,40 @@ export function BookingModal({
           <DialogHeader className="space-y-1 text-left">
             <div className="flex items-center gap-2 text-[0.7rem] uppercase tracking-[0.3em] text-gold-deep">
               <Sparkles className="h-3.5 w-3.5" />
-              Online-Buchung
+              {t.booking.eyebrow}
             </div>
             <DialogTitle className="font-serif text-2xl font-normal text-charcoal">
-              Termin reservieren
+              {t.booking.title}
             </DialogTitle>
             <DialogDescription className="text-charcoal-soft/80">
-              Wähle Behandlung, Datum und Uhrzeit. Wir bestätigen innerhalb von 2 Stunden.
+              {t.booking.desc}
             </DialogDescription>
           </DialogHeader>
         </div>
 
         <form onSubmit={submit} className="max-h-[70vh] overflow-y-auto px-8 py-6 space-y-6">
           <section className="space-y-3">
-            <Label className="text-xs uppercase tracking-[0.2em] text-charcoal-soft">Behandlung</Label>
+            <Label className="text-xs uppercase tracking-[0.2em] text-charcoal-soft">{t.booking.treatment}</Label>
             <div className="grid gap-2">
-              {treatments.map((t) => (
+              {treatments.map((tr) => (
                 <button
                   type="button"
-                  key={t.id}
-                  onClick={() => setTreatment(t.id)}
+                  key={tr.id}
+                  onClick={() => setTreatment(tr.id)}
                   className={cn(
                     "flex items-center justify-between rounded-sm border px-4 py-3 text-left transition",
-                    treatment === t.id
-                      ? "border-gold bg-gold-soft/30"
-                      : "border-border hover:border-gold/60"
+                    treatment === tr.id ? "border-gold bg-gold-soft/30" : "border-border hover:border-gold/60"
                   )}
                 >
-                  <span className="font-medium text-charcoal">{t.label}</span>
-                  <span className="text-sm text-charcoal-soft">{t.meta}</span>
+                  <span className="font-medium text-charcoal">{tr.label}</span>
+                  <span className="text-sm text-charcoal-soft">{tr.meta}</span>
                 </button>
               ))}
             </div>
           </section>
 
           <section className="space-y-3">
-            <Label className="text-xs uppercase tracking-[0.2em] text-charcoal-soft">Datum</Label>
+            <Label className="text-xs uppercase tracking-[0.2em] text-charcoal-soft">{t.booking.date}</Label>
             <div className="flex gap-2 overflow-x-auto pb-1">
               {days.map((d) => (
                 <button
@@ -120,9 +116,7 @@ export function BookingModal({
                   onClick={() => setDay(d.key)}
                   className={cn(
                     "flex min-w-[64px] flex-col items-center rounded-sm border px-3 py-2 transition",
-                    day === d.key
-                      ? "border-gold bg-gold text-primary-foreground"
-                      : "border-border hover:border-gold/60"
+                    day === d.key ? "border-gold bg-gold text-primary-foreground" : "border-border hover:border-gold/60"
                   )}
                 >
                   <span className="text-[0.65rem] uppercase tracking-widest opacity-80">{d.weekday}</span>
@@ -133,21 +127,19 @@ export function BookingModal({
           </section>
 
           <section className="space-y-3">
-            <Label className="text-xs uppercase tracking-[0.2em] text-charcoal-soft">Uhrzeit</Label>
+            <Label className="text-xs uppercase tracking-[0.2em] text-charcoal-soft">{t.booking.time}</Label>
             <div className="grid grid-cols-4 gap-2">
-              {times.map((t) => (
+              {times.map((tm) => (
                 <button
                   type="button"
-                  key={t}
-                  onClick={() => setTime(t)}
+                  key={tm}
+                  onClick={() => setTime(tm)}
                   className={cn(
                     "rounded-sm border px-3 py-2 text-sm transition",
-                    time === t
-                      ? "border-gold bg-gold text-primary-foreground"
-                      : "border-border hover:border-gold/60"
+                    time === tm ? "border-gold bg-gold text-primary-foreground" : "border-border hover:border-gold/60"
                   )}
                 >
-                  {t}
+                  {tm}
                 </button>
               ))}
             </div>
@@ -156,33 +148,29 @@ export function BookingModal({
           <section className="flex items-start gap-4 rounded-sm border border-gold/40 bg-gold-soft/20 p-4">
             <Switch checked={silent} onCheckedChange={setSilent} id="silent" className="mt-1" />
             <div className="space-y-1">
-              <Label htmlFor="silent" className="text-charcoal">
-                Silent Treatment
-              </Label>
-              <p className="text-sm text-charcoal-soft">
-                Kein Smalltalk während der Behandlung — für maximale mentale Erholung.
-              </p>
+              <Label htmlFor="silent" className="text-charcoal">{t.booking.silent}</Label>
+              <p className="text-sm text-charcoal-soft">{t.booking.silentDesc}</p>
             </div>
           </section>
 
           <section className="grid gap-4 sm:grid-cols-2">
             <div className="space-y-2">
-              <Label htmlFor="name">Name</Label>
-              <Input id="name" value={name} onChange={(e) => setName(e.target.value)} placeholder="Vor- und Nachname" />
+              <Label htmlFor="name">{t.booking.name}</Label>
+              <Input id="name" value={name} onChange={(e) => setName(e.target.value)} placeholder={t.booking.namePh} />
             </div>
             <div className="space-y-2">
-              <Label htmlFor="email">E-Mail</Label>
-              <Input id="email" type="email" value={email} onChange={(e) => setEmail(e.target.value)} placeholder="dein@mail.ch" />
+              <Label htmlFor="email">{t.booking.email}</Label>
+              <Input id="email" type="email" value={email} onChange={(e) => setEmail(e.target.value)} placeholder={t.booking.emailPh} />
             </div>
           </section>
 
           <div className="flex flex-col-reverse items-stretch gap-3 border-t border-border/60 pt-5 sm:flex-row sm:items-center sm:justify-between">
             <p className="flex items-center gap-2 text-xs text-charcoal-soft">
               <Check className="h-3.5 w-3.5 text-gold-deep" />
-              Bezahlung vor Ort: TWINT, Karte oder Bar
+              {t.booking.payHint}
             </p>
             <Button type="submit" className="btn-gold rounded-sm px-6 py-6 text-sm uppercase tracking-[0.2em]">
-              Termin anfragen
+              {t.booking.submit}
             </Button>
           </div>
         </form>

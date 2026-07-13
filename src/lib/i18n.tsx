@@ -1,0 +1,380 @@
+import { createContext, useContext, useEffect, useState, type ReactNode } from "react";
+
+export type Lang = "de" | "en";
+
+export const translations = {
+  de: {
+    nav: {
+      home: "Home",
+      treatments: "TREATMENTS",
+      contact: "Kontakt",
+      book: "Termin buchen",
+      menu: "Menü",
+    },
+    footer: {
+      tagline: "Boutique Thai-Massage-Studio in Zuzwil. Präzise Tiefenentspannung für den modernen Körper.",
+      studio: "Studio",
+      navigation: "Navigation",
+      home: "Home",
+      treatments: "Treatments",
+      contact: "Kontakt & Info",
+      copyright: "Thai Posture Lab · Zuzwil SG",
+      payments: "TWINT · Karte · Bar",
+    },
+    home: {
+      eyebrow: "Zuzwil · Eschenstrasse 24",
+      title1: "Die Symbiose aus ",
+      titleEm: "traditioneller Thai-Heilkunst",
+      title2: " & modernem Haltungs-Reset.",
+      intro: "Willkommen im Thai Posture Lab an der Eschenstrasse 24 in Zuzwil. Gezielte Tiefenentspannung für Vielsitzer, Sportler und Genießer. Parkplätze direkt vor der Tür.",
+      cta: "Jetzt online buchen",
+      treatmentsLink: "TREATMENTS →",
+      boutique: "Boutique Studio",
+      since: "SEIT 2027",
+      heroAlt: "Thai-Therapeutin führt eine achtsame Schulterdehnung an einer Klientin auf einer hölzernen Massageliege durch",
+      signature: "Signature",
+      postureReset: "Posture Reset · 60 Min",
+      postureResetDesc: "Präzise Arbeit an Kopf, Nacken & Schultern.",
+      philosophy: "Philosophie",
+      philosophyH: "Der Körper vergisst nichts. Wir helfen ihm zu erinnern, wie Leichtigkeit sich anfühlt.",
+      pillars: [
+        { t: "Haltungs-Korrektur", d: "Präzise Techniken gegen Tech-Neck, Rundrücken und einseitige Belastung." },
+        { t: "Muscle Release", d: "Tiefe Triggerpunkt-Arbeit kombiniert mit klassischen Thai-Dehnungen." },
+        { t: "Screen Fatigue", d: "Reset für Augen, Kiefer und Nacken — spürbar nach der ersten Sitzung." },
+      ],
+      studioEyebrow: "Modernes Studio",
+      studioH: "Digital reibungslos. Analog spürbar.",
+      studioP: "Wir haben das Studio so konzipiert, wie wir selbst behandelt werden möchten: still, warm, uneitel. Kein Papierkram, keine unnötigen Gespräche — nur du, dein Körper und präzise Hände.",
+      studioAlt: "Tablet auf Betonoberfläche zeigt eine elegante Buchungsbestätigung im Silent Mode",
+      features: [
+        { t: "Silent Treatment", d: "Optional stille Behandlung." },
+        { t: "Digitale Quittung", d: "Direkt per Mail nach Termin." },
+        { t: "TWINT & Karte & Bar", d: "Kontaktlos zahlen, ohne Wartezeit, aber auch Bar möglich" },
+        { t: "Parkplätze vor Ort", d: "Kostenlos an der Eschenstrasse." },
+      ],
+      bridgeH1: "Rückenschmerzen vom Bürostuhl?",
+      bridgeH2: "Schalte den Kopf aus.",
+      bridgeP: "Unser „Home-Office Deep Release\" — 60 Minuten präzise Tiefenentspannung für Kopf, Nacken, Schultern & Geist.",
+      bridgeCta: "Termin buchen · CHF 100.–",
+      more: "Mehr erfahren →",
+    },
+    treatments: {
+      eyebrow: "Home-Office Special · Zuzwil",
+      h1a: "Rückenschmerzen vom Bürostuhl? ",
+      h1b: "Schalte den Kopf aus.",
+      intro1: "Das ",
+      introEm: "„Home-Office Deep Release\"",
+      intro2: " Treatment — 60 Min. / CHF 100.–. Gezielte Tiefenentspannung für Kopf, Nacken, Schultern, Rücken und Geist — direkt in Zuzwil.",
+      bullets: [
+        "Kostenlose Parkplätze vor der Tür",
+        "Perfekt in der Mittagspause oder nach Feierabend",
+        "In 2 Minuten online gebucht",
+      ],
+      ctaMain: "Jetzt Termin online buchen",
+      confirmation: "SOFORT-BESTÄTIGUNG PER SMS & E-MAIL",
+      heroAlt: "Thai-Therapeutin arbeitet präzise am Nacken und oberen Rücken einer Klientin",
+      problemEyebrow: "Viel Bildschirm. Wenig Bewegung.",
+      problemH1: "Dein Körper hält 8 Stunden am Tag ",
+      problemHEm: "still",
+      problemH2: ". Er sollte es nicht müssen.",
+      problemP: "Steifer Nacken beim Schulterblick. Ein Ziehen vom Handgelenk bis in den Ellenbogen. Kopfschmerzen ab Nachmittag. Das ist keine Empfindlichkeit — das ist Physik. Unser Deep Release löst genau die Ketten, die Maus, Tastatur und Bildschirm über Monate aufgebaut haben.",
+      includedEyebrow: "Was enthalten ist",
+      includedH: "Drei präzise Rituale in 60 Minuten.",
+      rituals: [
+        { t: "Tech-Neck Focus", d: "Lösen der tiefen Nackenmuskulatur, sanftes Traktions-Ritual und subokzipitale Freigabe." },
+        { t: "PC-Arm Stretch", d: "Unterarme, Handgelenke und Ellenbogen — gezielte Dehnungen gegen Mausarm & Sehnen-Spannung." },
+        { t: "Hot-Towel Finish", d: "Warmes Tuch mit Eukalyptus über Nacken und Augen — für einen klaren Kopf beim Aufstehen." },
+      ],
+      menuEyebrow: "Treatment-Menü",
+      menuH: "Klare Preise. Keine Überraschungen.",
+      menu: [
+        { name: "Home-Office Deep Release", time: "60 Min.", desc: "Fokus auf Nacken, Schultern und PC-Arme. Der schnelle Reset für den Vielsitzer." },
+        { name: "Traditional Thai Stretch", time: "75 Min.", desc: "Klassische, intensive Ganzkörper-Mobilisation und passive Dehnungen." },
+        { name: "Sport Massage", time: "90 Min.", desc: "Deep-Tissue-Arbeit und intensive Mobilisation für Sportler, aktive Regeneration und die Lösung tiefer muskulärer Spannungen." },
+      ],
+      signature: "Signature",
+      oilOptionLabel: "Öl-Option",
+      withOil: "Mit Öl",
+      withoutOil: "Ohne Öl",
+      book: "Buchen",
+      ctaEyebrow: "Bereit für den Reset?",
+      ctaH1: "60 Minuten, die deinen Nacken wieder ",
+      ctaHEm: "leicht",
+      ctaH2: " machen.",
+      ctaBtn: "Termin online buchen",
+    },
+    contact: {
+      eyebrow: "Kontakt & Info",
+      h1: "An der Eschenstrasse 24. Mitten in Zuzwil.",
+      intro: "Ein ruhiger Ort — bewusst klein, bewusst persönlich. Termine ausschließlich nach Vereinbarung.",
+      address: "Adresse",
+      addressLines: ["Eschenstrasse 24", "9524 Zuzwil SG", "Schweiz"],
+      hoursTitle: "Öffnungszeiten",
+      hours: [
+        { d: "Montag – Freitag", h: "09:00 – 20:00" },
+        { d: "Samstag", h: "10:00 – 18:00" },
+        { d: "Sonntag", h: "Geschlossen" },
+      ],
+      payment: "Bezahlung",
+      paymentDesc: "TWINT, Kredit- & Debitkarte, Bargeld. Digitale Quittung per Mail.",
+      hygiene: "Hygiene-Standard",
+      hygieneDesc: "Frische Textilien pro Termin. Desinfizierte Oberflächen. Bio-Öle in Single-Use-Portionen.",
+      diary: "Massagetagebuch",
+      diaryDesc: "Wir dokumentieren deinen Behandlungs- und Haltungsverlauf nach jeder Sitzung präzise. So wissen wir bei deinem nächsten Besuch sofort, welche Muskelketten gezielte Zuwendung brauchen, tracken deine Fortschritte und passen jeden Griff perfekt an deinen Körper an – hocheffizient und ganz ohne erneutes Erklären.",
+      book: "Termin buchen",
+      towelsAlt: "Frisch gerollte, hochwertige weiße Baumwolltücher auf einer warmen, neutralen Oberfläche",
+      promise: "Unser Versprechen",
+      promiseDesc: "Präzise Griffe, fundiertes Haltungswissen und absolute Diskretion. Jede Behandlung im Thai Posture Lab wird nach höchsten Schweizer Hygiene- und Qualitätsstandards durchgeführt. Deine Erholung steht bei uns im Mittelpunkt.",
+      mapEyebrow: "So findest du uns",
+      mapH: "Eschenstrasse 24, Zuzwil.",
+      openMaps: "In Google Maps öffnen →",
+      mapTitle: "Standort Thai Posture Lab",
+      faqEyebrow: "FAQ",
+      faqH: "Häufige Fragen.",
+      faqP: "Weitere Fragen? Schreib uns beim Buchen einfach eine Notiz.",
+      faqs: [
+        { q: "Muss ich mich vorbereiten?", a: "Nein. Komm bequem gekleidet — wir stellen alles Nötige zur Verfügung. Bitte 5 Minuten vor Termin da sein." },
+        { q: "Was ist das Silent Treatment?", a: "Auf Wunsch verzichten wir vollständig auf Smalltalk. Ideal, wenn du wirklich abschalten willst — einfach beim Buchen aktivieren." },
+        { q: "Wie kann ich bezahlen?", a: "Wir akzeptieren TWINT, alle gängigen Karten sowie Bargeld. Die Quittung erhältst du digital per Mail." },
+        { q: "Kann ich kurzfristig absagen?", a: "Kostenlose Absagen sind bis zu 24 Stunden vor dem Termin möglich. Da wir ein kleines Studio sind und die Slots exklusiv für dich reservieren, behalten wir uns bei kurzfristigeren Absagen oder Nichterscheinen vor, eine Umtriebsentschädigung von 50% des Behandlungspreises per Post- oder Mail-Rechnung zu stellen. Vielen Dank für dein Verständnis und dein Fairplay!" },
+        { q: "Gibt es Parkplätze?", a: "Ja, direkt vor dem Studio an der Eschenstrasse 24. Kostenlos für unsere Gäste." },
+      ],
+    },
+    booking: {
+      eyebrow: "Online-Buchung",
+      title: "Termin reservieren",
+      desc: "Wähle Behandlung, Datum und Uhrzeit. Wir bestätigen innerhalb von 2 Stunden.",
+      treatment: "Behandlung",
+      date: "Datum",
+      time: "Uhrzeit",
+      silent: "Silent Treatment",
+      silentDesc: "Kein Smalltalk während der Behandlung — für maximale mentale Erholung.",
+      name: "Name",
+      namePh: "Vor- und Nachname",
+      email: "E-Mail",
+      emailPh: "dein@mail.ch",
+      payHint: "Bezahlung vor Ort: TWINT, Karte oder Bar",
+      submit: "Termin anfragen",
+      errAll: "Bitte alle Felder ausfüllen.",
+      success: "Termin-Anfrage gesendet",
+      weekdays: ["So", "Mo", "Di", "Mi", "Do", "Fr", "Sa"],
+      locale: "de-CH",
+      treatments: [
+        { id: "deep-release", label: "Home-Office Deep Release", meta: "60 Min. · CHF 100.–" },
+        { id: "thai-stretch-oil", label: "Traditional Thai Stretch · Mit Öl", meta: "75 Min. · CHF 120.–" },
+        { id: "thai-stretch-nooil", label: "Traditional Thai Stretch · Ohne Öl", meta: "75 Min. · CHF 100.–" },
+        { id: "zuzwiler", label: "Sport Massage", meta: "90 Min. · CHF 140.–" },
+      ],
+    },
+  },
+  en: {
+    nav: {
+      home: "Home",
+      treatments: "TREATMENTS",
+      contact: "Contact",
+      book: "Book appointment",
+      menu: "Menu",
+    },
+    footer: {
+      tagline: "Boutique Thai massage studio in Zuzwil. Precise deep relaxation for the modern body.",
+      studio: "Studio",
+      navigation: "Navigation",
+      home: "Home",
+      treatments: "Treatments",
+      contact: "Contact & Info",
+      copyright: "Thai Posture Lab · Zuzwil SG",
+      payments: "TWINT · Card · Cash",
+    },
+    home: {
+      eyebrow: "Zuzwil · Eschenstrasse 24",
+      title1: "The symbiosis of ",
+      titleEm: "traditional Thai healing",
+      title2: " & a modern posture reset.",
+      intro: "Welcome to Thai Posture Lab on Eschenstrasse 24 in Zuzwil. Targeted deep relaxation for desk workers, athletes and connoisseurs. Free parking right at the door.",
+      cta: "Book online now",
+      treatmentsLink: "TREATMENTS →",
+      boutique: "Boutique Studio",
+      since: "SINCE 2027",
+      heroAlt: "Thai therapist performing a mindful shoulder stretch on a client on a wooden massage bench",
+      signature: "Signature",
+      postureReset: "Posture Reset · 60 min",
+      postureResetDesc: "Precise work on head, neck & shoulders.",
+      philosophy: "Philosophy",
+      philosophyH: "The body forgets nothing. We help it remember what lightness feels like.",
+      pillars: [
+        { t: "Posture Correction", d: "Precise techniques against tech-neck, rounded shoulders and one-sided strain." },
+        { t: "Muscle Release", d: "Deep trigger-point work combined with classic Thai stretches." },
+        { t: "Screen Fatigue", d: "A reset for eyes, jaw and neck — noticeable after the first session." },
+      ],
+      studioEyebrow: "Modern Studio",
+      studioH: "Digitally seamless. Physically tangible.",
+      studioP: "We designed the studio the way we'd want to be treated ourselves: quiet, warm, unpretentious. No paperwork, no unnecessary chatter — just you, your body and precise hands.",
+      studioAlt: "Tablet on a concrete surface showing an elegant booking confirmation in Silent Mode",
+      features: [
+        { t: "Silent Treatment", d: "Optional silent session." },
+        { t: "Digital Receipt", d: "Straight to your inbox after the appointment." },
+        { t: "TWINT, Card & Cash", d: "Pay contactless without waiting — cash also accepted." },
+        { t: "Parking On-Site", d: "Free of charge on Eschenstrasse." },
+      ],
+      bridgeH1: "Back pain from your office chair?",
+      bridgeH2: "Switch your mind off.",
+      bridgeP: "Our \"Home-Office Deep Release\" — 60 minutes of precise deep relaxation for head, neck, shoulders & mind.",
+      bridgeCta: "Book · CHF 100.–",
+      more: "Learn more →",
+    },
+    treatments: {
+      eyebrow: "Home-Office Special · Zuzwil",
+      h1a: "Back pain from your office chair? ",
+      h1b: "Switch your mind off.",
+      intro1: "The ",
+      introEm: "\"Home-Office Deep Release\"",
+      intro2: " treatment — 60 min / CHF 100.–. Targeted deep relaxation for head, neck, shoulders, back and mind — right here in Zuzwil.",
+      bullets: [
+        "Free parking right at the door",
+        "Perfect during a lunch break or after work",
+        "Booked online in 2 minutes",
+      ],
+      ctaMain: "Book your appointment online",
+      confirmation: "INSTANT CONFIRMATION VIA SMS & EMAIL",
+      heroAlt: "Thai therapist working precisely on a client's neck and upper back",
+      problemEyebrow: "Lots of screen. Little movement.",
+      problemH1: "Your body stays ",
+      problemHEm: "still",
+      problemH2: " 8 hours a day. It shouldn't have to.",
+      problemP: "A stiff neck when you look over your shoulder. A pull from wrist to elbow. Afternoon headaches. That's not sensitivity — that's physics. Our Deep Release unwinds the exact chains that mouse, keyboard and screen have built up over months.",
+      includedEyebrow: "What's included",
+      includedH: "Three precise rituals in 60 minutes.",
+      rituals: [
+        { t: "Tech-Neck Focus", d: "Releasing the deep neck muscles, gentle traction ritual and suboccipital release." },
+        { t: "PC-Arm Stretch", d: "Forearms, wrists and elbows — targeted stretches against mouse arm and tendon tension." },
+        { t: "Hot-Towel Finish", d: "Warm eucalyptus towel over neck and eyes — for a clear head when you get up." },
+      ],
+      menuEyebrow: "Treatment Menu",
+      menuH: "Clear prices. No surprises.",
+      menu: [
+        { name: "Home-Office Deep Release", time: "60 min", desc: "Focus on neck, shoulders and PC arms. The quick reset for desk workers." },
+        { name: "Traditional Thai Stretch", time: "75 min", desc: "Classic, intensive full-body mobilization and passive stretches." },
+        { name: "Sport Massage", time: "90 min", desc: "Deep tissue work and intensive mobilization tailored for athletes, active recovery and releasing deep muscular tension." },
+      ],
+      signature: "Signature",
+      oilOptionLabel: "Oil option",
+      withOil: "With oil",
+      withoutOil: "Without oil",
+      book: "Book",
+      ctaEyebrow: "Ready for the reset?",
+      ctaH1: "60 minutes that make your neck feel ",
+      ctaHEm: "light",
+      ctaH2: " again.",
+      ctaBtn: "Book online",
+    },
+    contact: {
+      eyebrow: "Contact & Info",
+      h1: "On Eschenstrasse 24. Right in the middle of Zuzwil.",
+      intro: "A quiet place — deliberately small, deliberately personal. Appointments strictly by reservation.",
+      address: "Address",
+      addressLines: ["Eschenstrasse 24", "9524 Zuzwil SG", "Switzerland"],
+      hoursTitle: "Opening Hours",
+      hours: [
+        { d: "Monday – Friday", h: "09:00 – 20:00" },
+        { d: "Saturday", h: "10:00 – 18:00" },
+        { d: "Sunday", h: "Closed" },
+      ],
+      payment: "Payment",
+      paymentDesc: "TWINT, credit & debit cards, cash. Digital receipt by email.",
+      hygiene: "Hygiene Standard",
+      hygieneDesc: "Fresh textiles for every appointment. Disinfected surfaces. Organic oils in single-use portions.",
+      diary: "Massage Journal",
+      diaryDesc: "We precisely document your treatment and posture history after each session. On your next visit we know immediately which muscle chains need attention, track your progress and tailor every grip perfectly to your body — highly efficient, with no need to re-explain a thing.",
+      book: "Book appointment",
+      towelsAlt: "Freshly rolled, high-quality white cotton towels on a warm, neutral surface",
+      promise: "Our Promise",
+      promiseDesc: "Precise techniques, deep postural knowledge and absolute discretion. Every treatment at Thai Posture Lab meets the highest Swiss hygiene and quality standards. Your recovery is our focus.",
+      mapEyebrow: "How to find us",
+      mapH: "Eschenstrasse 24, Zuzwil.",
+      openMaps: "Open in Google Maps →",
+      mapTitle: "Thai Posture Lab location",
+      faqEyebrow: "FAQ",
+      faqH: "Frequently asked questions.",
+      faqP: "More questions? Just add a note when you book.",
+      faqs: [
+        { q: "Do I need to prepare?", a: "No. Come in comfortable clothes — we provide everything you need. Please arrive 5 minutes before your appointment." },
+        { q: "What is the Silent Treatment?", a: "On request we completely skip the small talk. Ideal if you really want to switch off — just activate it when booking." },
+        { q: "How can I pay?", a: "We accept TWINT, all common cards and cash. You'll receive your receipt digitally by email." },
+        { q: "Can I cancel at short notice?", a: "Free cancellations are possible up to 24 hours before your appointment. As we are a small studio and reserve slots exclusively for you, we reserve the right to charge a compensation fee of 50% of the treatment price for shorter-notice cancellations or no-shows, invoiced by post or email. Thank you for your understanding and fair play!" },
+        { q: "Is there parking?", a: "Yes, right in front of the studio on Eschenstrasse 24. Free of charge for our guests." },
+      ],
+    },
+    booking: {
+      eyebrow: "Online booking",
+      title: "Reserve appointment",
+      desc: "Choose treatment, date and time. We confirm within 2 hours.",
+      treatment: "Treatment",
+      date: "Date",
+      time: "Time",
+      silent: "Silent Treatment",
+      silentDesc: "No small talk during the treatment — for maximum mental recovery.",
+      name: "Name",
+      namePh: "First and last name",
+      email: "Email",
+      emailPh: "you@mail.ch",
+      payHint: "Payment on-site: TWINT, card or cash",
+      submit: "Request appointment",
+      errAll: "Please fill in all fields.",
+      success: "Appointment request sent",
+      weekdays: ["Sun", "Mon", "Tue", "Wed", "Thu", "Fri", "Sat"],
+      locale: "en-GB",
+      treatments: [
+        { id: "deep-release", label: "Home-Office Deep Release", meta: "60 min · CHF 100.–" },
+        { id: "thai-stretch-oil", label: "Traditional Thai Stretch · With oil", meta: "75 min · CHF 120.–" },
+        { id: "thai-stretch-nooil", label: "Traditional Thai Stretch · Without oil", meta: "75 min · CHF 100.–" },
+        { id: "zuzwiler", label: "Sport Massage", meta: "90 min · CHF 140.–" },
+      ],
+    },
+  },
+} as const;
+
+type Dict = (typeof translations)["de"];
+
+type Ctx = { lang: Lang; setLang: (l: Lang) => void; t: Dict };
+const LanguageContext = createContext<Ctx | null>(null);
+
+const STORAGE_KEY = "tpl-lang";
+
+export function LanguageProvider({ children }: { children: ReactNode }) {
+  const [lang, setLangState] = useState<Lang>("de");
+
+  useEffect(() => {
+    try {
+      const stored = window.localStorage.getItem(STORAGE_KEY);
+      if (stored === "de" || stored === "en") setLangState(stored);
+    } catch {
+      /* ignore */
+    }
+  }, []);
+
+  useEffect(() => {
+    if (typeof document !== "undefined") document.documentElement.lang = lang;
+  }, [lang]);
+
+  const setLang = (l: Lang) => {
+    setLangState(l);
+    try {
+      window.localStorage.setItem(STORAGE_KEY, l);
+    } catch {
+      /* ignore */
+    }
+  };
+
+  const value: Ctx = { lang, setLang, t: translations[lang] as Dict };
+  return <LanguageContext.Provider value={value}>{children}</LanguageContext.Provider>;
+}
+
+export function useLanguage() {
+  const ctx = useContext(LanguageContext);
+  if (!ctx) throw new Error("useLanguage must be used within LanguageProvider");
+  return ctx;
+}
+
+export function useT() {
+  return useLanguage().t;
+}

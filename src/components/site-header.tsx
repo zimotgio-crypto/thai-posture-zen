@@ -3,17 +3,19 @@ import { Link } from "@tanstack/react-router";
 import { Menu, X } from "lucide-react";
 import { useBooking } from "./booking-provider";
 import { cn } from "@/lib/utils";
-
-const links = [
-  { to: "/", label: "Home" },
-  { to: "/home-office", label: "TREATMENTS" },
-  { to: "/kontakt", label: "Kontakt" },
-] as const;
+import { useLanguage } from "@/lib/i18n";
 
 export function SiteHeader() {
   const { open } = useBooking();
+  const { lang, setLang, t } = useLanguage();
   const [scrolled, setScrolled] = useState(false);
   const [mobile, setMobile] = useState(false);
+
+  const links = [
+    { to: "/", label: t.nav.home, exact: true },
+    { to: "/home-office", label: t.nav.treatments, exact: false },
+    { to: "/kontakt", label: t.nav.contact, exact: false },
+  ] as const;
 
   useEffect(() => {
     const onScroll = () => setScrolled(window.scrollY > 8);
@@ -21,6 +23,39 @@ export function SiteHeader() {
     window.addEventListener("scroll", onScroll, { passive: true });
     return () => window.removeEventListener("scroll", onScroll);
   }, []);
+
+  const LangToggle = ({ className }: { className?: string }) => (
+    <div
+      role="group"
+      aria-label="Language"
+      className={cn(
+        "inline-flex items-center gap-1 text-[0.68rem] uppercase tracking-[0.22em] text-charcoal-soft",
+        className
+      )}
+    >
+      <button
+        onClick={() => setLang("de")}
+        aria-pressed={lang === "de"}
+        className={cn(
+          "px-1 transition hover:text-charcoal",
+          lang === "de" ? "text-gold-deep" : ""
+        )}
+      >
+        DE
+      </button>
+      <span aria-hidden className="text-border">|</span>
+      <button
+        onClick={() => setLang("en")}
+        aria-pressed={lang === "en"}
+        className={cn(
+          "px-1 transition hover:text-charcoal",
+          lang === "en" ? "text-gold-deep" : ""
+        )}
+      >
+        EN
+      </button>
+    </div>
+  );
 
   return (
     <header
@@ -42,7 +77,7 @@ export function SiteHeader() {
             <Link
               key={l.to}
               to={l.to}
-              activeOptions={{ exact: l.to === "/" }}
+              activeOptions={{ exact: l.exact }}
               activeProps={{ className: "text-charcoal after:w-full" }}
               inactiveProps={{ className: "text-charcoal-soft/80 hover:text-charcoal" }}
               className="relative text-[0.78rem] uppercase tracking-[0.22em] transition after:absolute after:-bottom-1.5 after:left-0 after:h-px after:w-0 after:bg-gold after:transition-all hover:after:w-full"
@@ -52,17 +87,18 @@ export function SiteHeader() {
           ))}
         </nav>
 
-        <div className="flex items-center gap-3">
+        <div className="flex items-center gap-4">
+          <LangToggle className="hidden md:inline-flex" />
           <button
             onClick={() => open()}
-            className="btn-gold hidden rounded-sm px-5 py-2.5 text-[0.72rem] uppercase tracking-[0.22em] md:inline-flex"
+            className="btn-gold hidden whitespace-nowrap rounded-sm px-5 py-2.5 text-[0.72rem] uppercase tracking-[0.22em] md:inline-flex"
           >
-            Termin buchen
+            {t.nav.book}
           </button>
           <button
             className="md:hidden text-charcoal"
             onClick={() => setMobile((v) => !v)}
-            aria-label="Menü"
+            aria-label={t.nav.menu}
           >
             {mobile ? <X className="h-5 w-5" /> : <Menu className="h-5 w-5" />}
           </button>
@@ -82,15 +118,18 @@ export function SiteHeader() {
                 {l.label}
               </Link>
             ))}
-            <button
-              onClick={() => {
-                setMobile(false);
-                open();
-              }}
-              className="btn-gold mt-3 rounded-sm px-5 py-3 text-[0.72rem] uppercase tracking-[0.22em]"
-            >
-              Termin buchen
-            </button>
+            <div className="mt-2 flex items-center justify-between">
+              <LangToggle />
+              <button
+                onClick={() => {
+                  setMobile(false);
+                  open();
+                }}
+                className="btn-gold rounded-sm px-5 py-3 text-[0.72rem] uppercase tracking-[0.22em]"
+              >
+                {t.nav.book}
+              </button>
+            </div>
           </div>
         </div>
       )}
