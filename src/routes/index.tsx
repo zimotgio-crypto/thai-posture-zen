@@ -33,7 +33,7 @@ function Index() {
                 Jetzt online buchen <ArrowRight className="h-4 w-4" />
               </button>
               <Link to="/home-office" className="text-sm uppercase tracking-[0.22em] text-charcoal-soft hover:text-charcoal">
-                Home-Office Special →
+                TREATMENTS →
               </Link>
             </div>
             <div className="mt-14 flex items-center gap-6 text-xs uppercase tracking-[0.24em] text-charcoal-soft">
