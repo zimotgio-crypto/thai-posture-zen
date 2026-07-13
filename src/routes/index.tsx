@@ -33,7 +33,7 @@ function Index() {
                 Jetzt online buchen <ArrowRight className="h-4 w-4" />
               </button>
               <Link to="/home-office" className="text-sm uppercase tracking-[0.22em] text-charcoal-soft hover:text-charcoal">
-                Home-Office Special →
+                TREATMENTS →
               </Link>
             </div>
             <div className="mt-14 flex items-center gap-6 text-xs uppercase tracking-[0.24em] text-charcoal-soft">
@@ -57,7 +57,7 @@ function Index() {
             <div className="absolute -bottom-6 -left-6 hidden max-w-[240px] rounded-sm bg-ivory p-5 shadow-[var(--shadow-soft)] sm:block">
               <div className="text-[0.65rem] uppercase tracking-[0.28em] text-gold-deep">Signature</div>
               <div className="mt-2 font-serif text-lg text-charcoal">Posture Reset · 60 Min</div>
-              <div className="mt-1 text-sm text-charcoal-soft">Präzise Arbeit an Nacken, Schultern & Rücken.</div>
+              <div className="mt-1 text-sm text-charcoal-soft">Präzise Arbeit an Kopf, Nacken & Schultern.</div>
             </div>
           </div>
         </div>
@@ -115,7 +115,7 @@ function Index() {
               {[
                 { i: VolumeX, t: "Silent Treatment", d: "Optional stille Behandlung." },
                 { i: Receipt, t: "Digitale Quittung", d: "Direkt per Mail nach Termin." },
-                { i: Wallet, t: "TWINT & Karte", d: "Kontaktlos zahlen, ohne Wartezeit." },
+                { i: Wallet, t: "TWINT & Karte & Bar", d: "Kontaktlos zahlen, ohne Wartezeit, aber auch Bar möglich" },
                 { i: MapPin, t: "Parkplätze vor Ort", d: "Kostenlos an der Eschenstrasse." },
               ].map(({ i: Icon, t, d }) => (
                 <li key={t} className="flex items-start gap-3 rounded-sm border border-border/60 bg-card p-4">
@@ -145,7 +145,7 @@ function Index() {
             </h2>
             <p className="mx-auto mt-4 max-w-xl text-charcoal-soft">
               Unser „Home-Office Deep Release" — 60 Minuten präzise Tiefenentspannung
-              für Nacken, Schultern & Geist.
+              für Kopf, Nacken, Schultern & Geist.
             </p>
             <div className="mt-8 flex flex-wrap items-center justify-center gap-4">
               <button onClick={() => open("deep-release")} className="btn-gold rounded-sm px-7 py-4 text-[0.78rem] uppercase tracking-[0.24em]">
