@@ -17,7 +17,16 @@ export const Route = createFileRoute("/home-office")({
   component: HomeOffice,
 });
 
-const menu = [
+type Treatment = {
+  id: string;
+  name: string;
+  time: string;
+  price: string;
+  desc: string;
+  featured?: boolean;
+};
+
+const menu: Treatment[] = [
   {
     id: "deep-release",
     name: "Home-Office Deep Release",
