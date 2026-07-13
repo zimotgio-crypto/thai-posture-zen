@@ -88,7 +88,7 @@ export function SiteHeader() {
         </nav>
 
         <div className="flex items-center gap-4">
-          <LangToggle className="hidden md:inline-flex" />
+          <LangToggle />
           <button
             onClick={() => open()}
             className="btn-gold hidden whitespace-nowrap rounded-sm px-5 py-2.5 text-[0.72rem] uppercase tracking-[0.22em] md:inline-flex"
@@ -118,8 +118,7 @@ export function SiteHeader() {
                 {l.label}
               </Link>
             ))}
-            <div className="mt-2 flex items-center justify-between">
-              <LangToggle />
+            <div className="mt-2 flex items-center justify-end">
               <button
                 onClick={() => {
                   setMobile(false);
