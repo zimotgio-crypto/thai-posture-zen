@@ -55,7 +55,19 @@ const menu: Treatment[] = [
 function HomeOffice() {
   const { open } = useBooking();
   const [activeTab, setActiveTab] = useState<string>(menu[0].id);
+  const [oilVariant, setOilVariant] = useState<"oil" | "nooil">("oil");
   const active = menu.find((m) => m.id === activeTab) ?? menu[0];
+  const isStretch = active.id === "thai-stretch";
+  const displayPrice = isStretch
+    ? oilVariant === "oil"
+      ? "CHF 120.–"
+      : "CHF 100.–"
+    : active.price;
+  const bookingId = isStretch
+    ? oilVariant === "oil"
+      ? "thai-stretch-oil"
+      : "thai-stretch-nooil"
+    : active.id;
   return (
     <>
       <section className="relative overflow-hidden">
@@ -199,10 +211,46 @@ function HomeOffice() {
               )}
               <div className="text-[0.7rem] uppercase tracking-[0.25em] text-charcoal-soft">{active.time}</div>
               <h3 className="mt-3 font-serif text-3xl leading-tight text-charcoal">{active.name}</h3>
-              <div className="mt-2 font-serif text-4xl text-gold-deep">{active.price}</div>
+              <div className="mt-2 font-serif text-4xl text-gold-deep">{displayPrice}</div>
               <p className="mt-5 flex-1 text-base leading-relaxed text-charcoal-soft">{active.desc}</p>
+              {isStretch && (
+                <div
+                  role="radiogroup"
+                  aria-label="Öl-Option"
+                  className="mt-6 grid grid-cols-2 gap-2"
+                >
+                  {[
+                    { id: "oil" as const, label: "Mit Öl", price: "CHF 120.–" },
+                    { id: "nooil" as const, label: "Ohne Öl", price: "CHF 100.–" },
+                  ].map((opt) => {
+                    const selected = oilVariant === opt.id;
+                    return (
+                      <button
+                        key={opt.id}
+                        type="button"
+                        role="radio"
+                        aria-checked={selected}
+                        onClick={() => setOilVariant(opt.id)}
+                        className={cn(
+                          "flex flex-col items-start rounded-sm border px-4 py-3 text-left transition",
+                          selected
+                            ? "border-gold bg-gold-soft/40"
+                            : "border-border/60 hover:border-gold/60"
+                        )}
+                      >
+                        <span className="text-[0.68rem] uppercase tracking-[0.24em] text-charcoal-soft">
+                          {opt.label}
+                        </span>
+                        <span className="mt-1 font-serif text-lg text-charcoal">
+                          {opt.price}
+                        </span>
+                      </button>
+                    );
+                  })}
+                </div>
+              )}
               <button
-                onClick={() => open(active.id)}
+                onClick={() => open(bookingId)}
                 className={cn(
                   "mt-8 rounded-sm py-4 text-[0.72rem] uppercase tracking-[0.24em] transition",
                   active.featured
