@@ -27,7 +27,7 @@ const faqs = [
   { q: "Muss ich mich vorbereiten?", a: "Nein. Komm bequem gekleidet — wir stellen alles Nötige zur Verfügung. Bitte 5 Minuten vor Termin da sein." },
   { q: "Was ist das Silent Treatment?", a: "Auf Wunsch verzichten wir vollständig auf Smalltalk. Ideal, wenn du wirklich abschalten willst — einfach beim Buchen aktivieren." },
   { q: "Wie kann ich bezahlen?", a: "Wir akzeptieren TWINT, alle gängigen Karten sowie Bargeld. Die Quittung erhältst du digital per Mail." },
-  { q: "Kann ich kurzfristig absagen?", a: "Kostenlose Absage bis 12 Stunden vor Termin. Danach berechnen wir 50% des Behandlungspreises." },
+  { q: "Kann ich kurzfristig absagen?", a: "Kostenlose Absagen sind bis zu 24 Stunden vor dem Termin möglich. Da wir ein kleines Studio sind und die Slots exklusiv für dich reservieren, behalten wir uns bei kurzfristigeren Absagen oder Nichterscheinen vor, eine Umtriebsentschädigung von 50% des Behandlungspreises per Post- oder Mail-Rechnung zu stellen. Vielen Dank für dein Verständnis und dein Fairplay!" },
   { q: "Gibt es Parkplätze?", a: "Ja, direkt vor dem Studio an der Eschenstrasse 24. Kostenlos für unsere Gäste." },
 ];
 
