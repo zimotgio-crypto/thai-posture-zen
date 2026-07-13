@@ -39,7 +39,7 @@ function Index() {
             <div className="mt-14 flex items-center gap-6 text-xs uppercase tracking-[0.24em] text-charcoal-soft">
               <span>Boutique Studio</span>
               <span className="h-px w-8 bg-border" />
-              <span>SEIT 202</span>
+              <span>SEIT 2027</span>
             </div>
           </div>
 
