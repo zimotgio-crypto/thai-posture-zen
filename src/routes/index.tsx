@@ -57,7 +57,7 @@ function Index() {
             <div className="absolute -bottom-6 -left-6 hidden max-w-[240px] rounded-sm bg-ivory p-5 shadow-[var(--shadow-soft)] sm:block">
               <div className="text-[0.65rem] uppercase tracking-[0.28em] text-gold-deep">Signature</div>
               <div className="mt-2 font-serif text-lg text-charcoal">Posture Reset · 60 Min</div>
-              <div className="mt-1 text-sm text-charcoal-soft">Präzise Arbeit an Nacken, Schultern & Rücken.</div>
+              <div className="mt-1 text-sm text-charcoal-soft">Präzise Arbeit an Kopf, Nacken & Schultern.</div>
             </div>
           </div>
         </div>
