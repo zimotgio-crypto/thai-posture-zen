@@ -145,7 +145,7 @@ function Index() {
             </h2>
             <p className="mx-auto mt-4 max-w-xl text-charcoal-soft">
               Unser „Home-Office Deep Release" — 60 Minuten präzise Tiefenentspannung
-              für Nacken, Schultern & Geist.
+              für Kopf, Nacken, Schultern & Geist.
             </p>
             <div className="mt-8 flex flex-wrap items-center justify-center gap-4">
               <button onClick={() => open("deep-release")} className="btn-gold rounded-sm px-7 py-4 text-[0.78rem] uppercase tracking-[0.24em]">
