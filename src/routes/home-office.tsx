@@ -4,6 +4,7 @@ import neckImg from "@/assets/home-office-neck.jpg";
 import { Eyebrow, Section } from "@/components/section";
 import { useBooking } from "@/components/booking-provider";
 import { cn } from "@/lib/utils";
+import { useState } from "react";
 
 export const Route = createFileRoute("/home-office")({
   head: () => ({
@@ -44,15 +45,17 @@ const menu: Treatment[] = [
   },
   {
     id: "zuzwiler",
-    name: "Zuzwiler Auszeit",
+    name: "Sport Massage",
     time: "90 Min.",
     price: "CHF 140.–",
-    desc: "Premium-Relaxation mit warmen Bio-Ölen und Hot-Towel-Ritual.",
+    desc: "Deep tissue work and intensive mobilization specifically tailored for athletes, active recovery, and relieving deep muscular tension.",
   },
 ] as const;
 
 function HomeOffice() {
   const { open } = useBooking();
+  const [activeTab, setActiveTab] = useState<string>(menu[0].id);
+  const active = menu.find((m) => m.id === activeTab) ?? menu[0];
   return (
     <>
       <section className="relative overflow-hidden">
