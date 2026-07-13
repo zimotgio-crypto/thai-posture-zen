@@ -64,7 +64,7 @@ function HomeOffice() {
             </h1>
             <p className="mt-6 max-w-xl text-lg leading-relaxed text-charcoal-soft">
               Das <strong className="font-medium text-charcoal">„Home-Office Deep Release"</strong> Treatment —
-              60 Min. / CHF 100.–. Gezielte Tiefenentspannung für Nacken, Schultern
+              60 Min. / CHF 100.–. Gezielte Tiefenentspannung für Kopf, Nacken, Schultern, Rücken
               und Geist — direkt in Zuzwil.
             </p>
 
@@ -88,7 +88,7 @@ function HomeOffice() {
                 Jetzt Termin online buchen <ArrowRight className="h-4 w-4" />
               </button>
               <p className="mt-3 text-xs uppercase tracking-[0.22em] text-charcoal-soft">
-                Bestätigung innerhalb von 2 Stunden
+                SOFORT-BESTÄTIGUNG PER SMS & E-MAIL
               </p>
             </div>
           </div>
