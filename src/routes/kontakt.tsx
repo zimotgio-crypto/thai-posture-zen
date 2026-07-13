@@ -1,7 +1,7 @@
 import { createFileRoute } from "@tanstack/react-router";
 import { MapPin, Clock, Wallet, ShieldCheck } from "lucide-react";
 import { Accordion, AccordionContent, AccordionItem, AccordionTrigger } from "@/components/ui/accordion";
-import portraitImg from "@/assets/therapist-portrait.jpg";
+import towelsImg from "@/assets/therapist-portrait.jpg";
 import { Eyebrow, Section } from "@/components/section";
 import { useBooking } from "@/components/booking-provider";
 
@@ -78,8 +78,8 @@ function Kontakt() {
             <div className="relative">
               <div className="absolute -inset-4 -z-10 wood-panel opacity-70" />
               <img
-                src={portraitImg}
-                alt="Portrait der Thai-Massage-Therapeutin in einem hellen, minimalistischen Studio"
+                src={towelsImg}
+                alt="Frisch gerollte, hochwertige weiße Baumwolltücher auf einer warmen, neutralen Oberfläche"
                 width={1200}
                 height={1500}
                 loading="lazy"
@@ -87,12 +87,12 @@ function Kontakt() {
               />
             </div>
             <div className="mt-8 rounded-sm border border-border/60 bg-card p-6">
-              <div className="text-[0.7rem] uppercase tracking-[0.25em] text-gold-deep">Meet Your Therapist</div>
-              <h2 className="mt-2 font-serif text-2xl text-charcoal">Kanya</h2>
+              <div className="text-[0.7rem] uppercase tracking-[0.25em] text-gold-deep">Unser Versprechen</div>
               <p className="mt-3 text-sm leading-relaxed text-charcoal-soft">
-                Ausgebildet in Chiang Mai, spezialisiert auf präzise Haltungs-Arbeit
-                und Tiefen-Release. Kanya führt jede Behandlung im Thai Posture Lab
-                persönlich durch.
+                Präzise Griffe, fundiertes Haltungswissen und absolute Diskretion.
+                Jede Behandlung im Thai Posture Lab wird nach höchsten Schweizer
+                Hygiene- und Qualitätsstandards durchgeführt. Deine Erholung steht
+                bei uns im Mittelpunkt.
               </p>
             </div>
           </aside>
