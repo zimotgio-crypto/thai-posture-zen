@@ -21,7 +21,7 @@ export function SiteFooter() {
           <div className="text-[0.7rem] uppercase tracking-[0.25em] text-gold-deep">Navigation</div>
           <div className="flex flex-col gap-1">
             <Link to="/" className="text-charcoal-soft hover:text-charcoal">Home</Link>
-            <Link to="/home-office" className="text-charcoal-soft hover:text-charcoal">Home-Office Special</Link>
+            <Link to="/treatments" className="text-charcoal-soft hover:text-charcoal">Treatments</Link>
             <Link to="/kontakt" className="text-charcoal-soft hover:text-charcoal">Kontakt & Info</Link>
           </div>
         </div>
