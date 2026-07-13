@@ -15,6 +15,7 @@ import { SiteHeader } from "@/components/site-header";
 import { SiteFooter } from "@/components/site-footer";
 import { BookingProvider } from "@/components/booking-provider";
 import { Toaster } from "@/components/ui/sonner";
+import { LanguageProvider } from "@/lib/i18n";
 
 function NotFoundComponent() {
   return (
@@ -128,6 +129,7 @@ function RootComponent() {
 
   return (
     <QueryClientProvider client={queryClient}>
+      <LanguageProvider>
       <BookingProvider>
         <div className="flex min-h-screen flex-col bg-ivory text-charcoal">
           <SiteHeader />
@@ -138,6 +140,7 @@ function RootComponent() {
         </div>
         <Toaster position="top-center" />
       </BookingProvider>
+      </LanguageProvider>
     </QueryClientProvider>
   );
 }
