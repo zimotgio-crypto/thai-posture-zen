@@ -1,5 +1,5 @@
 import { createFileRoute } from "@tanstack/react-router";
-import { MapPin, Clock, Wallet, ShieldCheck } from "lucide-react";
+import { MapPin, Clock, Wallet, ShieldCheck, ClipboardList } from "lucide-react";
 import { Accordion, AccordionContent, AccordionItem, AccordionTrigger } from "@/components/ui/accordion";
 import towelsImg from "@/assets/therapist-portrait.jpg";
 import { Eyebrow, Section } from "@/components/section";
@@ -64,6 +64,12 @@ function Kontakt() {
               </InfoCard>
               <InfoCard icon={ShieldCheck} title="Hygiene-Standard">
                 Frische Textilien pro Termin. Desinfizierte Oberflächen. Bio-Öle in Single-Use-Portionen.
+              </InfoCard>
+              <InfoCard icon={ClipboardList} title="Massagetagebuch" className="sm:col-span-2">
+                Wir dokumentieren deinen Behandlungs- und Haltungsverlauf nach jeder Sitzung präzise.
+                So wissen wir bei deinem nächsten Besuch sofort, welche Muskelketten gezielte Zuwendung
+                brauchen, tracken deine Fortschritte und passen jeden Griff perfekt an deinen Körper an
+                – hocheffizient und ganz ohne erneutes Erklären.
               </InfoCard>
             </div>
 
@@ -158,13 +164,15 @@ function InfoCard({
   icon: Icon,
   title,
   children,
+  className,
 }: {
   icon: React.ComponentType<{ className?: string }>;
   title: string;
   children: React.ReactNode;
+  className?: string;
 }) {
   return (
-    <div className="rounded-sm border border-border/60 bg-card p-6">
+    <div className={`rounded-sm border border-border/60 bg-card p-6 ${className ?? ""}`}>
       <div className="flex items-center gap-3">
         <div className="flex h-9 w-9 items-center justify-center rounded-sm bg-gold-soft/40 text-gold-deep">
           <Icon className="h-4 w-4" />
