@@ -19,11 +19,11 @@ export const Route = createFileRoute("/home-office")({
   component: HomeOffice,
 });
 
-const menuMeta = [
+const menuMeta: { id: string; price: string; featured?: boolean }[] = [
   { id: "deep-release", price: "CHF 100.–", featured: true },
   { id: "thai-stretch", price: "CHF 120.–" },
   { id: "zuzwiler", price: "CHF 140.–" },
-] as const;
+];
 
 const ritualIcons = [Monitor, Hand, Flame] as const;
 
