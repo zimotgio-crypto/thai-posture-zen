@@ -11,7 +11,7 @@ import { cn } from "@/lib/utils";
 const treatments = [
   { id: "deep-release", label: "Home-Office Deep Release", meta: "60 Min. · CHF 100.–" },
   { id: "thai-stretch", label: "Traditional Thai Stretch", meta: "75 Min. · CHF 120.–" },
-  { id: "zuzwiler", label: "Zuzwiler Auszeit", meta: "90 Min. · CHF 140.–" },
+  { id: "zuzwiler", label: "Sport Massage", meta: "90 Min. · CHF 140.–" },
 ];
 
 function nextDays(n: number) {
