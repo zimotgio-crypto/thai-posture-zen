@@ -115,7 +115,7 @@ function Index() {
               {[
                 { i: VolumeX, t: "Silent Treatment", d: "Optional stille Behandlung." },
                 { i: Receipt, t: "Digitale Quittung", d: "Direkt per Mail nach Termin." },
-                { i: Wallet, t: "TWINT & Karte", d: "Kontaktlos zahlen, ohne Wartezeit." },
+                { i: Wallet, t: "TWINT & Karte & Bar", d: "Kontaktlos zahlen, ohne Wartezeit, aber auch Bar möglich" },
                 { i: MapPin, t: "Parkplätze vor Ort", d: "Kostenlos an der Eschenstrasse." },
               ].map(({ i: Icon, t, d }) => (
                 <li key={t} className="flex items-start gap-3 rounded-sm border border-border/60 bg-card p-4">
