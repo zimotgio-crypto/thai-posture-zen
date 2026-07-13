@@ -97,7 +97,7 @@ function Index() {
               loading="lazy"
               width={1600}
               height={1000}
-              alt="Minimalistischer Behandlungsraum mit vertikalen Holzpaneelen und indirektem Licht"
+              alt="Tablet auf Betonoberfläche zeigt eine elegante Buchungsbestätigung im Silent Mode"
               className="h-[420px] w-full rounded-sm object-cover shadow-[var(--shadow-soft)] lg:h-[520px]"
             />
           </div>
