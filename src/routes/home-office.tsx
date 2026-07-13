@@ -4,6 +4,7 @@ import neckImg from "@/assets/home-office-neck.jpg";
 import { Eyebrow, Section } from "@/components/section";
 import { useBooking } from "@/components/booking-provider";
 import { cn } from "@/lib/utils";
+import { useState } from "react";
 
 export const Route = createFileRoute("/home-office")({
   head: () => ({
@@ -44,15 +45,17 @@ const menu: Treatment[] = [
   },
   {
     id: "zuzwiler",
-    name: "Zuzwiler Auszeit",
+    name: "Sport Massage",
     time: "90 Min.",
     price: "CHF 140.–",
-    desc: "Premium-Relaxation mit warmen Bio-Ölen und Hot-Towel-Ritual.",
+    desc: "Deep tissue work and intensive mobilization specifically tailored for athletes, active recovery, and relieving deep muscular tension.",
   },
 ] as const;
 
 function HomeOffice() {
   const { open } = useBooking();
+  const [activeTab, setActiveTab] = useState<string>(menu[0].id);
+  const active = menu.find((m) => m.id === activeTab) ?? menu[0];
   return (
     <>
       <section className="relative overflow-hidden">
@@ -154,39 +157,62 @@ function HomeOffice() {
               Klare Preise. Keine Überraschungen.
             </h2>
           </div>
-          <div className="mt-14 grid gap-6 md:grid-cols-3">
-            {menu.map((m) => (
-              <div
-                key={m.id}
-                className={cn(
-                  "relative flex h-full flex-col rounded-sm border bg-card p-8 transition",
-                  m.featured
-                    ? "border-gold shadow-[var(--shadow-gold)]"
-                    : "border-border/60 hover:border-gold/60"
-                )}
-              >
-                {m.featured && (
-                  <div className="absolute -top-3 left-8 rounded-sm bg-gold px-3 py-1 text-[0.62rem] uppercase tracking-[0.28em] text-primary-foreground">
-                    Signature
-                  </div>
-                )}
-                <div className="text-[0.7rem] uppercase tracking-[0.25em] text-charcoal-soft">{m.time}</div>
-                <h3 className="mt-3 font-serif text-2xl leading-tight text-charcoal">{m.name}</h3>
-                <div className="mt-2 font-serif text-3xl text-gold-deep">{m.price}</div>
-                <p className="mt-4 flex-1 text-sm leading-relaxed text-charcoal-soft">{m.desc}</p>
+          <div
+            role="tablist"
+            aria-label="Treatments"
+            className="mx-auto mt-14 flex flex-wrap justify-center gap-2 border-b border-border/60"
+          >
+            {menu.map((m) => {
+              const isActive = m.id === activeTab;
+              return (
                 <button
-                  onClick={() => open(m.id)}
+                  key={m.id}
+                  role="tab"
+                  aria-selected={isActive}
+                  onClick={() => setActiveTab(m.id)}
                   className={cn(
-                    "mt-8 rounded-sm py-3 text-[0.72rem] uppercase tracking-[0.24em] transition",
-                    m.featured
-                      ? "btn-gold"
-                      : "border border-charcoal/70 text-charcoal hover:bg-charcoal hover:text-ivory"
+                    "-mb-px border-b-2 px-5 py-4 text-[0.72rem] uppercase tracking-[0.24em] transition",
+                    isActive
+                      ? "border-gold text-gold-deep"
+                      : "border-transparent text-charcoal-soft hover:text-charcoal"
                   )}
                 >
-                  Buchen
+                  {m.name}
                 </button>
-              </div>
-            ))}
+              );
+            })}
+          </div>
+          <div className="mx-auto mt-10 max-w-xl">
+            <div
+              key={active.id}
+              className={cn(
+                "relative flex h-full flex-col rounded-sm border bg-card p-10 transition",
+                active.featured
+                  ? "border-gold shadow-[var(--shadow-gold)]"
+                  : "border-border/60"
+              )}
+            >
+              {active.featured && (
+                <div className="absolute -top-3 left-8 rounded-sm bg-gold px-3 py-1 text-[0.62rem] uppercase tracking-[0.28em] text-primary-foreground">
+                  Signature
+                </div>
+              )}
+              <div className="text-[0.7rem] uppercase tracking-[0.25em] text-charcoal-soft">{active.time}</div>
+              <h3 className="mt-3 font-serif text-3xl leading-tight text-charcoal">{active.name}</h3>
+              <div className="mt-2 font-serif text-4xl text-gold-deep">{active.price}</div>
+              <p className="mt-5 flex-1 text-base leading-relaxed text-charcoal-soft">{active.desc}</p>
+              <button
+                onClick={() => open(active.id)}
+                className={cn(
+                  "mt-8 rounded-sm py-4 text-[0.72rem] uppercase tracking-[0.24em] transition",
+                  active.featured
+                    ? "btn-gold"
+                    : "border border-charcoal/70 text-charcoal hover:bg-charcoal hover:text-ivory"
+                )}
+              >
+                Buchen
+              </button>
+            </div>
           </div>
         </div>
       </section>
