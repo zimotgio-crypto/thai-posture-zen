@@ -285,6 +285,15 @@ export const translations = {
       ctaH2: " again.",
       ctaBtn: "Book online",
     },
+    testimonials: {
+      eyebrow: "Social proof",
+      h: "Voices from the studio",
+      items: [
+        { q: "Finally a studio that understands what neck tension from constant sitting really means. The techniques are incredibly precise.", who: "M. B.", where: "Zuzwil" },
+        { q: "The Silent Treatment is genius. No forced conversation — just deep recovery and professional work.", who: "S. K.", where: "Wil" },
+        { q: "Thanks to the massage journal, the therapist knew exactly where my weak spots were on my second visit. Extremely efficient!", who: "T. R.", where: "Uzwil" },
+      ],
+    },
     contact: {
       eyebrow: "Contact & Info",
       h1: "On Eschenstrasse 24. Right in the middle of Zuzwil.",
