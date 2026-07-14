@@ -21,29 +21,29 @@ function Index() {
       {/* Hero */}
       <section className="relative overflow-hidden">
         <div className="pointer-events-none absolute inset-x-0 top-0 h-[60%] bg-gradient-to-b from-ivory-deep/70 to-transparent" />
-        <div className="mx-auto grid max-w-7xl gap-14 px-6 pb-20 pt-10 lg:grid-cols-12 lg:gap-10 lg:px-10 lg:pb-32 lg:pt-16">
-          <div className="relative z-10 flex flex-col justify-center lg:col-span-6">
+        <div className="mx-auto grid max-w-7xl gap-8 px-6 pb-16 pt-6 lg:grid-cols-12 lg:gap-10 lg:px-10 lg:pb-32 lg:pt-16">
+          <div className="relative z-10 order-1 flex flex-col justify-center lg:col-span-6">
             <Eyebrow>{t.home.eyebrow}</Eyebrow>
-            <h1 className="mt-6 text-[2.6rem] leading-[1.05] text-charcoal sm:text-6xl lg:text-[4.2rem]">
+            <h1 className="mt-4 text-[2rem] leading-[1.08] text-charcoal sm:text-6xl sm:mt-6 sm:leading-[1.05] lg:text-[4.2rem]">
               {t.home.title1}<em className="not-italic text-gold-deep">{t.home.titleEm}</em>{t.home.title2}
             </h1>
-            <p className="mt-6 max-w-lg text-lg leading-relaxed text-charcoal-soft">{t.home.intro}</p>
-            <div className="mt-10 flex flex-wrap items-center gap-4">
-              <button onClick={() => open()} className="btn-gold inline-flex items-center gap-2 rounded-sm px-7 py-4 text-[0.78rem] uppercase tracking-[0.24em]">
+            <p className="mt-4 max-w-lg text-base leading-relaxed text-charcoal-soft sm:mt-6 sm:text-lg">{t.home.intro}</p>
+            <div className="mt-6 flex flex-wrap items-center gap-4 sm:mt-10">
+              <button onClick={() => open()} className="btn-gold inline-flex w-full items-center justify-center gap-2 rounded-sm px-7 py-4 text-[0.78rem] uppercase tracking-[0.24em] sm:w-auto">
                 {t.home.cta} <ArrowRight className="h-4 w-4" />
               </button>
               <Link to="/home-office" className="text-sm uppercase tracking-[0.22em] text-charcoal-soft hover:text-charcoal">
                 {t.home.treatmentsLink}
               </Link>
             </div>
-            <div className="mt-14 flex items-center gap-6 text-xs uppercase tracking-[0.24em] text-charcoal-soft">
+            <div className="mt-8 hidden items-center gap-6 text-xs uppercase tracking-[0.24em] text-charcoal-soft sm:mt-14 sm:flex">
               <span>{t.home.boutique}</span>
               <span className="h-px w-8 bg-border" />
               <span>{t.home.since}</span>
             </div>
           </div>
 
-          <div className="relative lg:col-span-6">
+          <div className="relative order-2 lg:col-span-6">
             <div className="absolute -inset-6 -z-10 rounded-sm wood-panel opacity-70" />
             <div className="overflow-hidden rounded-sm shadow-[var(--shadow-soft)]">
               <img
@@ -51,7 +51,7 @@ function Index() {
                 alt={t.home.heroAlt}
                 width={1600}
                 height={1200}
-                className="h-[520px] w-full object-cover lg:h-[640px]"
+                className="h-[320px] w-full object-cover sm:h-[520px] lg:h-[640px]"
               />
             </div>
             <div className="absolute -bottom-6 -left-6 hidden max-w-[240px] rounded-sm bg-ivory p-5 shadow-[var(--shadow-soft)] sm:block">
