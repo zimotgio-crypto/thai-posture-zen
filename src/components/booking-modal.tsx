@@ -44,6 +44,11 @@ export function BookingModal({
   const [silent, setSilent] = useState(true);
   const [name, setName] = useState("");
   const [email, setEmail] = useState("");
+  const [phone, setPhone] = useState("");
+  const [street, setStreet] = useState("");
+  const [zip, setZip] = useState("");
+  const [city, setCity] = useState("");
+  const [errors, setErrors] = useState<Record<string, boolean>>({});
 
   const days = useMemo(
     () => nextDays(10, t.booking.weekdays, t.booking.locale),
@@ -53,7 +58,16 @@ export function BookingModal({
 
   function submit(e: React.FormEvent) {
     e.preventDefault();
-    if (!day || !time || !name || !email) {
+    const nextErrors: Record<string, boolean> = {
+      name: !name.trim(),
+      email: !email.trim(),
+      phone: !phone.trim(),
+      street: !street.trim(),
+      zip: !zip.trim(),
+      city: !city.trim(),
+    };
+    setErrors(nextErrors);
+    if (!day || !time || Object.values(nextErrors).some(Boolean)) {
       toast.error(t.booking.errAll);
       return;
     }
@@ -65,6 +79,11 @@ export function BookingModal({
     setTime(null);
     setName("");
     setEmail("");
+    setPhone("");
+    setStreet("");
+    setZip("");
+    setCity("");
+    setErrors({});
   }
 
   return (
@@ -155,12 +174,79 @@ export function BookingModal({
 
           <section className="grid gap-4 sm:grid-cols-2">
             <div className="space-y-2">
-              <Label htmlFor="name">{t.booking.name}</Label>
-              <Input id="name" value={name} onChange={(e) => setName(e.target.value)} placeholder={t.booking.namePh} />
+              <Label htmlFor="name">{t.booking.name} *</Label>
+              <Input
+                id="name"
+                value={name}
+                onChange={(e) => setName(e.target.value)}
+                placeholder={t.booking.namePh}
+                aria-invalid={errors.name || undefined}
+                className={cn(errors.name && "border-destructive focus-visible:ring-destructive")}
+              />
+              {errors.name && <p className="text-xs text-destructive">{t.booking.required}</p>}
             </div>
             <div className="space-y-2">
-              <Label htmlFor="email">{t.booking.email}</Label>
-              <Input id="email" type="email" value={email} onChange={(e) => setEmail(e.target.value)} placeholder={t.booking.emailPh} />
+              <Label htmlFor="email">{t.booking.email} *</Label>
+              <Input
+                id="email"
+                type="email"
+                value={email}
+                onChange={(e) => setEmail(e.target.value)}
+                placeholder={t.booking.emailPh}
+                aria-invalid={errors.email || undefined}
+                className={cn(errors.email && "border-destructive focus-visible:ring-destructive")}
+              />
+              {errors.email && <p className="text-xs text-destructive">{t.booking.required}</p>}
+            </div>
+            <div className="space-y-2 sm:col-span-2">
+              <Label htmlFor="phone">{t.booking.phone} *</Label>
+              <Input
+                id="phone"
+                type="tel"
+                value={phone}
+                onChange={(e) => setPhone(e.target.value)}
+                placeholder={t.booking.phonePh}
+                aria-invalid={errors.phone || undefined}
+                className={cn(errors.phone && "border-destructive focus-visible:ring-destructive")}
+              />
+              {errors.phone && <p className="text-xs text-destructive">{t.booking.required}</p>}
+            </div>
+            <div className="space-y-2 sm:col-span-2">
+              <Label htmlFor="street">{t.booking.street} *</Label>
+              <Input
+                id="street"
+                value={street}
+                onChange={(e) => setStreet(e.target.value)}
+                placeholder={t.booking.streetPh}
+                aria-invalid={errors.street || undefined}
+                className={cn(errors.street && "border-destructive focus-visible:ring-destructive")}
+              />
+              {errors.street && <p className="text-xs text-destructive">{t.booking.required}</p>}
+            </div>
+            <div className="space-y-2">
+              <Label htmlFor="zip">{t.booking.zip} *</Label>
+              <Input
+                id="zip"
+                inputMode="numeric"
+                value={zip}
+                onChange={(e) => setZip(e.target.value)}
+                placeholder={t.booking.zipPh}
+                aria-invalid={errors.zip || undefined}
+                className={cn(errors.zip && "border-destructive focus-visible:ring-destructive")}
+              />
+              {errors.zip && <p className="text-xs text-destructive">{t.booking.required}</p>}
+            </div>
+            <div className="space-y-2">
+              <Label htmlFor="city">{t.booking.city} *</Label>
+              <Input
+                id="city"
+                value={city}
+                onChange={(e) => setCity(e.target.value)}
+                placeholder={t.booking.cityPh}
+                aria-invalid={errors.city || undefined}
+                className={cn(errors.city && "border-destructive focus-visible:ring-destructive")}
+              />
+              {errors.city && <p className="text-xs text-destructive">{t.booking.required}</p>}
             </div>
           </section>
 
