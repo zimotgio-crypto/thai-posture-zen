@@ -484,7 +484,11 @@ export function BookingModal({
               <Check className="h-3.5 w-3.5 text-gold-deep" />
               {t.booking.payHint}
             </p>
-            <Button type="submit" className="btn-gold rounded-sm px-6 py-6 text-sm uppercase tracking-[0.2em]">
+            <Button
+              type="submit"
+              disabled={submitting}
+              className="btn-gold rounded-sm px-6 py-6 text-sm uppercase tracking-[0.2em] disabled:opacity-50"
+            >
               {t.booking.submit}
             </Button>
           </div>
