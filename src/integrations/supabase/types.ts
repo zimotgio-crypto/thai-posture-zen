@@ -14,16 +14,173 @@ export type Database = {
   }
   public: {
     Tables: {
-      [_ in never]: never
+      bookings: {
+        Row: {
+          client_id: string | null
+          created_at: string
+          day: string
+          id: string
+          notes: string | null
+          silent: boolean
+          source: Database["public"]["Enums"]["booking_source"]
+          time: string
+          treatment: string
+        }
+        Insert: {
+          client_id?: string | null
+          created_at?: string
+          day: string
+          id?: string
+          notes?: string | null
+          silent?: boolean
+          source?: Database["public"]["Enums"]["booking_source"]
+          time: string
+          treatment: string
+        }
+        Update: {
+          client_id?: string | null
+          created_at?: string
+          day?: string
+          id?: string
+          notes?: string | null
+          silent?: boolean
+          source?: Database["public"]["Enums"]["booking_source"]
+          time?: string
+          treatment?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "bookings_client_id_fkey"
+            columns: ["client_id"]
+            isOneToOne: false
+            referencedRelation: "clients"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      clients: {
+        Row: {
+          city: string
+          created_at: string
+          email: string
+          id: string
+          name: string
+          phone: string
+          street: string
+          updated_at: string
+          zip: string
+        }
+        Insert: {
+          city: string
+          created_at?: string
+          email: string
+          id?: string
+          name: string
+          phone: string
+          street: string
+          updated_at?: string
+          zip: string
+        }
+        Update: {
+          city?: string
+          created_at?: string
+          email?: string
+          id?: string
+          name?: string
+          phone?: string
+          street?: string
+          updated_at?: string
+          zip?: string
+        }
+        Relationships: []
+      }
+      session_logs: {
+        Row: {
+          author_id: string | null
+          body_html: string
+          booking_id: string | null
+          client_id: string
+          created_at: string
+          id: string
+        }
+        Insert: {
+          author_id?: string | null
+          body_html: string
+          booking_id?: string | null
+          client_id: string
+          created_at?: string
+          id?: string
+        }
+        Update: {
+          author_id?: string | null
+          body_html?: string
+          booking_id?: string | null
+          client_id?: string
+          created_at?: string
+          id?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "session_logs_booking_id_fkey"
+            columns: ["booking_id"]
+            isOneToOne: false
+            referencedRelation: "bookings"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "session_logs_client_id_fkey"
+            columns: ["client_id"]
+            isOneToOne: false
+            referencedRelation: "clients"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      user_roles: {
+        Row: {
+          created_at: string
+          id: string
+          role: Database["public"]["Enums"]["app_role"]
+          user_id: string
+        }
+        Insert: {
+          created_at?: string
+          id?: string
+          role: Database["public"]["Enums"]["app_role"]
+          user_id: string
+        }
+        Update: {
+          created_at?: string
+          id?: string
+          role?: Database["public"]["Enums"]["app_role"]
+          user_id?: string
+        }
+        Relationships: []
+      }
     }
     Views: {
       [_ in never]: never
     }
     Functions: {
-      [_ in never]: never
+      claim_admin: { Args: never; Returns: boolean }
+      has_role: {
+        Args: {
+          _role: Database["public"]["Enums"]["app_role"]
+          _user_id: string
+        }
+        Returns: boolean
+      }
+      list_booking_slots: {
+        Args: { _day: string }
+        Returns: {
+          day: string
+          time: string
+        }[]
+      }
     }
     Enums: {
-      [_ in never]: never
+      app_role: "admin"
+      booking_source: "online" | "manual" | "block"
     }
     CompositeTypes: {
       [_ in never]: never
@@ -150,6 +307,9 @@ export type CompositeTypes<
 
 export const Constants = {
   public: {
-    Enums: {},
+    Enums: {
+      app_role: ["admin"],
+      booking_source: ["online", "manual", "block"],
+    },
   },
 } as const
