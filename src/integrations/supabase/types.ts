@@ -170,13 +170,6 @@ export type Database = {
         }
         Returns: boolean
       }
-      list_booking_slots: {
-        Args: { _day: string }
-        Returns: {
-          day: string
-          time: string
-        }[]
-      }
     }
     Enums: {
       app_role: "admin"
