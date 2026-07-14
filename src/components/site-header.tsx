@@ -64,15 +64,15 @@ export function SiteHeader() {
         scrolled ? "border-b border-border/60 bg-ivory/85 backdrop-blur" : "bg-transparent"
       )}
     >
-      <div className="mx-auto flex max-w-7xl items-center justify-between px-6 py-4 lg:px-10">
-        <Link to="/" className="group flex items-baseline gap-2">
+      <div className="mx-auto flex max-w-7xl items-center justify-between gap-4 px-6 py-4 lg:px-10">
+        <Link to="/" className="group flex flex-col leading-none lg:flex-row lg:items-baseline lg:gap-2">
           <span className="font-serif text-xl tracking-tight text-charcoal">Thai Posture Lab</span>
-          <span className="hidden text-[0.62rem] uppercase tracking-[0.35em] text-gold-deep sm:inline">
+          <span className="mt-1 text-[0.6rem] uppercase tracking-[0.32em] text-gold-deep lg:mt-0 lg:text-[0.62rem] lg:tracking-[0.35em]">
             Zuzwil
           </span>
         </Link>
 
-        <nav className="hidden items-center gap-10 md:flex">
+        <nav className="hidden items-center gap-8 lg:flex xl:gap-10">
           {links.map((l) => (
             <Link
               key={l.to}
@@ -87,16 +87,16 @@ export function SiteHeader() {
           ))}
         </nav>
 
-        <div className="flex items-center gap-4">
-          <LangToggle />
+        <div className="flex items-center gap-3 sm:gap-4 lg:gap-6 lg:pl-2">
+          <LangToggle className="hidden sm:inline-flex" />
           <button
             onClick={() => open()}
-            className="btn-gold hidden whitespace-nowrap rounded-sm px-5 py-2.5 text-[0.72rem] uppercase tracking-[0.22em] md:inline-flex"
+            className="btn-gold whitespace-nowrap rounded-sm px-4 py-2 text-[0.7rem] uppercase tracking-[0.2em] sm:text-[0.72rem] lg:px-5 lg:py-2.5 lg:tracking-[0.22em]"
           >
             {t.nav.book}
           </button>
           <button
-            className="md:hidden text-charcoal"
+            className="lg:hidden text-charcoal"
             onClick={() => setMobile((v) => !v)}
             aria-label={t.nav.menu}
           >
@@ -106,8 +106,11 @@ export function SiteHeader() {
       </div>
 
       {mobile && (
-        <div className="border-t border-border/60 bg-ivory md:hidden">
+        <div className="border-t border-border/60 bg-ivory lg:hidden">
           <div className="mx-auto flex max-w-7xl flex-col gap-1 px-6 py-4">
+            <div className="flex justify-end pb-2 sm:hidden">
+              <LangToggle />
+            </div>
             {links.map((l) => (
               <Link
                 key={l.to}
