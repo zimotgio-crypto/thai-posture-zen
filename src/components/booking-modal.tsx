@@ -1,4 +1,6 @@
 import { useEffect, useMemo, useState } from "react";
+import { useServerFn } from "@tanstack/react-start";
+import { submitBooking, listBookedTimes } from "@/lib/booking.functions";
 import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogDescription } from "@/components/ui/dialog";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
@@ -55,8 +57,6 @@ const TREATMENT_MIN = 60;      // treatment length
 const BUFFER_MIN = 30;         // clean-up / prep buffer
 const BLOCK_MIN = TREATMENT_MIN + BUFFER_MIN; // 90-min hard block
 
-const BOOKINGS_KEY = "tpl-bookings";
-
 function fmt(min: number) {
   const h = Math.floor(min / 60);
   const m = min % 60;
@@ -89,23 +89,7 @@ function generateStartTimes(dateKey: string, bookedStarts: string[], nowMinutes:
   return out;
 }
 
-function readBookings(): Record<string, string[]> {
-  if (typeof window === "undefined") return {};
-  try {
-    const raw = window.localStorage.getItem(BOOKINGS_KEY);
-    return raw ? (JSON.parse(raw) as Record<string, string[]>) : {};
-  } catch {
-    return {};
-  }
-}
-
-function writeBookings(v: Record<string, string[]>) {
-  try {
-    window.localStorage.setItem(BOOKINGS_KEY, JSON.stringify(v));
-  } catch {
-    /* ignore */
-  }
-}
+// (Bookings live server-side in Lovable Cloud; no localStorage cache.)
 
 export function BookingModal({
   open,
@@ -133,11 +117,29 @@ export function BookingModal({
   const [zip, setZip] = useState("");
   const [city, setCity] = useState("");
   const [errors, setErrors] = useState<Record<string, boolean>>({});
-  const [bookings, setBookings] = useState<Record<string, string[]>>({});
+  const [bookedTimes, setBookedTimes] = useState<string[]>([]);
+  const [submitting, setSubmitting] = useState(false);
+  const listBooked = useServerFn(listBookedTimes);
+  const submitBookingFn = useServerFn(submitBooking);
 
+  // Fetch existing bookings for the selected day so we can hide occupied slots.
   useEffect(() => {
-    if (open) setBookings(readBookings());
-  }, [open]);
+    if (!open || !day) {
+      setBookedTimes([]);
+      return;
+    }
+    let cancelled = false;
+    listBooked({ data: { day } })
+      .then((rows) => {
+        if (!cancelled) setBookedTimes(rows);
+      })
+      .catch(() => {
+        if (!cancelled) setBookedTimes([]);
+      });
+    return () => {
+      cancelled = true;
+    };
+  }, [open, day, listBooked]);
 
   const today = useMemo(() => startOfDay(new Date()), []);
   const cells = useMemo(() => buildMonthGrid(cursor), [cursor]);
@@ -170,10 +172,10 @@ export function BookingModal({
   }, [day]);
   const slots = useMemo(() => {
     if (!day) return [];
-    return generateStartTimes(day, bookings[day] ?? [], nowMinutesToday);
-  }, [day, bookings, nowMinutesToday]);
+    return generateStartTimes(day, bookedTimes, nowMinutesToday);
+  }, [day, bookedTimes, nowMinutesToday]);
 
-  function submit(e: React.FormEvent) {
+  async function submit(e: React.FormEvent) {
     e.preventDefault();
     const nextErrors: Record<string, boolean> = {
       name: !name.trim(),
@@ -188,23 +190,47 @@ export function BookingModal({
       toast.error(t.booking.errAll);
       return;
     }
-    // Persist the booking so it blocks 90 minutes on subsequent lookups.
-    const nextBookings = { ...bookings, [day]: [...(bookings[day] ?? []), time] };
-    setBookings(nextBookings);
-    writeBookings(nextBookings);
-    toast.success(t.booking.success, {
-      description: `${current.label} · ${day} · ${time}${silent ? " · " + t.booking.silent : ""}`,
-    });
-    onOpenChange(false);
-    setDay(null);
-    setTime(null);
-    setName("");
-    setEmail("");
-    setPhone("");
-    setStreet("");
-    setZip("");
-    setCity("");
-    setErrors({});
+    setSubmitting(true);
+    try {
+      const res = await submitBookingFn({
+        data: {
+          treatment: current.label,
+          day,
+          time,
+          silent,
+          name: name.trim(),
+          email: email.trim(),
+          phone: phone.trim(),
+          street: street.trim(),
+          zip: zip.trim(),
+          city: city.trim(),
+        },
+      });
+      if (!res.ok) {
+        toast.error(t.booking.noSlots);
+        // Refresh availability so the disabled state shows up immediately.
+        listBooked({ data: { day } }).then(setBookedTimes).catch(() => {});
+        return;
+      }
+      toast.success(t.booking.success, {
+        description: `${current.label} · ${day} · ${time}${silent ? " · " + t.booking.silent : ""}`,
+      });
+      onOpenChange(false);
+      setDay(null);
+      setTime(null);
+      setName("");
+      setEmail("");
+      setPhone("");
+      setStreet("");
+      setZip("");
+      setCity("");
+      setErrors({});
+    } catch (err) {
+      console.error(err);
+      toast.error(t.booking.errAll);
+    } finally {
+      setSubmitting(false);
+    }
   }
 
   return (
@@ -458,7 +484,11 @@ export function BookingModal({
               <Check className="h-3.5 w-3.5 text-gold-deep" />
               {t.booking.payHint}
             </p>
-            <Button type="submit" className="btn-gold rounded-sm px-6 py-6 text-sm uppercase tracking-[0.2em]">
+            <Button
+              type="submit"
+              disabled={submitting}
+              className="btn-gold rounded-sm px-6 py-6 text-sm uppercase tracking-[0.2em] disabled:opacity-50"
+            >
               {t.booking.submit}
             </Button>
           </div>
