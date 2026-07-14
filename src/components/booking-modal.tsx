@@ -327,28 +327,43 @@ export function BookingModal({
             <Label className="text-xs uppercase tracking-[0.2em] text-charcoal-soft">
               {t.booking.time}
             </Label>
-            {day ? (
-              <div className="grid grid-cols-3 gap-2 sm:grid-cols-4">
-                {times.map((tm) => (
-                  <button
-                    type="button"
-                    key={tm}
-                    onClick={() => setTime(tm)}
-                    className={cn(
-                      "rounded-sm border px-3 py-2.5 text-sm transition",
-                      time === tm
-                        ? "border-gold bg-gold text-primary-foreground"
-                        : "border-border hover:border-gold/60"
-                    )}
-                  >
-                    {tm}
-                  </button>
-                ))}
-              </div>
-            ) : (
+            {!day ? (
               <p className="rounded-sm border border-dashed border-border/70 px-4 py-6 text-center text-sm text-charcoal-soft">
                 {t.booking.pickDay}
               </p>
+            ) : !dayHours ? (
+              <p className="rounded-sm border border-dashed border-border/70 px-4 py-6 text-center text-sm text-charcoal-soft">
+                {t.booking.closed}
+              </p>
+            ) : slots.every((s) => s.disabled) ? (
+              <p className="rounded-sm border border-dashed border-border/70 px-4 py-6 text-center text-sm text-charcoal-soft">
+                {t.booking.noSlots}
+              </p>
+            ) : (
+              <div className="grid grid-cols-3 gap-2 sm:grid-cols-4">
+                {slots.map((s) => {
+                  const selected = time === s.time;
+                  return (
+                    <button
+                      type="button"
+                      key={s.time}
+                      onClick={() => !s.disabled && setTime(s.time)}
+                      disabled={s.disabled}
+                      aria-label={s.disabled && s.reason === "booked" ? `${s.time} · ${t.booking.booked}` : s.time}
+                      className={cn(
+                        "rounded-sm border px-3 py-2.5 text-sm transition",
+                        s.disabled
+                          ? "cursor-not-allowed border-border/40 bg-ivory-deep/40 text-charcoal-soft/40 line-through"
+                          : selected
+                            ? "border-gold bg-gold text-primary-foreground"
+                            : "border-border hover:border-gold/60"
+                      )}
+                    >
+                      {s.time}
+                    </button>
+                  );
+                })}
+              </div>
             )}
           </section>
 
