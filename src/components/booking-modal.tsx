@@ -1,4 +1,4 @@
-import { useMemo, useState } from "react";
+import { useEffect, useMemo, useState } from "react";
 import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogDescription } from "@/components/ui/dialog";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
@@ -38,7 +38,74 @@ function buildMonthGrid(cursor: Date) {
   return cells;
 }
 
-const times = ["09:00", "10:30", "12:00", "13:30", "15:00", "16:30", "18:00", "19:30"];
+// Studio opening hours (24h). null = closed.
+// Index 0 = Sunday ... 6 = Saturday to match JS Date.getDay().
+const HOURS: ({ open: number; close: number } | null)[] = [
+  null,                       // Sun — closed
+  { open: 9 * 60, close: 20 * 60 },  // Mon
+  { open: 9 * 60, close: 20 * 60 },  // Tue
+  { open: 9 * 60, close: 20 * 60 },  // Wed
+  { open: 9 * 60, close: 20 * 60 },  // Thu
+  { open: 9 * 60, close: 20 * 60 },  // Fri
+  { open: 10 * 60, close: 18 * 60 }, // Sat
+];
+
+const SLOT_STEP = 30;          // minutes between start times
+const TREATMENT_MIN = 60;      // treatment length
+const BUFFER_MIN = 30;         // clean-up / prep buffer
+const BLOCK_MIN = TREATMENT_MIN + BUFFER_MIN; // 90-min hard block
+
+const BOOKINGS_KEY = "tpl-bookings";
+
+function fmt(min: number) {
+  const h = Math.floor(min / 60);
+  const m = min % 60;
+  return `${String(h).padStart(2, "0")}:${String(m).padStart(2, "0")}`;
+}
+
+function parseTime(s: string) {
+  const [h, m] = s.split(":").map(Number);
+  return h * 60 + m;
+}
+
+function generateStartTimes(dateKey: string, bookedStarts: string[], nowMinutes: number | null) {
+  const [y, mo, d] = dateKey.split("-").map(Number);
+  const dow = new Date(y, mo - 1, d).getDay();
+  const hours = HOURS[dow];
+  if (!hours) return [];
+  const bookedRanges = bookedStarts.map((s) => {
+    const start = parseTime(s);
+    return [start, start + BLOCK_MIN] as const;
+  });
+  const out: { time: string; disabled: boolean; reason?: "booked" | "past" }[] = [];
+  for (let t = hours.open; t + TREATMENT_MIN <= hours.close; t += SLOT_STEP) {
+    // A new slot occupies [t, t + BLOCK_MIN). Reject overlap with any booking.
+    const overlaps = bookedRanges.some(([bs, be]) => t < be && t + BLOCK_MIN > bs);
+    const isPast = nowMinutes !== null && t <= nowMinutes;
+    if (overlaps) out.push({ time: fmt(t), disabled: true, reason: "booked" });
+    else if (isPast) out.push({ time: fmt(t), disabled: true, reason: "past" });
+    else out.push({ time: fmt(t), disabled: false });
+  }
+  return out;
+}
+
+function readBookings(): Record<string, string[]> {
+  if (typeof window === "undefined") return {};
+  try {
+    const raw = window.localStorage.getItem(BOOKINGS_KEY);
+    return raw ? (JSON.parse(raw) as Record<string, string[]>) : {};
+  } catch {
+    return {};
+  }
+}
+
+function writeBookings(v: Record<string, string[]>) {
+  try {
+    window.localStorage.setItem(BOOKINGS_KEY, JSON.stringify(v));
+  } catch {
+    /* ignore */
+  }
+}
 
 export function BookingModal({
   open,
@@ -66,6 +133,11 @@ export function BookingModal({
   const [zip, setZip] = useState("");
   const [city, setCity] = useState("");
   const [errors, setErrors] = useState<Record<string, boolean>>({});
+  const [bookings, setBookings] = useState<Record<string, string[]>>({});
+
+  useEffect(() => {
+    if (open) setBookings(readBookings());
+  }, [open]);
 
   const today = useMemo(() => startOfDay(new Date()), []);
   const cells = useMemo(() => buildMonthGrid(cursor), [cursor]);
@@ -85,6 +157,22 @@ export function BookingModal({
   }, [cursor, today]);
   const current = treatments.find((x) => x.id === treatment) ?? treatments[0];
 
+  const now = useMemo(() => new Date(), [day, open]);
+  const nowMinutesToday = useMemo(() => {
+    if (!day) return null;
+    if (day !== ymd(startOfDay(now))) return null;
+    return now.getHours() * 60 + now.getMinutes();
+  }, [day, now]);
+  const dayHours = useMemo(() => {
+    if (!day) return null;
+    const [y, mo, d] = day.split("-").map(Number);
+    return HOURS[new Date(y, mo - 1, d).getDay()];
+  }, [day]);
+  const slots = useMemo(() => {
+    if (!day) return [];
+    return generateStartTimes(day, bookings[day] ?? [], nowMinutesToday);
+  }, [day, bookings, nowMinutesToday]);
+
   function submit(e: React.FormEvent) {
     e.preventDefault();
     const nextErrors: Record<string, boolean> = {
@@ -100,6 +188,10 @@ export function BookingModal({
       toast.error(t.booking.errAll);
       return;
     }
+    // Persist the booking so it blocks 90 minutes on subsequent lookups.
+    const nextBookings = { ...bookings, [day]: [...(bookings[day] ?? []), time] };
+    setBookings(nextBookings);
+    writeBookings(nextBookings);
     toast.success(t.booking.success, {
       description: `${current.label} · ${day} · ${time}${silent ? " · " + t.booking.silent : ""}`,
     });
@@ -235,28 +327,43 @@ export function BookingModal({
             <Label className="text-xs uppercase tracking-[0.2em] text-charcoal-soft">
               {t.booking.time}
             </Label>
-            {day ? (
-              <div className="grid grid-cols-3 gap-2 sm:grid-cols-4">
-                {times.map((tm) => (
-                  <button
-                    type="button"
-                    key={tm}
-                    onClick={() => setTime(tm)}
-                    className={cn(
-                      "rounded-sm border px-3 py-2.5 text-sm transition",
-                      time === tm
-                        ? "border-gold bg-gold text-primary-foreground"
-                        : "border-border hover:border-gold/60"
-                    )}
-                  >
-                    {tm}
-                  </button>
-                ))}
-              </div>
-            ) : (
+            {!day ? (
               <p className="rounded-sm border border-dashed border-border/70 px-4 py-6 text-center text-sm text-charcoal-soft">
                 {t.booking.pickDay}
               </p>
+            ) : !dayHours ? (
+              <p className="rounded-sm border border-dashed border-border/70 px-4 py-6 text-center text-sm text-charcoal-soft">
+                {t.booking.closed}
+              </p>
+            ) : slots.every((s) => s.disabled) ? (
+              <p className="rounded-sm border border-dashed border-border/70 px-4 py-6 text-center text-sm text-charcoal-soft">
+                {t.booking.noSlots}
+              </p>
+            ) : (
+              <div className="grid grid-cols-3 gap-2 sm:grid-cols-4">
+                {slots.map((s) => {
+                  const selected = time === s.time;
+                  return (
+                    <button
+                      type="button"
+                      key={s.time}
+                      onClick={() => !s.disabled && setTime(s.time)}
+                      disabled={s.disabled}
+                      aria-label={s.disabled && s.reason === "booked" ? `${s.time} · ${t.booking.booked}` : s.time}
+                      className={cn(
+                        "rounded-sm border px-3 py-2.5 text-sm transition",
+                        s.disabled
+                          ? "cursor-not-allowed border-border/40 bg-ivory-deep/40 text-charcoal-soft/40 line-through"
+                          : selected
+                            ? "border-gold bg-gold text-primary-foreground"
+                            : "border-border hover:border-gold/60"
+                      )}
+                    >
+                      {s.time}
+                    </button>
+                  );
+                })}
+              </div>
             )}
           </section>
 
