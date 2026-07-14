@@ -103,6 +103,15 @@ export const translations = {
       ctaH2: " machen.",
       ctaBtn: "Termin online buchen",
     },
+    testimonials: {
+      eyebrow: "Social Proof",
+      h: "Stimmen aus dem Studio",
+      items: [
+        { q: "Endlich ein Studio, das versteht, was Nackenverspannungen vom ständigen Sitzen bedeuten. Die Griffe sind unglaublich präzise.", who: "M. B.", where: "Zuzwil" },
+        { q: "Das Silent Treatment ist genial. Keine erzwungenen Gespräche, einfach nur tiefe Erholung und professionelle Arbeit.", who: "S. K.", where: "Wil" },
+        { q: "Dank des Massagetagebuchs wusste der Therapeut beim zweiten Mal sofort, wo meine Schwachstellen liegen. Extrem effizient!", who: "T. R.", where: "Uzwil" },
+      ],
+    },
     contact: {
       eyebrow: "Kontakt & Info",
       h1: "An der Eschenstrasse 24. Mitten in Zuzwil.",
