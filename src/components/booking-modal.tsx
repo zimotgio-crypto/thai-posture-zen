@@ -4,25 +4,38 @@ import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { Switch } from "@/components/ui/switch";
-import { Check, Sparkles } from "lucide-react";
+import { Check, Sparkles, ChevronLeft, ChevronRight } from "lucide-react";
 import { toast } from "sonner";
 import { cn } from "@/lib/utils";
 import { useT } from "@/lib/i18n";
 
-function nextDays(n: number, weekdayLabels: readonly string[], locale: string) {
-  const out: { key: string; label: string; weekday: string; day: string }[] = [];
-  const today = new Date();
-  for (let i = 0; i < n; i++) {
-    const d = new Date(today);
-    d.setDate(today.getDate() + i);
-    out.push({
-      key: d.toISOString().slice(0, 10),
-      label: d.toLocaleDateString(locale, { day: "2-digit", month: "short" }),
-      weekday: weekdayLabels[d.getDay()],
-      day: String(d.getDate()),
-    });
+function ymd(d: Date) {
+  const y = d.getFullYear();
+  const m = String(d.getMonth() + 1).padStart(2, "0");
+  const day = String(d.getDate()).padStart(2, "0");
+  return `${y}-${m}-${day}`;
+}
+
+function startOfDay(d: Date) {
+  const c = new Date(d);
+  c.setHours(0, 0, 0, 0);
+  return c;
+}
+
+function buildMonthGrid(cursor: Date) {
+  // Monday-first grid: 6 weeks x 7 days = 42 cells.
+  const first = new Date(cursor.getFullYear(), cursor.getMonth(), 1);
+  // getDay: 0=Sun..6=Sat -> convert to Mon-first offset (0..6)
+  const offset = (first.getDay() + 6) % 7;
+  const cells: { date: Date; inMonth: boolean }[] = [];
+  const start = new Date(first);
+  start.setDate(first.getDate() - offset);
+  for (let i = 0; i < 42; i++) {
+    const d = new Date(start);
+    d.setDate(start.getDate() + i);
+    cells.push({ date: d, inMonth: d.getMonth() === cursor.getMonth() });
   }
-  return out;
+  return cells;
 }
 
 const times = ["09:00", "10:30", "12:00", "13:30", "15:00", "16:30", "18:00", "19:30"];
@@ -41,6 +54,10 @@ export function BookingModal({
   const [treatment, setTreatment] = useState(initialTreatment ?? treatments[0].id);
   const [day, setDay] = useState<string | null>(null);
   const [time, setTime] = useState<string | null>(null);
+  const [cursor, setCursor] = useState<Date>(() => {
+    const now = new Date();
+    return new Date(now.getFullYear(), now.getMonth(), 1);
+  });
   const [silent, setSilent] = useState(true);
   const [name, setName] = useState("");
   const [email, setEmail] = useState("");
@@ -50,10 +67,22 @@ export function BookingModal({
   const [city, setCity] = useState("");
   const [errors, setErrors] = useState<Record<string, boolean>>({});
 
-  const days = useMemo(
-    () => nextDays(10, t.booking.weekdays, t.booking.locale),
-    [t.booking.weekdays, t.booking.locale]
+  const today = useMemo(() => startOfDay(new Date()), []);
+  const cells = useMemo(() => buildMonthGrid(cursor), [cursor]);
+  const monthLabel = useMemo(
+    () =>
+      cursor.toLocaleDateString(t.booking.locale, {
+        month: "long",
+        year: "numeric",
+      }),
+    [cursor, t.booking.locale]
   );
+  const canGoPrev = useMemo(() => {
+    const prev = new Date(cursor.getFullYear(), cursor.getMonth() - 1, 1);
+    const endOfPrev = new Date(cursor.getFullYear(), cursor.getMonth(), 0);
+    return endOfPrev >= today;
+    void prev;
+  }, [cursor, today]);
   const current = treatments.find((x) => x.id === treatment) ?? treatments[0];
 
   function submit(e: React.FormEvent) {
@@ -126,42 +155,109 @@ export function BookingModal({
           </section>
 
           <section className="space-y-3">
-            <Label className="text-xs uppercase tracking-[0.2em] text-charcoal-soft">{t.booking.date}</Label>
-            <div className="flex gap-2 overflow-x-auto pb-1">
-              {days.map((d) => (
+            <Label className="text-xs uppercase tracking-[0.2em] text-charcoal-soft">
+              {t.booking.date}
+            </Label>
+            <div className="rounded-sm border border-border/60 bg-card p-4 sm:p-5">
+              <div className="flex items-center justify-between">
                 <button
                   type="button"
-                  key={d.key}
-                  onClick={() => setDay(d.key)}
-                  className={cn(
-                    "flex min-w-[64px] flex-col items-center rounded-sm border px-3 py-2 transition",
-                    day === d.key ? "border-gold bg-gold text-primary-foreground" : "border-border hover:border-gold/60"
-                  )}
+                  onClick={() =>
+                    setCursor(new Date(cursor.getFullYear(), cursor.getMonth() - 1, 1))
+                  }
+                  disabled={!canGoPrev}
+                  aria-label={t.booking.prevMonth}
+                  className="flex h-9 w-9 items-center justify-center rounded-sm text-charcoal-soft transition hover:bg-gold-soft/40 hover:text-gold-deep disabled:pointer-events-none disabled:opacity-30"
                 >
-                  <span className="text-[0.65rem] uppercase tracking-widest opacity-80">{d.weekday}</span>
-                  <span className="text-lg font-serif">{d.day}</span>
+                  <ChevronLeft className="h-4 w-4" />
                 </button>
-              ))}
+                <div className="font-serif text-lg capitalize text-charcoal">
+                  {monthLabel}
+                </div>
+                <button
+                  type="button"
+                  onClick={() =>
+                    setCursor(new Date(cursor.getFullYear(), cursor.getMonth() + 1, 1))
+                  }
+                  aria-label={t.booking.nextMonth}
+                  className="flex h-9 w-9 items-center justify-center rounded-sm text-charcoal-soft transition hover:bg-gold-soft/40 hover:text-gold-deep"
+                >
+                  <ChevronRight className="h-4 w-4" />
+                </button>
+              </div>
+
+              <div className="mt-4 grid grid-cols-7 gap-1 text-center text-[0.6rem] uppercase tracking-[0.2em] text-charcoal-soft">
+                {t.booking.weekdaysShort.map((w) => (
+                  <div key={w} className="py-1">
+                    {w}
+                  </div>
+                ))}
+              </div>
+
+              <div className="mt-1 grid grid-cols-7 gap-1">
+                {cells.map(({ date, inMonth }) => {
+                  const key = ymd(date);
+                  const isPast = date < today;
+                  const isDisabled = isPast;
+                  const isSelected = day === key;
+                  const isToday = key === ymd(today);
+                  return (
+                    <button
+                      key={key}
+                      type="button"
+                      onClick={() => {
+                        if (isDisabled) return;
+                        setDay(key);
+                        setTime(null);
+                      }}
+                      disabled={isDisabled}
+                      aria-pressed={isSelected}
+                      className={cn(
+                        "relative aspect-square min-h-[40px] rounded-sm text-sm transition",
+                        "flex items-center justify-center",
+                        !inMonth && "opacity-30",
+                        isDisabled && "cursor-not-allowed text-charcoal-soft/40",
+                        !isDisabled && !isSelected &&
+                          "text-charcoal hover:bg-gold-soft/40 hover:text-gold-deep",
+                        isSelected && "bg-gold text-primary-foreground shadow-[var(--shadow-soft)]",
+                        isToday && !isSelected && "ring-1 ring-gold/50"
+                      )}
+                    >
+                      <span className="font-serif text-base">{date.getDate()}</span>
+                    </button>
+                  );
+                })}
+              </div>
             </div>
           </section>
 
           <section className="space-y-3">
-            <Label className="text-xs uppercase tracking-[0.2em] text-charcoal-soft">{t.booking.time}</Label>
-            <div className="grid grid-cols-4 gap-2">
-              {times.map((tm) => (
-                <button
-                  type="button"
-                  key={tm}
-                  onClick={() => setTime(tm)}
-                  className={cn(
-                    "rounded-sm border px-3 py-2 text-sm transition",
-                    time === tm ? "border-gold bg-gold text-primary-foreground" : "border-border hover:border-gold/60"
-                  )}
-                >
-                  {tm}
-                </button>
-              ))}
-            </div>
+            <Label className="text-xs uppercase tracking-[0.2em] text-charcoal-soft">
+              {t.booking.time}
+            </Label>
+            {day ? (
+              <div className="grid grid-cols-3 gap-2 sm:grid-cols-4">
+                {times.map((tm) => (
+                  <button
+                    type="button"
+                    key={tm}
+                    onClick={() => setTime(tm)}
+                    className={cn(
+                      "rounded-sm border px-3 py-2.5 text-sm transition",
+                      time === tm
+                        ? "border-gold bg-gold text-primary-foreground"
+                        : "border-border hover:border-gold/60"
+                    )}
+                  >
+                    {tm}
+                  </button>
+                ))}
+              </div>
+            ) : (
+              <p className="rounded-sm border border-dashed border-border/70 px-4 py-6 text-center text-sm text-charcoal-soft">
+                {t.booking.pickDay}
+              </p>
+            )}
           </section>
 
           <section className="flex items-start gap-4 rounded-sm border border-gold/40 bg-gold-soft/20 p-4">
