@@ -153,13 +153,13 @@ export const listClients = createServerFn({ method: "GET" })
     const admin = await assertAdmin(context.userId);
     let query = admin
       .from("clients")
-      .select("id, first_name, last_name, email, phone, city, created_at")
+      .select("id, first_name, last_name, email, phone, street, zip, city, created_at")
       .order("last_name", { ascending: true })
       .order("first_name", { ascending: true });
     if (data.q) {
       const like = `%${data.q}%`;
       query = query.or(
-        `first_name.ilike.${like},last_name.ilike.${like},email.ilike.${like},phone.ilike.${like},city.ilike.${like}`
+        `first_name.ilike.${like},last_name.ilike.${like},email.ilike.${like},phone.ilike.${like},street.ilike.${like},zip.ilike.${like},city.ilike.${like}`
       );
     }
     const { data: rows, error } = await query;
