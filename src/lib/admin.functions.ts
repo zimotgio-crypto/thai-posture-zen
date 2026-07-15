@@ -183,6 +183,33 @@ export const addClient = createServerFn({ method: "POST" })
   .inputValidator((data: unknown) => addClientInput.parse(data))
   .handler(async ({ data, context }) => {
     const admin = await assertAdmin(context.userId);
+    // Dedupe: match on first_name + last_name + phone + street + city (case-insensitive, trimmed)
+    const { data: existing, error: findErr } = await admin
+      .from("clients")
+      .select("id")
+      .ilike("first_name", data.firstName)
+      .ilike("last_name", data.lastName)
+      .ilike("phone", data.phone)
+      .ilike("street", data.street)
+      .ilike("city", data.city)
+      .maybeSingle();
+    if (findErr) throw new Error(findErr.message);
+    if (existing) {
+      const { error: updErr } = await admin
+        .from("clients")
+        .update({
+          first_name: data.firstName,
+          last_name: data.lastName,
+          email: data.email.toLowerCase(),
+          phone: data.phone,
+          street: data.street,
+          zip: data.zip,
+          city: data.city,
+        })
+        .eq("id", existing.id);
+      if (updErr) throw new Error(updErr.message);
+      return { ok: true as const, id: existing.id, merged: true as const };
+    }
     const { data: row, error } = await admin
       .from("clients")
       .insert({
@@ -197,7 +224,48 @@ export const addClient = createServerFn({ method: "POST" })
       .select("id")
       .single();
     if (error) throw new Error(error.message);
-    return { ok: true as const, id: row.id };
+    return { ok: true as const, id: row.id, merged: false as const };
+  });
+
+const updateClientInput = z.object({
+  id: z.string().uuid(),
+  firstName: z.string().trim().min(1).max(80),
+  lastName: z.string().trim().min(1).max(80),
+  email: z.string().trim().email().max(200),
+  phone: z.string().trim().min(1).max(60),
+  street: z.string().trim().min(1).max(200),
+  zip: z.string().trim().min(1).max(20),
+  city: z.string().trim().min(1).max(120),
+});
+export const updateClient = createServerFn({ method: "POST" })
+  .middleware([requireSupabaseAuth])
+  .inputValidator((data: unknown) => updateClientInput.parse(data))
+  .handler(async ({ data, context }) => {
+    const admin = await assertAdmin(context.userId);
+    const { error } = await admin
+      .from("clients")
+      .update({
+        first_name: data.firstName,
+        last_name: data.lastName,
+        email: data.email.toLowerCase(),
+        phone: data.phone,
+        street: data.street,
+        zip: data.zip,
+        city: data.city,
+      })
+      .eq("id", data.id);
+    if (error) throw new Error(error.message);
+    return { ok: true as const, id: data.id };
+  });
+
+export const deleteClient = createServerFn({ method: "POST" })
+  .middleware([requireSupabaseAuth])
+  .inputValidator((data: unknown) => clientIdInput.parse(data))
+  .handler(async ({ data, context }) => {
+    const admin = await assertAdmin(context.userId);
+    const { error } = await admin.from("clients").delete().eq("id", data.id);
+    if (error) throw new Error(error.message);
+    return { ok: true as const };
   });
 
 export const getClient = createServerFn({ method: "GET" })
