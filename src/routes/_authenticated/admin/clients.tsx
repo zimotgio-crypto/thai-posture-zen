@@ -40,7 +40,7 @@ function ClientsPage() {
               <th className="text-left px-5 py-3">Name</th>
               <th className="text-left px-5 py-3 hidden md:table-cell">E-Mail</th>
               <th className="text-left px-5 py-3 hidden sm:table-cell">Telefon</th>
-              <th className="text-left px-5 py-3 hidden md:table-cell">Ort</th>
+              <th className="text-left px-5 py-3 hidden md:table-cell">Adresse</th>
               <th />
             </tr>
           </thead>
@@ -54,7 +54,9 @@ function ClientsPage() {
                 </td>
                 <td className="px-5 py-3 text-charcoal-soft hidden md:table-cell">{c.email}</td>
                 <td className="px-5 py-3 text-charcoal-soft hidden sm:table-cell">{c.phone}</td>
-                <td className="px-5 py-3 text-charcoal-soft hidden md:table-cell">{c.city}</td>
+                <td className="px-5 py-3 text-charcoal-soft hidden md:table-cell max-w-[280px] truncate" title={`${c.street}, ${c.zip} ${c.city}`}>
+                  {`${c.street}, ${c.zip} ${c.city}`}
+                </td>
                 <td className="px-5 py-3 text-right">
                   <Link
                     to="/admin/clients/$id"
