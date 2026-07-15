@@ -110,7 +110,8 @@ export function BookingModal({
     return new Date(now.getFullYear(), now.getMonth(), 1);
   });
   const [silent, setSilent] = useState(true);
-  const [name, setName] = useState("");
+  const [firstName, setFirstName] = useState("");
+  const [lastName, setLastName] = useState("");
   const [email, setEmail] = useState("");
   const [phone, setPhone] = useState("");
   const [street, setStreet] = useState("");
@@ -178,7 +179,8 @@ export function BookingModal({
   async function submit(e: React.FormEvent) {
     e.preventDefault();
     const nextErrors: Record<string, boolean> = {
-      name: !name.trim(),
+      firstName: !firstName.trim(),
+      lastName: !lastName.trim(),
       email: !email.trim(),
       phone: !phone.trim(),
       street: !street.trim(),
@@ -198,7 +200,8 @@ export function BookingModal({
           day,
           time,
           silent,
-          name: name.trim(),
+          firstName: firstName.trim(),
+          lastName: lastName.trim(),
           email: email.trim(),
           phone: phone.trim(),
           street: street.trim(),
@@ -218,7 +221,8 @@ export function BookingModal({
       onOpenChange(false);
       setDay(null);
       setTime(null);
-      setName("");
+      setFirstName("");
+      setLastName("");
       setEmail("");
       setPhone("");
       setStreet("");
@@ -403,16 +407,28 @@ export function BookingModal({
 
           <section className="grid gap-4 sm:grid-cols-2">
             <div className="space-y-2">
-              <Label htmlFor="name">{t.booking.name} *</Label>
+              <Label htmlFor="firstName">{t.booking.firstName} *</Label>
               <Input
-                id="name"
-                value={name}
-                onChange={(e) => setName(e.target.value)}
-                placeholder={t.booking.namePh}
-                aria-invalid={errors.name || undefined}
-                className={cn(errors.name && "border-destructive focus-visible:ring-destructive")}
+                id="firstName"
+                value={firstName}
+                onChange={(e) => setFirstName(e.target.value)}
+                placeholder={t.booking.firstNamePh}
+                aria-invalid={errors.firstName || undefined}
+                className={cn(errors.firstName && "border-destructive focus-visible:ring-destructive")}
               />
-              {errors.name && <p className="text-xs text-destructive">{t.booking.required}</p>}
+              {errors.firstName && <p className="text-xs text-destructive">{t.booking.required}</p>}
+            </div>
+            <div className="space-y-2">
+              <Label htmlFor="lastName">{t.booking.lastName} *</Label>
+              <Input
+                id="lastName"
+                value={lastName}
+                onChange={(e) => setLastName(e.target.value)}
+                placeholder={t.booking.lastNamePh}
+                aria-invalid={errors.lastName || undefined}
+                className={cn(errors.lastName && "border-destructive focus-visible:ring-destructive")}
+              />
+              {errors.lastName && <p className="text-xs text-destructive">{t.booking.required}</p>}
             </div>
             <div className="space-y-2">
               <Label htmlFor="email">{t.booking.email} *</Label>
@@ -427,7 +443,7 @@ export function BookingModal({
               />
               {errors.email && <p className="text-xs text-destructive">{t.booking.required}</p>}
             </div>
-            <div className="space-y-2 sm:col-span-2">
+            <div className="space-y-2">
               <Label htmlFor="phone">{t.booking.phone} *</Label>
               <Input
                 id="phone"

@@ -27,7 +27,7 @@ function ClientsPage() {
           <Input
             value={q}
             onChange={(e) => setQ(e.target.value)}
-            placeholder="Suchen: Name, E-Mail, Telefon…"
+            placeholder="Suchen: Vor-, Nachname, E-Mail, Telefon…"
             className="pl-9 w-72"
           />
         </div>
@@ -49,7 +49,7 @@ function ClientsPage() {
               <tr key={c.id} className="border-t border-border/50 hover:bg-gold-soft/20">
                 <td className="px-5 py-3 font-medium text-charcoal">
                   <Link to="/admin/clients/$id" params={{ id: c.id }}>
-                    {c.name}
+                    {`${c.first_name} ${c.last_name}`.trim()}
                   </Link>
                 </td>
                 <td className="px-5 py-3 text-charcoal-soft hidden md:table-cell">{c.email}</td>

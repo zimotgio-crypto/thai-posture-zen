@@ -33,7 +33,8 @@ export function AddBookingDialog({
   const [day, setDay] = useState(defaultDay ?? new Date().toISOString().slice(0, 10));
   const [time, setTime] = useState("10:00");
   const [silent, setSilent] = useState(false);
-  const [name, setName] = useState("");
+  const [firstName, setFirstName] = useState("");
+  const [lastName, setLastName] = useState("");
   const [phone, setPhone] = useState("");
   const [email, setEmail] = useState("");
   const [street, setStreet] = useState("");
@@ -51,7 +52,8 @@ export function AddBookingDialog({
           time,
           silent,
           block,
-          name: block ? undefined : name,
+          firstName: block ? undefined : firstName,
+          lastName: block ? undefined : lastName,
           phone: block ? undefined : phone,
           email: block ? undefined : email.toLowerCase(),
           street: block ? undefined : street,
@@ -114,30 +116,72 @@ export function AddBookingDialog({
               </div>
               <div className="grid grid-cols-2 gap-3">
                 <div className="space-y-2">
-                  <Label>Name *</Label>
-                  <Input value={name} onChange={(e) => setName(e.target.value)} required />
+                  <Label>Vorname *</Label>
+                  <Input
+                    value={firstName}
+                    onChange={(e) => setFirstName(e.target.value)}
+                    placeholder="Max"
+                    required
+                  />
+                </div>
+                <div className="space-y-2">
+                  <Label>Nachname *</Label>
+                  <Input
+                    value={lastName}
+                    onChange={(e) => setLastName(e.target.value)}
+                    placeholder="Muster"
+                    required
+                  />
+                </div>
+              </div>
+              <div className="grid grid-cols-2 gap-3">
+                <div className="space-y-2">
+                  <Label>E-Mail *</Label>
+                  <Input
+                    type="email"
+                    value={email}
+                    onChange={(e) => setEmail(e.target.value)}
+                    placeholder="dein@mail.ch"
+                    required
+                  />
                 </div>
                 <div className="space-y-2">
                   <Label>Telefon *</Label>
-                  <Input value={phone} onChange={(e) => setPhone(e.target.value)} required />
+                  <Input
+                    value={phone}
+                    onChange={(e) => setPhone(e.target.value)}
+                    placeholder="+41 79 000 00 00"
+                    required
+                  />
                 </div>
-              </div>
-              <div className="space-y-2">
-                <Label>E-Mail *</Label>
-                <Input type="email" value={email} onChange={(e) => setEmail(e.target.value)} required />
               </div>
               <div className="space-y-2">
                 <Label>Strasse / Nr. *</Label>
-                <Input value={street} onChange={(e) => setStreet(e.target.value)} required />
+                <Input
+                  value={street}
+                  onChange={(e) => setStreet(e.target.value)}
+                  placeholder="Musterstrasse 12"
+                  required
+                />
               </div>
-              <div className="grid grid-cols-[100px_1fr] gap-3">
+              <div className="grid grid-cols-2 gap-3">
                 <div className="space-y-2">
                   <Label>PLZ *</Label>
-                  <Input value={zip} onChange={(e) => setZip(e.target.value)} required />
+                  <Input
+                    value={zip}
+                    onChange={(e) => setZip(e.target.value)}
+                    placeholder="9524"
+                    required
+                  />
                 </div>
                 <div className="space-y-2">
                   <Label>Ort *</Label>
-                  <Input value={city} onChange={(e) => setCity(e.target.value)} required />
+                  <Input
+                    value={city}
+                    onChange={(e) => setCity(e.target.value)}
+                    placeholder="Zuzwil"
+                    required
+                  />
                 </div>
               </div>
               <label className="flex items-center gap-3">

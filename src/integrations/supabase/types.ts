@@ -63,8 +63,9 @@ export type Database = {
           city: string
           created_at: string
           email: string
+          first_name: string
           id: string
-          name: string
+          last_name: string
           phone: string
           street: string
           updated_at: string
@@ -74,8 +75,9 @@ export type Database = {
           city: string
           created_at?: string
           email: string
+          first_name: string
           id?: string
-          name: string
+          last_name: string
           phone: string
           street: string
           updated_at?: string
@@ -85,8 +87,9 @@ export type Database = {
           city?: string
           created_at?: string
           email?: string
+          first_name?: string
           id?: string
-          name?: string
+          last_name?: string
           phone?: string
           street?: string
           updated_at?: string

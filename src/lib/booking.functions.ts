@@ -6,7 +6,8 @@ const submitInput = z.object({
   day: z.string().regex(/^\d{4}-\d{2}-\d{2}$/),
   time: z.string().regex(/^\d{2}:\d{2}$/),
   silent: z.boolean(),
-  name: z.string().trim().min(1).max(120),
+  firstName: z.string().trim().min(1).max(80),
+  lastName: z.string().trim().min(1).max(80),
   email: z.string().trim().email().max(200),
   phone: z.string().trim().min(3).max(60),
   street: z.string().trim().min(1).max(200),
@@ -40,7 +41,8 @@ export const submitBooking = createServerFn({ method: "POST" })
       .from("clients")
       .upsert(
         {
-          name: data.name,
+          first_name: data.firstName,
+          last_name: data.lastName,
           email: data.email.toLowerCase(),
           phone: data.phone,
           street: data.street,

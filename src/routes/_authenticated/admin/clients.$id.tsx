@@ -75,7 +75,7 @@ function ClientDetail() {
       </Link>
 
       <header className="rounded-sm border border-border/60 bg-card p-8">
-        <h1 className="font-serif text-3xl text-charcoal">{client.name}</h1>
+        <h1 className="font-serif text-3xl text-charcoal">{`${client.first_name} ${client.last_name}`.trim()}</h1>
         <div className="mt-4 grid gap-3 text-sm text-charcoal-soft sm:grid-cols-3">
           <span className="inline-flex items-center gap-2">
             <Phone className="h-4 w-4 text-gold-deep" /> {client.phone}
