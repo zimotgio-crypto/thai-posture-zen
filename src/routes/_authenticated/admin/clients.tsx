@@ -159,14 +159,16 @@ function ClientsPage() {
       <AddClientDialog open={addOpen} onOpenChange={setAddOpen} />
       <Sheet open={Boolean(selectedClient)} onOpenChange={(open) => !open && setSelectedClient(null)}>
         <SheetContent side="right" className="!w-[92vw] !max-w-none overflow-y-auto sm:!w-[760px]">
-          {selectedClient && <ClientProfileSheet client={selectedClient} />}
+          {selectedClient && (
+            <ClientProfileSheet client={selectedClient} onClose={() => setSelectedClient(null)} />
+          )}
         </SheetContent>
       </Sheet>
     </div>
   );
 }
 
-function ClientProfileSheet({ client }: { client: ClientRow }) {
+function ClientProfileSheet({ client, onClose }: { client: ClientRow; onClose: () => void }) {
   const qc = useQueryClient();
   const getClientFn = useServerFn(getClient);
   const addLog = useServerFn(addSessionLog);
@@ -263,7 +265,7 @@ function ClientProfileSheet({ client }: { client: ClientRow }) {
       qc.invalidateQueries({ queryKey: ["admin", "clients"] });
       setConfirmDelete(false);
       // Trigger the parent sheet to close by dispatching a custom event on window
-      window.dispatchEvent(new CustomEvent("client-profile-close"));
+      onClose();
     } catch (err) {
       toast.error(err instanceof Error ? err.message : "Fehler");
       setDeleting(false);
