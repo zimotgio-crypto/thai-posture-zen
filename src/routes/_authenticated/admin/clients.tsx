@@ -2,9 +2,11 @@ import { createFileRoute, useNavigate } from "@tanstack/react-router";
 import { useServerFn } from "@tanstack/react-start";
 import { useQuery } from "@tanstack/react-query";
 import { useState } from "react";
-import { Search, ChevronRight } from "lucide-react";
+import { Search, ChevronRight, Plus } from "lucide-react";
 import { listClients } from "@/lib/admin.functions";
 import { Input } from "@/components/ui/input";
+import { Button } from "@/components/ui/button";
+import { AddClientDialog } from "@/components/admin/add-client-dialog";
 
 export const Route = createFileRoute("/_authenticated/admin/clients")({
   component: ClientsPage,
@@ -15,6 +17,7 @@ function ClientsPage() {
   const listFn = useServerFn(listClients);
   const navigate = useNavigate({ from: "/admin/clients" });
   const [selectedClientId, setSelectedClientId] = useState<string | null>(null);
+  const [addOpen, setAddOpen] = useState(false);
   const clients = useQuery({
     queryKey: ["admin", "clients", q],
     queryFn: () => listFn({ data: { q: q || undefined } }),
@@ -29,14 +32,22 @@ function ClientsPage() {
     <div>
       <div className="mb-6 flex flex-wrap items-center justify-between gap-4">
         <h1 className="font-serif text-2xl text-charcoal">Kunden</h1>
-        <div className="relative">
-          <Search className="absolute left-3 top-1/2 -translate-y-1/2 h-4 w-4 text-charcoal-soft" />
-          <Input
-            value={q}
-            onChange={(e) => setQ(e.target.value)}
-            placeholder="Suchen: Vor-, Nachname, E-Mail, Telefon…"
-            className="pl-9 w-72"
-          />
+        <div className="flex items-center gap-3">
+          <div className="relative">
+            <Search className="absolute left-3 top-1/2 -translate-y-1/2 h-4 w-4 text-charcoal-soft" />
+            <Input
+              value={q}
+              onChange={(e) => setQ(e.target.value)}
+              placeholder="Suchen: Vor-, Nachname, E-Mail, Telefon…"
+              className="pl-9 w-72"
+            />
+          </div>
+          <Button
+            onClick={() => setAddOpen(true)}
+            className="btn-gold rounded-sm px-4 py-2.5 text-[0.7rem] uppercase tracking-[0.22em]"
+          >
+            <Plus className="h-4 w-4 mr-1" /> Kunde
+          </Button>
         </div>
       </div>
 
@@ -118,6 +129,7 @@ function ClientsPage() {
           </tbody>
         </table>
       </div>
+      <AddClientDialog open={addOpen} onOpenChange={setAddOpen} />
     </div>
   );
 }
