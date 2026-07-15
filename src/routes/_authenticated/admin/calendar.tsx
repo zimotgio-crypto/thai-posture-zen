@@ -191,7 +191,7 @@ function CalendarPage() {
                   const top = ((start - OPEN_MIN) / ROW_MIN) * ROW_PX;
                   const height = (90 / ROW_MIN) * ROW_PX - 4;
                   const isBlock = b.source === "block";
-                  const client = (b as unknown as { clients?: { id: string; name: string; phone: string } }).clients;
+                  const client = (b as unknown as { clients?: { id: string; first_name: string; last_name: string; phone: string } }).clients;
                   return (
                     <div
                       key={b.id}
@@ -223,7 +223,7 @@ function CalendarPage() {
                           params={{ id: client.id }}
                           className="mt-0.5 block font-medium hover:underline truncate"
                         >
-                          {client.name}
+                          {`${client.first_name} ${client.last_name}`.trim()}
                         </Link>
                       ) : (
                         <div className="mt-0.5 truncate">—</div>
