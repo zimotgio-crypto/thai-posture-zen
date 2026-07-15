@@ -1,14 +1,25 @@
 import { createFileRoute } from "@tanstack/react-router";
 import { useServerFn } from "@tanstack/react-start";
 import { useQuery, useQueryClient } from "@tanstack/react-query";
-import { useMemo, useState } from "react";
-import { Search, ChevronRight, Plus, Phone, Mail, MapPin, Sparkles } from "lucide-react";
-import { addSessionLog, getClient, listClients } from "@/lib/admin.functions";
+import { useEffect, useMemo, useState } from "react";
+import { Search, ChevronRight, Plus, Sparkles, Trash2 } from "lucide-react";
+import { addSessionLog, deleteClient, getClient, listClients, updateClient } from "@/lib/admin.functions";
 import { Input } from "@/components/ui/input";
 import { Button } from "@/components/ui/button";
+import { Label } from "@/components/ui/label";
 import { AddClientDialog } from "@/components/admin/add-client-dialog";
 import { TiptapEditor } from "@/components/admin/tiptap-editor";
 import { Sheet, SheetContent, SheetHeader, SheetTitle } from "@/components/ui/sheet";
+import {
+  AlertDialog,
+  AlertDialogAction,
+  AlertDialogCancel,
+  AlertDialogContent,
+  AlertDialogDescription,
+  AlertDialogFooter,
+  AlertDialogHeader,
+  AlertDialogTitle,
+} from "@/components/ui/alert-dialog";
 import { toast } from "sonner";
 
 export const Route = createFileRoute("/_authenticated/admin/clients")({
@@ -159,9 +170,23 @@ function ClientProfileSheet({ client }: { client: ClientRow }) {
   const qc = useQueryClient();
   const getClientFn = useServerFn(getClient);
   const addLog = useServerFn(addSessionLog);
+  const updateClientFn = useServerFn(updateClient);
+  const deleteClientFn = useServerFn(deleteClient);
   const [bodyHtml, setBodyHtml] = useState("");
   const [linkBookingId, setLinkBookingId] = useState("");
   const [busy, setBusy] = useState(false);
+  const [savingProfile, setSavingProfile] = useState(false);
+  const [deleting, setDeleting] = useState(false);
+  const [confirmDelete, setConfirmDelete] = useState(false);
+  const [form, setForm] = useState({
+    firstName: client.first_name ?? "",
+    lastName: client.last_name ?? "",
+    email: client.email ?? "",
+    phone: client.phone ?? "",
+    street: client.street ?? "",
+    zip: client.zip ?? "",
+    city: client.city ?? "",
+  });
 
   const q = useQuery({
     queryKey: ["admin", "client", client.id],
@@ -169,6 +194,20 @@ function ClientProfileSheet({ client }: { client: ClientRow }) {
   });
 
   const loadedClient = q.data?.client ?? client;
+  useEffect(() => {
+    if (q.data?.client) {
+      const c = q.data.client;
+      setForm({
+        firstName: c.first_name ?? "",
+        lastName: c.last_name ?? "",
+        email: c.email ?? "",
+        phone: c.phone ?? "",
+        street: c.street ?? "",
+        zip: c.zip ?? "",
+        city: c.city ?? "",
+      });
+    }
+  }, [q.data?.client]);
   const bookings = q.data?.bookings ?? [];
   const logs = q.data?.logs ?? [];
   const pastBookings = useMemo(
@@ -202,6 +241,35 @@ function ClientProfileSheet({ client }: { client: ClientRow }) {
     }
   }
 
+  async function saveProfile() {
+    setSavingProfile(true);
+    try {
+      await updateClientFn({ data: { id: client.id, ...form } });
+      toast.success("Kundendaten aktualisiert");
+      qc.invalidateQueries({ queryKey: ["admin", "client", client.id] });
+      qc.invalidateQueries({ queryKey: ["admin", "clients"] });
+    } catch (err) {
+      toast.error(err instanceof Error ? err.message : "Fehler");
+    } finally {
+      setSavingProfile(false);
+    }
+  }
+
+  async function removeClient() {
+    setDeleting(true);
+    try {
+      await deleteClientFn({ data: { id: client.id } });
+      toast.success("Kunde gelöscht");
+      qc.invalidateQueries({ queryKey: ["admin", "clients"] });
+      setConfirmDelete(false);
+      // Trigger the parent sheet to close by dispatching a custom event on window
+      window.dispatchEvent(new CustomEvent("client-profile-close"));
+    } catch (err) {
+      toast.error(err instanceof Error ? err.message : "Fehler");
+      setDeleting(false);
+    }
+  }
+
   return (
     <div className="space-y-7 pr-2">
       <SheetHeader className="space-y-3 text-left">
@@ -211,21 +279,47 @@ function ClientProfileSheet({ client }: { client: ClientRow }) {
         </SheetTitle>
       </SheetHeader>
 
-      <section className="grid gap-3 rounded-sm border border-border/60 bg-ivory-deep/20 p-5 text-sm text-charcoal-soft sm:grid-cols-2">
-        <span className="inline-flex min-w-0 items-center gap-2">
-          <Phone className="h-4 w-4 shrink-0 text-gold-deep" />
-          <span className="truncate">{loadedClient.phone}</span>
-        </span>
-        <span className="inline-flex min-w-0 items-center gap-2">
-          <Mail className="h-4 w-4 shrink-0 text-gold-deep" />
-          <span className="truncate">{loadedClient.email}</span>
-        </span>
-        <span className="inline-flex min-w-0 items-center gap-2 sm:col-span-2">
-          <MapPin className="h-4 w-4 shrink-0 text-gold-deep" />
-          <span className="select-text">
-            {loadedClient.street}, {loadedClient.zip} {loadedClient.city}
-          </span>
-        </span>
+      <section className="rounded-sm border border-border/60 bg-ivory-deep/20 p-5">
+        <div className="mb-4 text-[0.65rem] uppercase tracking-[0.22em] text-charcoal-soft">Kontakt & Adresse</div>
+        <div className="grid gap-3 sm:grid-cols-2">
+          <div className="space-y-1.5">
+            <Label className="text-xs text-charcoal-soft">Vorname</Label>
+            <Input value={form.firstName} onChange={(e) => setForm((f) => ({ ...f, firstName: e.target.value }))} />
+          </div>
+          <div className="space-y-1.5">
+            <Label className="text-xs text-charcoal-soft">Nachname</Label>
+            <Input value={form.lastName} onChange={(e) => setForm((f) => ({ ...f, lastName: e.target.value }))} />
+          </div>
+          <div className="space-y-1.5">
+            <Label className="text-xs text-charcoal-soft">E-Mail</Label>
+            <Input type="email" value={form.email} onChange={(e) => setForm((f) => ({ ...f, email: e.target.value }))} />
+          </div>
+          <div className="space-y-1.5">
+            <Label className="text-xs text-charcoal-soft">Telefon</Label>
+            <Input value={form.phone} onChange={(e) => setForm((f) => ({ ...f, phone: e.target.value }))} />
+          </div>
+          <div className="space-y-1.5 sm:col-span-2">
+            <Label className="text-xs text-charcoal-soft">Strasse / Nr.</Label>
+            <Input value={form.street} onChange={(e) => setForm((f) => ({ ...f, street: e.target.value }))} />
+          </div>
+          <div className="space-y-1.5">
+            <Label className="text-xs text-charcoal-soft">PLZ</Label>
+            <Input value={form.zip} onChange={(e) => setForm((f) => ({ ...f, zip: e.target.value }))} />
+          </div>
+          <div className="space-y-1.5">
+            <Label className="text-xs text-charcoal-soft">Ort</Label>
+            <Input value={form.city} onChange={(e) => setForm((f) => ({ ...f, city: e.target.value }))} />
+          </div>
+        </div>
+        <div className="mt-4 flex justify-end">
+          <Button
+            onClick={saveProfile}
+            disabled={savingProfile}
+            className="btn-gold rounded-sm px-5 py-2.5 text-[0.7rem] uppercase tracking-[0.22em] disabled:opacity-50"
+          >
+            Änderungen speichern
+          </Button>
+        </div>
       </section>
 
       <section>
@@ -313,6 +407,48 @@ function ClientProfileSheet({ client }: { client: ClientRow }) {
           ))}
         </div>
       </section>
+
+      <section className="rounded-sm border border-destructive/30 bg-destructive/5 p-5">
+        <h3 className="font-serif text-lg text-charcoal">Kunde löschen</h3>
+        <p className="mt-1 text-xs text-charcoal-soft">
+          Entfernt diesen Kunden inklusive aller Termine und Massagetagebuch-Einträge unwiderruflich.
+        </p>
+        <div className="mt-4 flex justify-end">
+          <Button
+            type="button"
+            variant="outline"
+            onClick={() => setConfirmDelete(true)}
+            className="rounded-sm border-destructive/50 px-5 py-2.5 text-[0.7rem] uppercase tracking-[0.22em] text-destructive hover:bg-destructive hover:text-destructive-foreground"
+          >
+            <Trash2 className="mr-2 h-4 w-4" /> Kunde löschen
+          </Button>
+        </div>
+      </section>
+
+      <AlertDialog open={confirmDelete} onOpenChange={setConfirmDelete}>
+        <AlertDialogContent>
+          <AlertDialogHeader>
+            <AlertDialogTitle>Kunde wirklich löschen?</AlertDialogTitle>
+            <AlertDialogDescription>
+              Möchtest du diesen Kunden wirklich unwiderruflich löschen? Alle zugehörigen Termine und
+              Massagetagebuch-Einträge werden ebenfalls gelöscht.
+            </AlertDialogDescription>
+          </AlertDialogHeader>
+          <AlertDialogFooter>
+            <AlertDialogCancel disabled={deleting}>Abbrechen</AlertDialogCancel>
+            <AlertDialogAction
+              disabled={deleting}
+              onClick={(e) => {
+                e.preventDefault();
+                removeClient();
+              }}
+              className="bg-destructive text-destructive-foreground hover:bg-destructive/90"
+            >
+              Endgültig löschen
+            </AlertDialogAction>
+          </AlertDialogFooter>
+        </AlertDialogContent>
+      </AlertDialog>
     </div>
   );
 }
