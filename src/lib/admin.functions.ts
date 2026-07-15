@@ -168,6 +168,38 @@ export const listClients = createServerFn({ method: "GET" })
   });
 
 const clientIdInput = z.object({ id: z.string().uuid() });
+
+const addClientInput = z.object({
+  firstName: z.string().trim().min(1).max(80),
+  lastName: z.string().trim().min(1).max(80),
+  email: z.string().trim().email().max(200),
+  phone: z.string().trim().min(1).max(60),
+  street: z.string().trim().min(1).max(200),
+  zip: z.string().trim().min(1).max(20),
+  city: z.string().trim().min(1).max(120),
+});
+export const addClient = createServerFn({ method: "POST" })
+  .middleware([requireSupabaseAuth])
+  .inputValidator((data: unknown) => addClientInput.parse(data))
+  .handler(async ({ data, context }) => {
+    const admin = await assertAdmin(context.userId);
+    const { data: row, error } = await admin
+      .from("clients")
+      .insert({
+        first_name: data.firstName,
+        last_name: data.lastName,
+        email: data.email.toLowerCase(),
+        phone: data.phone,
+        street: data.street,
+        zip: data.zip,
+        city: data.city,
+      })
+      .select("id")
+      .single();
+    if (error) throw new Error(error.message);
+    return { ok: true as const, id: row.id };
+  });
+
 export const getClient = createServerFn({ method: "GET" })
   .middleware([requireSupabaseAuth])
   .inputValidator((data: unknown) => clientIdInput.parse(data))
