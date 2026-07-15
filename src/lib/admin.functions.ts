@@ -66,7 +66,7 @@ export const listBookingsInRange = createServerFn({ method: "GET" })
     const admin = await assertAdmin(context.userId);
     const { data: rows, error } = await admin
       .from("bookings")
-      .select("id, day, time, treatment, silent, source, notes, client_id, clients:client_id (id, name, phone, email, street, zip, city)")
+      .select("id, day, time, treatment, silent, source, notes, client_id, clients:client_id (id, first_name, last_name, phone, email, street, zip, city)")
       .gte("day", data.from)
       .lte("day", data.to)
       .order("day", { ascending: true })
@@ -82,7 +82,8 @@ const addBookingInput = z.object({
   silent: z.boolean().default(false),
   block: z.boolean().default(false),
   clientId: z.string().uuid().nullish(),
-  name: z.string().trim().max(120).optional(),
+  firstName: z.string().trim().max(80).optional(),
+  lastName: z.string().trim().max(80).optional(),
   phone: z.string().trim().max(60).optional(),
   email: z.string().trim().email().max(200).optional(),
   street: z.string().trim().max(200).optional(),
@@ -99,14 +100,15 @@ export const addBooking = createServerFn({ method: "POST" })
     if (data.block) {
       clientId = null;
     } else if (!clientId) {
-      if (!data.email || !data.name || !data.phone || !data.street || !data.zip || !data.city) {
+      if (!data.email || !data.firstName || !data.lastName || !data.phone || !data.street || !data.zip || !data.city) {
         throw new Error("Missing client details");
       }
       const up = await admin
         .from("clients")
         .upsert(
           {
-            name: data.name,
+            first_name: data.firstName,
+            last_name: data.lastName,
             email: data.email.toLowerCase(),
             phone: data.phone,
             street: data.street,
@@ -151,11 +153,14 @@ export const listClients = createServerFn({ method: "GET" })
     const admin = await assertAdmin(context.userId);
     let query = admin
       .from("clients")
-      .select("id, name, email, phone, city, created_at")
-      .order("name", { ascending: true });
+      .select("id, first_name, last_name, email, phone, city, created_at")
+      .order("last_name", { ascending: true })
+      .order("first_name", { ascending: true });
     if (data.q) {
       const like = `%${data.q}%`;
-      query = query.or(`name.ilike.${like},email.ilike.${like},phone.ilike.${like},city.ilike.${like}`);
+      query = query.or(
+        `first_name.ilike.${like},last_name.ilike.${like},email.ilike.${like},phone.ilike.${like},city.ilike.${like}`
+      );
     }
     const { data: rows, error } = await query;
     if (error) throw new Error(error.message);
