@@ -1,4 +1,4 @@
-import { createFileRoute, Link, useNavigate } from "@tanstack/react-router";
+import { createFileRoute, useNavigate } from "@tanstack/react-router";
 import { useServerFn } from "@tanstack/react-start";
 import { useQuery } from "@tanstack/react-query";
 import { useState } from "react";
@@ -13,11 +13,17 @@ export const Route = createFileRoute("/_authenticated/admin/clients")({
 function ClientsPage() {
   const [q, setQ] = useState("");
   const listFn = useServerFn(listClients);
-  const navigate = useNavigate();
+  const navigate = useNavigate({ from: "/admin/clients" });
+  const [selectedClientId, setSelectedClientId] = useState<string | null>(null);
   const clients = useQuery({
     queryKey: ["admin", "clients", q],
     queryFn: () => listFn({ data: { q: q || undefined } }),
   });
+
+  function handleRowClick(clientId: string) {
+    setSelectedClientId(clientId);
+    navigate({ to: "/admin/clients/$id", params: { id: clientId } });
+  }
 
   return (
     <div>
@@ -60,8 +66,18 @@ function ClientsPage() {
             {(clients.data ?? []).map((c) => (
               <tr
                 key={c.id}
-                onClick={() => navigate({ to: "/admin/clients/$id", params: { id: c.id } })}
-                className="border-t border-border/50 cursor-pointer transition-colors hover:bg-gold-soft/30"
+                role="link"
+                tabIndex={0}
+                aria-label={`Profil von ${`${c.first_name} ${c.last_name}`.trim()} öffnen`}
+                aria-current={selectedClientId === c.id ? "page" : undefined}
+                onClick={() => handleRowClick(c.id)}
+                onKeyDown={(event) => {
+                  if (event.key === "Enter" || event.key === " ") {
+                    event.preventDefault();
+                    handleRowClick(c.id);
+                  }
+                }}
+                className="border-t border-border/50 cursor-pointer transition-colors hover:bg-gold-soft/30 focus-visible:outline-none focus-visible:bg-gold-soft/30"
               >
                 <td className="px-5 py-3 font-medium text-charcoal truncate">
                   {`${c.first_name} ${c.last_name}`.trim()}
@@ -78,15 +94,17 @@ function ClientsPage() {
                   {c.city}
                 </td>
                 <td className="px-5 py-3 text-right">
-                  <Link
-                    to="/admin/clients/$id"
-                    params={{ id: c.id }}
-                    onClick={(e) => e.stopPropagation()}
+                  <button
+                    type="button"
+                    onClick={(event) => {
+                      event.stopPropagation();
+                      handleRowClick(c.id);
+                    }}
                     aria-label="Profil öffnen"
-                    className="inline-flex items-center text-charcoal-soft hover:text-gold-deep"
+                    className="inline-flex h-8 w-8 items-center justify-center rounded-sm text-charcoal-soft transition-colors hover:bg-gold-soft/40 hover:text-gold-deep focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-gold/40"
                   >
                     <ChevronRight className="h-4 w-4" />
-                  </Link>
+                  </button>
                 </td>
               </tr>
             ))}
