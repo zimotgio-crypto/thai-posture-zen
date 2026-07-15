@@ -103,10 +103,19 @@ export const addBooking = createServerFn({ method: "POST" })
       if (!data.email || !data.firstName || !data.lastName || !data.phone || !data.street || !data.zip || !data.city) {
         throw new Error("Missing client details");
       }
-      const up = await admin
+      // Dedupe strictly on first_name + last_name + phone (case-insensitive).
+      const { data: existing, error: findErr } = await admin
         .from("clients")
-        .upsert(
-          {
+        .select("id")
+        .ilike("first_name", data.firstName)
+        .ilike("last_name", data.lastName)
+        .ilike("phone", data.phone)
+        .maybeSingle();
+      if (findErr) throw new Error(findErr.message);
+      if (existing) {
+        const { error: updErr } = await admin
+          .from("clients")
+          .update({
             first_name: data.firstName,
             last_name: data.lastName,
             email: data.email.toLowerCase(),
@@ -114,13 +123,27 @@ export const addBooking = createServerFn({ method: "POST" })
             street: data.street,
             zip: data.zip,
             city: data.city,
-          },
-          { onConflict: "email" }
-        )
-        .select("id")
-        .single();
-      if (up.error) throw new Error(up.error.message);
-      clientId = up.data.id;
+          })
+          .eq("id", existing.id);
+        if (updErr) throw new Error(updErr.message);
+        clientId = existing.id;
+      } else {
+        const ins = await admin
+          .from("clients")
+          .insert({
+            first_name: data.firstName,
+            last_name: data.lastName,
+            email: data.email.toLowerCase(),
+            phone: data.phone,
+            street: data.street,
+            zip: data.zip,
+            city: data.city,
+          })
+          .select("id")
+          .single();
+        if (ins.error) throw new Error(ins.error.message);
+        clientId = ins.data.id;
+      }
     }
     const insert = await admin.from("bookings").insert({
       client_id: clientId,
@@ -183,15 +206,13 @@ export const addClient = createServerFn({ method: "POST" })
   .inputValidator((data: unknown) => addClientInput.parse(data))
   .handler(async ({ data, context }) => {
     const admin = await assertAdmin(context.userId);
-    // Dedupe: match on first_name + last_name + phone + street + city (case-insensitive, trimmed)
+    // Dedupe strictly on first_name + last_name + phone (case-insensitive).
     const { data: existing, error: findErr } = await admin
       .from("clients")
       .select("id")
       .ilike("first_name", data.firstName)
       .ilike("last_name", data.lastName)
       .ilike("phone", data.phone)
-      .ilike("street", data.street)
-      .ilike("city", data.city)
       .maybeSingle();
     if (findErr) throw new Error(findErr.message);
     if (existing) {
