@@ -1,5 +1,6 @@
 import { createServerFn } from "@tanstack/react-start";
 import { z } from "zod";
+import { getOrCreateClient } from "@/lib/client-records";
 
 const submitInput = z.object({
   treatment: z.string().min(1).max(100),
@@ -36,27 +37,10 @@ export const submitBooking = createServerFn({ method: "POST" })
       return { ok: false as const, reason: "conflict" as const };
     }
 
-    // Upsert client by email; keep contact/address fresh with the latest form input.
-    const clientUpsert = await supabaseAdmin
-      .from("clients")
-      .upsert(
-        {
-          first_name: data.firstName,
-          last_name: data.lastName,
-          email: data.email.toLowerCase(),
-          phone: data.phone,
-          street: data.street,
-          zip: data.zip,
-          city: data.city,
-        },
-        { onConflict: "email" }
-      )
-      .select("id")
-      .single();
-    if (clientUpsert.error) throw new Error(clientUpsert.error.message);
+    const client = await getOrCreateClient(supabaseAdmin, data);
 
     const insert = await supabaseAdmin.from("bookings").insert({
-      client_id: clientUpsert.data.id,
+      client_id: client.id,
       treatment: data.treatment,
       day: data.day,
       time: data.time,
