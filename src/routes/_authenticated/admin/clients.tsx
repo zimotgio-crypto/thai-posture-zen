@@ -27,7 +27,7 @@ function ClientsPage() {
           <Input
             value={q}
             onChange={(e) => setQ(e.target.value)}
-            placeholder="Suchen: Name, E-Mail, Telefon…"
+            placeholder="Suchen: Vor-, Nachname, E-Mail, Telefon…"
             className="pl-9 w-72"
           />
         </div>
