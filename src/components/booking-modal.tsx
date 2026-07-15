@@ -110,7 +110,8 @@ export function BookingModal({
     return new Date(now.getFullYear(), now.getMonth(), 1);
   });
   const [silent, setSilent] = useState(true);
-  const [name, setName] = useState("");
+  const [firstName, setFirstName] = useState("");
+  const [lastName, setLastName] = useState("");
   const [email, setEmail] = useState("");
   const [phone, setPhone] = useState("");
   const [street, setStreet] = useState("");
@@ -178,7 +179,8 @@ export function BookingModal({
   async function submit(e: React.FormEvent) {
     e.preventDefault();
     const nextErrors: Record<string, boolean> = {
-      name: !name.trim(),
+      firstName: !firstName.trim(),
+      lastName: !lastName.trim(),
       email: !email.trim(),
       phone: !phone.trim(),
       street: !street.trim(),
@@ -198,7 +200,8 @@ export function BookingModal({
           day,
           time,
           silent,
-          name: name.trim(),
+          firstName: firstName.trim(),
+          lastName: lastName.trim(),
           email: email.trim(),
           phone: phone.trim(),
           street: street.trim(),
@@ -218,7 +221,8 @@ export function BookingModal({
       onOpenChange(false);
       setDay(null);
       setTime(null);
-      setName("");
+      setFirstName("");
+      setLastName("");
       setEmail("");
       setPhone("");
       setStreet("");
