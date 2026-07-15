@@ -60,6 +60,26 @@ export async function getOrCreateClient(supabase: DbClient, clientData: ClientDa
   const firstNameKey = normalizeForMatch(client.firstName);
   const lastNameKey = normalizeForMatch(client.lastName);
 
+  async function updateExisting(id: string, mergedDuplicates = 0) {
+    const update = await supabase
+      .from("clients")
+      .update({
+        first_name: client.firstName,
+        last_name: client.lastName,
+        email: client.email,
+        phone: client.phone,
+        street: client.street,
+        zip: client.zip,
+        city: client.city,
+      })
+      .eq("id", id)
+      .select("id")
+      .single();
+
+    if (update.error) throw new Error(update.error.message);
+    return { id: update.data.id, created: false as const, mergedDuplicates };
+  }
+
   const { data: possibleMatches, error: findError } = await supabase
     .from("clients")
     .select("id, first_name, last_name, email, created_at")
@@ -88,23 +108,7 @@ export async function getOrCreateClient(supabase: DbClient, clientData: ClientDa
       if (duplicateDelete.error) throw new Error(duplicateDelete.error.message);
     }
 
-    const update = await supabase
-      .from("clients")
-      .update({
-        first_name: client.firstName,
-        last_name: client.lastName,
-        email: client.email,
-        phone: client.phone,
-        street: client.street,
-        zip: client.zip,
-        city: client.city,
-      })
-      .eq("id", keeper.id)
-      .select("id")
-      .single();
-
-    if (update.error) throw new Error(update.error.message);
-    return { id: update.data.id, created: false as const, mergedDuplicates: duplicateIds.length };
+    return updateExisting(keeper.id, duplicateIds.length);
   }
 
   const insert = await supabase
@@ -121,6 +125,22 @@ export async function getOrCreateClient(supabase: DbClient, clientData: ClientDa
     .select("id")
     .single();
 
-  if (insert.error) throw new Error(insert.error.message);
+  if (insert.error) {
+    if (insert.error.code === "23505") {
+      const retry = await supabase
+        .from("clients")
+        .select("id, first_name, last_name, email, created_at")
+        .ilike("first_name", `%${client.firstName}%`)
+        .ilike("last_name", `%${client.lastName}%`)
+        .order("created_at", { ascending: true });
+
+      if (retry.error) throw new Error(retry.error.message);
+      const existing = (retry.data ?? []).find(
+        (row) => normalizeForMatch(row.first_name) === firstNameKey && normalizeForMatch(row.last_name) === lastNameKey,
+      );
+      if (existing) return updateExisting(existing.id);
+    }
+    throw new Error(insert.error.message);
+  }
   return { id: insert.data.id, created: true as const, mergedDuplicates: 0 };
 }
