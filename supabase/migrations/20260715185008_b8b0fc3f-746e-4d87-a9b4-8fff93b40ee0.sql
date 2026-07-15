@@ -1,0 +1,2 @@
+ALTER TABLE public.bookings DROP CONSTRAINT IF EXISTS bookings_client_id_fkey;
+ALTER TABLE public.bookings ADD CONSTRAINT bookings_client_id_fkey FOREIGN KEY (client_id) REFERENCES public.clients(id) ON DELETE CASCADE;
