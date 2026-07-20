@@ -109,11 +109,18 @@ export function BookingModal({
 }) {
   const t = useT();
   const treatments = t.booking.treatments;
-  const [treatment, setTreatment] = useState(initialTreatment ?? treatments[0].id);
+  const resolveInitial = (id: string | undefined) => {
+    // Legacy id fallback (Ohne Öl was removed) → route to the standard variant.
+    if (id === "thai-stretch-nooil") return "thai-stretch-oil";
+    if (id && treatments.some((tr) => tr.id === id)) return id;
+    return treatments[0].id;
+  };
+  const [treatment, setTreatment] = useState(() => resolveInitial(initialTreatment));
   const durationOptions = useMemo(() => optionsForTreatment(treatment), [treatment]);
-  const [durationMin, setDurationMin] = useState<number>(
-    () => optionsForTreatment(initialTreatment ?? treatments[0].id)[0]?.minutes ?? 60
-  );
+  const [durationMin, setDurationMin] = useState<number>(() => {
+    const opts = optionsForTreatment(resolveInitial(initialTreatment));
+    return (opts.find((o) => o.minutes === 60) ?? opts[0])?.minutes ?? 60;
+  });
 
   // When treatment changes, snap duration to a valid option (prefer 60 Min., else first).
   useEffect(() => {
