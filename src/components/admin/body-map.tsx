@@ -5,11 +5,106 @@ export type BodyMapState = { front: BodyPoint[]; back: BodyPoint[] };
 
 export const EMPTY_BODY_MAP: BodyMapState = { front: [], back: [] };
 
-// Minimalist human outline path (proportional, viewBox 100x220).
-// Same silhouette works for front and back — labels distinguish them.
-const BODY_PATH =
-  "M50 6c-6 0-10 4-10 10s4 11 10 11 10-5 10-11S56 6 50 6z" + // head
-  "M40 29c-3 1-5 3-6 6l-4 14c-1 3-4 5-8 6l-8 3c-2 1-3 3-2 5 1 2 3 3 5 2l8-2 5-2-2 10-3 22c-1 4 1 7 5 8l3 1-2 30c0 4-2 24-3 34-1 4 2 7 6 7 3 0 5-2 6-6l4-32 2-18h4l2 18 4 32c1 4 3 6 6 6 4 0 7-3 6-7-1-10-3-30-3-34l-2-30 3-1c4-1 6-4 5-8l-3-22-2-10 5 2 8 2c2 1 4 0 5-2 1-2 0-4-2-5l-8-3c-4-1-7-3-8-6l-4-14c-1-3-3-5-6-6-3-1-6-2-10-2s-7 1-10 2z";
+// Detailed anatomical line-art human figures (viewBox 100x220).
+// Shared silhouette outline (torso, arms, legs) used by both front and back.
+const SILHOUETTE_D =
+  // head
+  "M50 6c-6 0-10.5 4.2-10.5 10.5 0 3.2 1.1 6 3 8.2 -0.4 1.6 -0.6 3.1 -0.6 4.3 0 0.6 0.1 1.2 0.3 1.8 " +
+  // neck
+  "-1.4 0.6 -2.6 1.4 -3.7 2.3 " +
+  // shoulders + arms down to hands
+  "-2.6 2.1 -6.3 3.6 -10 4.8 l-8 2.6 c-3.4 1.2 -6.3 3.3 -8.3 6.3 " +
+  "-1.4 2.1 -2.4 4.6 -3 7.3 l-3 14 c-0.6 2.8 -0.8 5.4 -0.6 7.8 0.1 1.4 -0.1 2.8 -0.6 4.1 l-2.4 6.5 " +
+  "c-0.4 1.1 0.2 2.3 1.3 2.6 1.1 0.3 2.3 -0.4 2.6 -1.5 l1.9 -5.6 c0.5 -1.4 1.2 -2.7 2.1 -3.9 " +
+  "0.6 2.6 1.6 5.2 2.9 7.6 1.1 1.9 1.8 3.9 2.1 6 l1.4 8.4 c0.2 1.1 1.2 1.9 2.3 1.7 1.1 -0.2 1.9 -1.2 1.7 -2.3 " +
+  "l-1.4 -8.5 c-0.3 -2.3 -1 -4.5 -2.1 -6.5 -2.2 -4 -3.5 -8.4 -3.8 -12.9 l-0.4 -5.8 c-0.1 -2 0.1 -4 0.6 -5.9 l3 -11.6 " +
+  // side of torso down to hip
+  "c0.4 -1.5 1.3 -2.8 2.5 -3.7 l0.4 8 c0.3 5.6 1 11.2 2.2 16.7 l3.4 15.7 c0.4 1.9 0.5 3.9 0.3 5.9 " +
+  "l-1.6 15.2 c-0.2 1.8 -0.5 3.5 -1 5.2 " +
+  // left leg down
+  "l-4.4 15.4 c-0.5 1.7 -0.9 3.5 -1.1 5.3 l-2.2 18.6 c-0.2 1.7 -0.4 3.5 -0.6 5.2 l-1.4 11.7 " +
+  "c-0.2 1.5 0.9 2.9 2.4 3 1.5 0.1 2.9 -1 3 -2.5 l1.4 -11.7 c0.2 -1.7 0.4 -3.4 0.6 -5.1 l2.2 -18.5 " +
+  "c0.2 -1.6 0.5 -3.2 1 -4.7 l4.2 -14.7 c0.7 -2.4 1.2 -4.8 1.5 -7.3 l1.4 -12.4 " +
+  // feet left
+  "c0.2 -1.8 0.6 -3.6 1.1 -5.3 l1.3 -4.3 c0.6 -2 3.4 -2 4 0 l1.3 4.3 c0.5 1.7 0.9 3.5 1.1 5.3 " +
+  "l1.4 12.4 c0.3 2.5 0.8 4.9 1.5 7.3 l4.2 14.7 c0.4 1.5 0.8 3.1 1 4.7 l2.2 18.5 c0.2 1.7 0.4 3.4 0.6 5.1 " +
+  // right leg up
+  "l1.4 11.7 c0.1 1.5 1.5 2.6 3 2.5 1.5 -0.1 2.6 -1.5 2.4 -3 l-1.4 -11.7 c-0.2 -1.7 -0.4 -3.5 -0.6 -5.2 " +
+  "l-2.2 -18.6 c-0.2 -1.8 -0.6 -3.6 -1.1 -5.3 l-4.4 -15.4 c-0.5 -1.7 -0.8 -3.4 -1 -5.2 l-1.6 -15.2 " +
+  "c-0.2 -2 -0.1 -4 0.3 -5.9 l3.4 -15.7 c1.2 -5.5 1.9 -11.1 2.2 -16.7 l0.4 -8 c1.2 0.9 2.1 2.2 2.5 3.7 " +
+  "l3 11.6 c0.5 1.9 0.7 3.9 0.6 5.9 l-0.4 5.8 c-0.3 4.5 -1.6 8.9 -3.8 12.9 -1.1 2 -1.8 4.2 -2.1 6.5 " +
+  "l-1.4 8.5 c-0.2 1.1 0.6 2.1 1.7 2.3 1.1 0.2 2.1 -0.6 2.3 -1.7 l1.4 -8.4 c0.3 -2.1 1 -4.1 2.1 -6 " +
+  "1.3 -2.4 2.3 -5 2.9 -7.6 0.9 1.2 1.6 2.5 2.1 3.9 l1.9 5.6 c0.3 1.1 1.5 1.8 2.6 1.5 1.1 -0.3 1.7 -1.5 1.3 -2.6 " +
+  "l-2.4 -6.5 c-0.5 -1.3 -0.7 -2.7 -0.6 -4.1 0.2 -2.4 0 -5 -0.6 -7.8 l-3 -14 c-0.6 -2.7 -1.6 -5.2 -3 -7.3 " +
+  "-2 -3 -4.9 -5.1 -8.3 -6.3 l-8 -2.6 c-3.7 -1.2 -7.4 -2.7 -10 -4.8 -1.1 -0.9 -2.3 -1.7 -3.7 -2.3 " +
+  "0.2 -0.6 0.3 -1.2 0.3 -1.8 0 -1.2 -0.2 -2.7 -0.6 -4.3 1.9 -2.2 3 -5 3 -8.2 C60.5 10.2 56 6 50 6 z";
+
+// Front-only anatomical detail lines (face, chest, abs, knees, palms).
+const FRONT_DETAILS: string[] = [
+  // face: eye line
+  "M45.5 15.5 h2 M52.5 15.5 h2",
+  // nose
+  "M50 17 v3",
+  // mouth
+  "M47.5 22 q2.5 1.5 5 0",
+  // collarbones
+  "M39 33 q11 3 22 0",
+  // sternum
+  "M50 33 v18",
+  // pectoral curve
+  "M40 36 q10 8 20 0",
+  // ribcage / lower chest
+  "M42 52 q8 4 16 0",
+  // linea alba (abs center)
+  "M50 52 v22",
+  // ab creases
+  "M44 60 q6 3 12 0 M44 66 q6 3 12 0 M44 72 q6 3 12 0",
+  // navel
+  "M50 78 v2",
+  // hip crease
+  "M40 92 q10 5 20 0",
+  // knees
+  "M42 148 q3 3 6 0 M52 148 q3 3 6 0",
+  // palm crease left
+  "M15 96 q3 2 6 0 M85 96 q-3 2 -6 0",
+  // fingers left hand
+  "M14 100 v6 M17 100 v7 M20 100 v6 M23 100 v5",
+  // fingers right hand
+  "M86 100 v6 M83 100 v7 M80 100 v6 M77 100 v5",
+];
+
+// Back-only anatomical detail lines (spine, scapula, glutes, hamstrings, heels).
+const BACK_DETAILS: string[] = [
+  // back of head hairline
+  "M42 20 q8 -3 16 0",
+  // trapezius upper line
+  "M40 32 q10 -5 20 0",
+  // spine (long central line)
+  "M50 33 v55",
+  // shoulder blades (scapulae)
+  "M42 40 q4 8 8 8 M58 40 q-4 8 -8 8",
+  // mid-back ribs hints
+  "M44 56 q6 3 12 0",
+  // lower back / lumbar
+  "M44 78 q6 4 12 0",
+  // sacrum triangle
+  "M46 88 l4 6 4 -6",
+  // gluteal cleft
+  "M50 96 v10",
+  // gluteal curves
+  "M42 96 q8 8 16 0",
+  // hamstring center lines
+  "M42 118 v20 M58 118 v20",
+  // knee back creases
+  "M42 148 h6 M52 148 h6",
+  // calf definition
+  "M40 165 q4 6 8 0 M52 165 q4 6 8 0",
+  // achilles / heels
+  "M43 198 v6 M53 198 v6",
+  // knuckle lines back of hand
+  "M14 100 v5 M17 100 v6 M20 100 v5 M23 100 v4",
+  "M86 100 v5 M83 100 v6 M80 100 v5 M77 100 v4",
+];
 
 function BodyOutline({
   label,
@@ -25,6 +120,8 @@ function BodyOutline({
   small?: boolean;
 }) {
   const gradId = useId();
+  const isBack = label.toLowerCase().startsWith("back") || label.toLowerCase().startsWith("rück");
+  const details = isBack ? BACK_DETAILS : FRONT_DETAILS;
   return (
     <div className="flex flex-col items-center gap-2">
       {!small && (
@@ -53,14 +150,20 @@ function BodyOutline({
             <stop offset="100%" stopColor="rgb(220 38 38)" stopOpacity="0" />
           </radialGradient>
         </defs>
-        <path
-          d={BODY_PATH}
-          fill="rgba(0,0,0,0.02)"
-          stroke="currentColor"
-          strokeWidth={small ? 1.2 : 0.8}
-          strokeLinejoin="round"
+        <g
           className="text-charcoal-soft"
-        />
+          fill="none"
+          stroke="currentColor"
+          strokeWidth={small ? 1.2 : 1}
+          strokeLinecap="round"
+          strokeLinejoin="round"
+        >
+          <path d={SILHOUETTE_D} fill="rgba(0,0,0,0.02)" />
+          {!small &&
+            details.map((d, i) => (
+              <path key={i} d={d} strokeWidth={0.6} opacity={0.75} />
+            ))}
+        </g>
         {points.map((p, i) => {
           const cx = p.x;
           const cy = (p.y / 100) * 220;
