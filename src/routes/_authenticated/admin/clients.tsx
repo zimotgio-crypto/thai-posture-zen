@@ -27,6 +27,15 @@ import {
   AlertDialogTitle,
 } from "@/components/ui/alert-dialog";
 import { toast } from "sonner";
+import { DURATION_OPTIONS, formatDuration, formatSwissDate, priceFor } from "@/lib/pricing";
+import { cn } from "@/lib/utils";
+
+const TREATMENT_OPTIONS = [
+  "Home-Office Deep Release",
+  "Traditional Thai Stretch · Mit Öl",
+  "Traditional Thai Stretch · Ohne Öl",
+  "Sport Massage",
+];
 
 export const Route = createFileRoute("/_authenticated/admin/clients")({
   component: ClientsPage,
@@ -182,6 +191,11 @@ function ClientProfileSheet({ client, onClose }: { client: ClientRow; onClose: (
   const deleteClientFn = useServerFn(deleteClient);
   const [bodyHtml, setBodyHtml] = useState("");
   const [linkBookingId, setLinkBookingId] = useState("");
+  const [treatmentDate, setTreatmentDate] = useState<string>(
+    () => new Date().toISOString().slice(0, 10)
+  );
+  const [manualTreatment, setManualTreatment] = useState<string>(TREATMENT_OPTIONS[0]);
+  const [manualDuration, setManualDuration] = useState<number>(60);
   const [bodyMap, setBodyMap] = useState(EMPTY_BODY_MAP);
   const [busy, setBusy] = useState(false);
   const [savingProfile, setSavingProfile] = useState(false);
@@ -237,12 +251,18 @@ function ClientProfileSheet({ client, onClose }: { client: ClientRow; onClose: (
           clientId: client.id,
           bookingId: linkBookingId || null,
           bodyHtml,
+          treatmentDate: linkBookingId ? null : treatmentDate,
+          treatmentName: linkBookingId ? null : manualTreatment,
+          durationMinutes: linkBookingId ? null : manualDuration,
           bodyMap,
         },
       });
       toast.success("Notiz gespeichert");
       setBodyHtml("");
       setLinkBookingId("");
+      setTreatmentDate(new Date().toISOString().slice(0, 10));
+      setManualTreatment(TREATMENT_OPTIONS[0]);
+      setManualDuration(60);
       setBodyMap(EMPTY_BODY_MAP);
       qc.invalidateQueries({ queryKey: ["admin", "client", client.id] });
     } catch (err) {
