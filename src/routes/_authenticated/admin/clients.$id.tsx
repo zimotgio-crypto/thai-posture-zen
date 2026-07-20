@@ -8,6 +8,11 @@ import { TiptapEditor } from "@/components/admin/tiptap-editor";
 import { Button } from "@/components/ui/button";
 import { toast } from "sonner";
 
+function formatSwissDate(iso: string): string {
+  const [y, m, d] = iso.slice(0, 10).split("-");
+  return `${d}.${m}.${y}`;
+}
+
 export const Route = createFileRoute("/_authenticated/admin/clients/$id")({
   component: ClientDetail,
 });
