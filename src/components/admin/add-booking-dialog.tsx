@@ -8,6 +8,8 @@ import { Button } from "@/components/ui/button";
 import { Switch } from "@/components/ui/switch";
 import { addBooking } from "@/lib/admin.functions";
 import { toast } from "sonner";
+import { DURATION_OPTIONS, priceFor } from "@/lib/pricing";
+import { cn } from "@/lib/utils";
 
 const TREATMENTS = [
   "Home-Office Deep Release",
@@ -30,6 +32,7 @@ export function AddBookingDialog({
   const [busy, setBusy] = useState(false);
   const [block, setBlock] = useState(false);
   const [treatment, setTreatment] = useState(TREATMENTS[0]);
+  const [durationMin, setDurationMin] = useState<number>(60);
   const [day, setDay] = useState(defaultDay ?? new Date().toISOString().slice(0, 10));
   const [time, setTime] = useState("10:00");
   const [silent, setSilent] = useState(false);
@@ -50,6 +53,7 @@ export function AddBookingDialog({
           treatment,
           day,
           time,
+          durationMinutes: durationMin,
           silent,
           block,
           firstName: block ? undefined : firstName,
@@ -98,6 +102,34 @@ export function AddBookingDialog({
               <Input type="time" value={time} onChange={(e) => setTime(e.target.value)} required />
             </div>
           </div>
+          {!block && (
+            <div className="space-y-2">
+              <Label>Dauer · Preis</Label>
+              <div className="grid grid-cols-4 gap-2">
+                {DURATION_OPTIONS.map((opt) => {
+                  const selected = durationMin === opt.minutes;
+                  return (
+                    <button
+                      type="button"
+                      key={opt.minutes}
+                      onClick={() => setDurationMin(opt.minutes)}
+                      className={cn(
+                        "flex flex-col items-start rounded-sm border px-3 py-2 text-left transition",
+                        selected ? "border-gold bg-gold-soft/40" : "border-border hover:border-gold/60"
+                      )}
+                    >
+                      <span className="text-[0.65rem] uppercase tracking-[0.2em] text-charcoal-soft">
+                        {opt.label}
+                      </span>
+                      <span className="mt-1 font-serif text-base text-charcoal">
+                        CHF {priceFor(opt.minutes)}.–
+                      </span>
+                    </button>
+                  );
+                })}
+              </div>
+            </div>
+          )}
           {!block && (
             <>
               <div className="space-y-2">
