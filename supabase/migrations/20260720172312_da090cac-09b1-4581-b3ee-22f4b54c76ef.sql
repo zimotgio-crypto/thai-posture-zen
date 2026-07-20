@@ -1,0 +1,1 @@
+ALTER TABLE public.session_logs ADD COLUMN IF NOT EXISTS body_map jsonb NOT NULL DEFAULT '{"front":[],"back":[]}'::jsonb;

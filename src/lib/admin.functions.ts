@@ -236,7 +236,7 @@ export const getClient = createServerFn({ method: "GET" })
         .order("time", { ascending: false }),
       admin
         .from("session_logs")
-        .select("id, body_html, created_at, booking_id, treatment_date, bookings:booking_id (day, treatment)")
+        .select("id, body_html, created_at, booking_id, treatment_date, body_map, bookings:booking_id (day, treatment)")
         .eq("client_id", data.id)
         .order("created_at", { ascending: false }),
     ]);
@@ -247,11 +247,21 @@ export const getClient = createServerFn({ method: "GET" })
     return { client: client.data, bookings: bookings.data ?? [], logs: logs.data ?? [] };
   });
 
+const bodyPoint = z.object({
+  x: z.number().min(0).max(100),
+  y: z.number().min(0).max(100),
+});
+const bodyMapSchema = z.object({
+  front: z.array(bodyPoint).max(200),
+  back: z.array(bodyPoint).max(200),
+});
+
 const addNoteInput = z.object({
   clientId: z.string().uuid(),
   bookingId: z.string().uuid().nullish(),
   bodyHtml: z.string().trim().min(1).max(20000),
   treatmentDate: z.string().regex(/^\d{4}-\d{2}-\d{2}$/).nullish(),
+  bodyMap: bodyMapSchema.optional(),
 });
 export const addSessionLog = createServerFn({ method: "POST" })
   .middleware([requireSupabaseAuth])
@@ -264,6 +274,7 @@ export const addSessionLog = createServerFn({ method: "POST" })
       author_id: context.userId,
       body_html: data.bodyHtml,
       treatment_date: data.bookingId ? null : (data.treatmentDate ?? null),
+      body_map: data.bodyMap ?? { front: [], back: [] },
     });
     if (error) throw new Error(error.message);
     return { ok: true as const };
