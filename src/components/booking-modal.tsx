@@ -10,7 +10,7 @@ import { Check, Sparkles, ChevronLeft, ChevronRight } from "lucide-react";
 import { toast } from "sonner";
 import { cn } from "@/lib/utils";
 import { useT } from "@/lib/i18n";
-import { DURATION_OPTIONS, priceFor } from "@/lib/pricing";
+import { optionsForTreatment, priceForTreatment } from "@/lib/pricing";
 
 function ymd(d: Date) {
   const y = d.getFullYear();
@@ -109,8 +109,27 @@ export function BookingModal({
 }) {
   const t = useT();
   const treatments = t.booking.treatments;
-  const [treatment, setTreatment] = useState(initialTreatment ?? treatments[0].id);
-  const [durationMin, setDurationMin] = useState<number>(60);
+  const resolveInitial = (id: string | undefined) => {
+    // Legacy id fallback (Ohne Öl was removed) → route to the standard variant.
+    if (id === "thai-stretch-nooil") return "thai-stretch-oil";
+    if (id && treatments.some((tr) => tr.id === id)) return id;
+    return treatments[0].id;
+  };
+  const [treatment, setTreatment] = useState(() => resolveInitial(initialTreatment));
+  const durationOptions = useMemo(() => optionsForTreatment(treatment), [treatment]);
+  const [durationMin, setDurationMin] = useState<number>(() => {
+    const opts = optionsForTreatment(resolveInitial(initialTreatment));
+    return (opts.find((o) => o.minutes === 60) ?? opts[0])?.minutes ?? 60;
+  });
+
+  // When treatment changes, snap duration to a valid option (prefer 60 Min., else first).
+  useEffect(() => {
+    if (!durationOptions.some((o) => o.minutes === durationMin)) {
+      const preferred = durationOptions.find((o) => o.minutes === 60) ?? durationOptions[0];
+      if (preferred) setDurationMin(preferred.minutes);
+      setTime(null);
+    }
+  }, [durationOptions, durationMin]);
   const [day, setDay] = useState<string | null>(null);
   const [time, setTime] = useState<string | null>(null);
   const [cursor, setCursor] = useState<Date>(() => {
@@ -274,12 +293,11 @@ export function BookingModal({
                   key={tr.id}
                   onClick={() => setTreatment(tr.id)}
                   className={cn(
-                    "flex items-center justify-between rounded-sm border px-4 py-3 text-left transition",
+                    "flex items-center rounded-sm border px-4 py-3 text-left transition",
                     treatment === tr.id ? "border-gold bg-gold-soft/30" : "border-border hover:border-gold/60"
                   )}
                 >
                   <span className="font-medium text-charcoal">{tr.label}</span>
-                  <span className="text-sm text-charcoal-soft">{tr.meta}</span>
                 </button>
               ))}
             </div>
@@ -290,7 +308,7 @@ export function BookingModal({
               Dauer · Preis
             </Label>
             <div className="grid grid-cols-2 gap-2 sm:grid-cols-4">
-              {DURATION_OPTIONS.map((opt) => {
+              {durationOptions.map((opt) => {
                 const selected = durationMin === opt.minutes;
                 return (
                   <button
@@ -312,7 +330,7 @@ export function BookingModal({
                       {opt.label}
                     </span>
                     <span className="mt-1 font-serif text-lg text-charcoal">
-                      CHF {priceFor(opt.minutes)}.–
+                      CHF {priceForTreatment(treatment, opt.minutes)}.–
                     </span>
                   </button>
                 );
