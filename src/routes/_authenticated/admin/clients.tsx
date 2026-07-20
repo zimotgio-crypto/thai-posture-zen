@@ -2,13 +2,19 @@ import { createFileRoute } from "@tanstack/react-router";
 import { useServerFn } from "@tanstack/react-start";
 import { useQuery, useQueryClient } from "@tanstack/react-query";
 import { useEffect, useMemo, useState } from "react";
-import { Search, ChevronRight, Plus, Sparkles, Trash2 } from "lucide-react";
+import { Search, ChevronRight, Plus, Sparkles, Trash2, Target } from "lucide-react";
 import { addSessionLog, deleteClient, getClient, listClients, updateClient } from "@/lib/admin.functions";
 import { Input } from "@/components/ui/input";
 import { Button } from "@/components/ui/button";
 import { Label } from "@/components/ui/label";
 import { AddClientDialog } from "@/components/admin/add-client-dialog";
 import { TiptapEditor } from "@/components/admin/tiptap-editor";
+import {
+  BodyMapEditor,
+  BodyMapThumbnail,
+  EMPTY_BODY_MAP,
+  parseBodyMap,
+} from "@/components/admin/body-map";
 import { Sheet, SheetContent, SheetHeader, SheetTitle } from "@/components/ui/sheet";
 import {
   AlertDialog,
@@ -176,6 +182,7 @@ function ClientProfileSheet({ client, onClose }: { client: ClientRow; onClose: (
   const deleteClientFn = useServerFn(deleteClient);
   const [bodyHtml, setBodyHtml] = useState("");
   const [linkBookingId, setLinkBookingId] = useState("");
+  const [bodyMap, setBodyMap] = useState(EMPTY_BODY_MAP);
   const [busy, setBusy] = useState(false);
   const [savingProfile, setSavingProfile] = useState(false);
   const [deleting, setDeleting] = useState(false);
@@ -230,11 +237,13 @@ function ClientProfileSheet({ client, onClose }: { client: ClientRow; onClose: (
           clientId: client.id,
           bookingId: linkBookingId || null,
           bodyHtml,
+          bodyMap,
         },
       });
       toast.success("Notiz gespeichert");
       setBodyHtml("");
       setLinkBookingId("");
+      setBodyMap(EMPTY_BODY_MAP);
       qc.invalidateQueries({ queryKey: ["admin", "client", client.id] });
     } catch (err) {
       toast.error(err instanceof Error ? err.message : "Fehler");
@@ -373,6 +382,17 @@ function ClientProfileSheet({ client, onClose }: { client: ClientRow; onClose: (
           onChange={setBodyHtml}
           placeholder="z.B. Verhärtung im oberen Trapezmuskel gelöst, Haltung leicht verbessert…"
         />
+        <div className="rounded-sm border border-border/60 bg-card p-5">
+          <div className="flex items-center gap-2 text-[0.7rem] uppercase tracking-[0.3em] text-gold-deep">
+            <Target className="h-3.5 w-3.5" /> Körperkartierung
+          </div>
+          <p className="mt-2 text-sm text-charcoal-soft">
+            Klicken Sie auf die Körperumrisse, um Schmerz- oder Problemstellen zu markieren.
+          </p>
+          <div className="mt-4">
+            <BodyMapEditor value={bodyMap} onChange={setBodyMap} />
+          </div>
+        </div>
         <div className="flex justify-end">
           <Button
             onClick={saveNote}
@@ -394,11 +414,16 @@ function ClientProfileSheet({ client, onClose }: { client: ClientRow; onClose: (
           )}
           {logs.map((l) => (
             <article key={l.id} className="rounded-sm border border-border/60 bg-card p-5">
-              <div className="text-[0.65rem] uppercase tracking-[0.22em] text-charcoal-soft">
-                {new Date(l.created_at).toLocaleString("de-CH", {
-                  dateStyle: "medium",
-                  timeStyle: "short",
-                })}
+              <div className="flex items-start justify-between gap-4">
+                <div className="text-[0.65rem] uppercase tracking-[0.22em] text-charcoal-soft">
+                  {new Date(l.created_at).toLocaleString("de-CH", {
+                    dateStyle: "medium",
+                    timeStyle: "short",
+                  })}
+                </div>
+                <BodyMapThumbnail
+                  value={parseBodyMap((l as { body_map?: unknown }).body_map)}
+                />
               </div>
               <div
                 className="prose prose-sm mt-3 max-w-none text-charcoal"
