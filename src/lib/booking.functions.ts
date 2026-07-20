@@ -6,6 +6,7 @@ const submitInput = z.object({
   treatment: z.string().min(1).max(100),
   day: z.string().regex(/^\d{4}-\d{2}-\d{2}$/),
   time: z.string().regex(/^\d{2}:\d{2}$/),
+  durationMinutes: z.number().int().min(15).max(240),
   silent: z.boolean(),
   firstName: z.string().trim().min(1).max(80),
   lastName: z.string().trim().min(1).max(80),
@@ -20,18 +21,20 @@ export const submitBooking = createServerFn({ method: "POST" })
   .inputValidator((data: unknown) => submitInput.parse(data))
   .handler(async ({ data }) => {
     const { supabaseAdmin } = await import("@/integrations/supabase/client.server");
+    const BUFFER = 30;
 
-    // Reject overlap: any existing booking at the same day whose window
-    // [start, start+90) collides with the requested [t, t+90) window.
+    // Reject overlap using each booking's own duration (+30 min buffer).
     const dayRows = await supabaseAdmin
       .from("bookings")
-      .select("time")
+      .select("time, duration_minutes")
       .eq("day", data.day);
     if (dayRows.error) throw new Error(dayRows.error.message);
     const requested = toMinutes(data.time);
+    const newBlock = data.durationMinutes + BUFFER;
     const conflict = (dayRows.data ?? []).some((r) => {
       const s = toMinutes(r.time as string);
-      return requested < s + 90 && requested + 90 > s;
+      const block = ((r as { duration_minutes?: number | null }).duration_minutes ?? 60) + BUFFER;
+      return requested < s + block && requested + newBlock > s;
     });
     if (conflict) {
       return { ok: false as const, reason: "conflict" as const };
@@ -44,6 +47,7 @@ export const submitBooking = createServerFn({ method: "POST" })
       treatment: data.treatment,
       day: data.day,
       time: data.time,
+      duration_minutes: data.durationMinutes,
       silent: data.silent,
       source: "online",
     });
@@ -56,18 +60,21 @@ const listInput = z.object({
   day: z.string().regex(/^\d{4}-\d{2}-\d{2}$/),
 });
 
-// Public availability: returns only start times booked for the given day.
-// Used by the public modal to grey out slots. No PII returned.
+// Public availability: returns booked start times + durations for the day.
+// Used by the modal to grey out slots. No PII returned.
 export const listBookedTimes = createServerFn({ method: "GET" })
   .inputValidator((data: unknown) => listInput.parse(data))
   .handler(async ({ data }) => {
     const { supabaseAdmin } = await import("@/integrations/supabase/client.server");
     const { data: rows, error } = await supabaseAdmin
       .from("bookings")
-      .select("time")
+      .select("time, duration_minutes")
       .eq("day", data.day);
     if (error) throw new Error(error.message);
-    return (rows ?? []).map((r) => r.time as string);
+    return (rows ?? []).map((r) => ({
+      time: r.time as string,
+      duration: (r as { duration_minutes?: number | null }).duration_minutes ?? 60,
+    }));
   });
 
 function toMinutes(hhmm: string): number {
