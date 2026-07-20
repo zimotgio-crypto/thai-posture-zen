@@ -67,7 +67,7 @@ export const listBookingsInRange = createServerFn({ method: "GET" })
     const admin = await assertAdmin(context.userId);
     const { data: rows, error } = await admin
       .from("bookings")
-      .select("id, day, time, treatment, silent, source, notes, client_id, clients:client_id (id, first_name, last_name, phone, email, street, zip, city)")
+      .select("id, day, time, treatment, duration_minutes, silent, source, notes, client_id, clients:client_id (id, first_name, last_name, phone, email, street, zip, city)")
       .gte("day", data.from)
       .lte("day", data.to)
       .order("day", { ascending: true })
@@ -80,6 +80,7 @@ const addBookingInput = z.object({
   treatment: z.string().min(1).max(100),
   day: z.string().regex(/^\d{4}-\d{2}-\d{2}$/),
   time: z.string().regex(/^\d{2}:\d{2}$/),
+  durationMinutes: z.number().int().min(15).max(240).default(60),
   silent: z.boolean().default(false),
   block: z.boolean().default(false),
   clientId: z.string().uuid().nullish(),
@@ -120,6 +121,7 @@ export const addBooking = createServerFn({ method: "POST" })
       treatment: data.block ? "Blockiert" : data.treatment,
       day: data.day,
       time: data.time,
+      duration_minutes: data.durationMinutes,
       silent: data.silent,
       source: data.block ? "block" : "manual",
     });
@@ -230,13 +232,13 @@ export const getClient = createServerFn({ method: "GET" })
       admin.from("clients").select("*").eq("id", data.id).maybeSingle(),
       admin
         .from("bookings")
-        .select("id, day, time, treatment, silent, source")
+        .select("id, day, time, treatment, duration_minutes, silent, source")
         .eq("client_id", data.id)
         .order("day", { ascending: false })
         .order("time", { ascending: false }),
       admin
         .from("session_logs")
-        .select("id, body_html, created_at, booking_id, treatment_date, body_map, bookings:booking_id (day, treatment)")
+        .select("id, body_html, created_at, booking_id, treatment_date, treatment_name, duration_minutes, body_map, bookings:booking_id (day, treatment, duration_minutes)")
         .eq("client_id", data.id)
         .order("created_at", { ascending: false }),
     ]);
@@ -261,6 +263,8 @@ const addNoteInput = z.object({
   bookingId: z.string().uuid().nullish(),
   bodyHtml: z.string().trim().min(1).max(20000),
   treatmentDate: z.string().regex(/^\d{4}-\d{2}-\d{2}$/).nullish(),
+  treatmentName: z.string().trim().max(100).nullish(),
+  durationMinutes: z.number().int().min(15).max(240).nullish(),
   bodyMap: bodyMapSchema.optional(),
 });
 export const addSessionLog = createServerFn({ method: "POST" })
@@ -274,6 +278,8 @@ export const addSessionLog = createServerFn({ method: "POST" })
       author_id: context.userId,
       body_html: data.bodyHtml,
       treatment_date: data.bookingId ? null : (data.treatmentDate ?? null),
+      treatment_name: data.bookingId ? null : (data.treatmentName ?? null),
+      duration_minutes: data.bookingId ? null : (data.durationMinutes ?? null),
       body_map: data.bodyMap ?? { front: [], back: [] },
     });
     if (error) throw new Error(error.message);

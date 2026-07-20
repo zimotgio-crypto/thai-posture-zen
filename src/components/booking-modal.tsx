@@ -10,6 +10,7 @@ import { Check, Sparkles, ChevronLeft, ChevronRight } from "lucide-react";
 import { toast } from "sonner";
 import { cn } from "@/lib/utils";
 import { useT } from "@/lib/i18n";
+import { DURATION_OPTIONS, priceFor } from "@/lib/pricing";
 
 function ymd(d: Date) {
   const y = d.getFullYear();
@@ -53,9 +54,7 @@ const HOURS: ({ open: number; close: number } | null)[] = [
 ];
 
 const SLOT_STEP = 30;          // minutes between start times
-const TREATMENT_MIN = 60;      // treatment length
 const BUFFER_MIN = 30;         // clean-up / prep buffer
-const BLOCK_MIN = TREATMENT_MIN + BUFFER_MIN; // 90-min hard block
 
 function fmt(min: number) {
   const h = Math.floor(min / 60);
@@ -68,19 +67,27 @@ function parseTime(s: string) {
   return h * 60 + m;
 }
 
-function generateStartTimes(dateKey: string, bookedStarts: string[], nowMinutes: number | null) {
+type BookedSlot = { time: string; duration: number };
+
+function generateStartTimes(
+  dateKey: string,
+  booked: BookedSlot[],
+  nowMinutes: number | null,
+  treatmentMin: number
+) {
   const [y, mo, d] = dateKey.split("-").map(Number);
   const dow = new Date(y, mo - 1, d).getDay();
   const hours = HOURS[dow];
   if (!hours) return [];
-  const bookedRanges = bookedStarts.map((s) => {
-    const start = parseTime(s);
-    return [start, start + BLOCK_MIN] as const;
+  const bookedRanges = booked.map((b) => {
+    const start = parseTime(b.time);
+    return [start, start + b.duration + BUFFER_MIN] as const;
   });
+  const newBlock = treatmentMin + BUFFER_MIN;
   const out: { time: string; disabled: boolean; reason?: "booked" | "past" }[] = [];
-  for (let t = hours.open; t + TREATMENT_MIN <= hours.close; t += SLOT_STEP) {
-    // A new slot occupies [t, t + BLOCK_MIN). Reject overlap with any booking.
-    const overlaps = bookedRanges.some(([bs, be]) => t < be && t + BLOCK_MIN > bs);
+  for (let t = hours.open; t + treatmentMin <= hours.close; t += SLOT_STEP) {
+    // A new slot occupies [t, t + newBlock). Reject overlap with any booking.
+    const overlaps = bookedRanges.some(([bs, be]) => t < be && t + newBlock > bs);
     const isPast = nowMinutes !== null && t <= nowMinutes;
     if (overlaps) out.push({ time: fmt(t), disabled: true, reason: "booked" });
     else if (isPast) out.push({ time: fmt(t), disabled: true, reason: "past" });
@@ -103,6 +110,7 @@ export function BookingModal({
   const t = useT();
   const treatments = t.booking.treatments;
   const [treatment, setTreatment] = useState(initialTreatment ?? treatments[0].id);
+  const [durationMin, setDurationMin] = useState<number>(60);
   const [day, setDay] = useState<string | null>(null);
   const [time, setTime] = useState<string | null>(null);
   const [cursor, setCursor] = useState<Date>(() => {
@@ -118,7 +126,7 @@ export function BookingModal({
   const [zip, setZip] = useState("");
   const [city, setCity] = useState("");
   const [errors, setErrors] = useState<Record<string, boolean>>({});
-  const [bookedTimes, setBookedTimes] = useState<string[]>([]);
+  const [bookedTimes, setBookedTimes] = useState<BookedSlot[]>([]);
   const [submitting, setSubmitting] = useState(false);
   const listBooked = useServerFn(listBookedTimes);
   const submitBookingFn = useServerFn(submitBooking);
@@ -173,8 +181,8 @@ export function BookingModal({
   }, [day]);
   const slots = useMemo(() => {
     if (!day) return [];
-    return generateStartTimes(day, bookedTimes, nowMinutesToday);
-  }, [day, bookedTimes, nowMinutesToday]);
+    return generateStartTimes(day, bookedTimes, nowMinutesToday, durationMin);
+  }, [day, bookedTimes, nowMinutesToday, durationMin]);
 
   async function submit(e: React.FormEvent) {
     e.preventDefault();
@@ -199,6 +207,7 @@ export function BookingModal({
           treatment: current.label,
           day,
           time,
+          durationMinutes: durationMin,
           silent,
           firstName: firstName.trim(),
           lastName: lastName.trim(),
@@ -216,7 +225,7 @@ export function BookingModal({
         return;
       }
       toast.success(t.booking.success, {
-        description: `${current.label} · ${day} · ${time}${silent ? " · " + t.booking.silent : ""}`,
+        description: `${current.label} (${durationMin} Min.) · ${day} · ${time}${silent ? " · " + t.booking.silent : ""}`,
       });
       onOpenChange(false);
       setDay(null);
@@ -273,6 +282,41 @@ export function BookingModal({
                   <span className="text-sm text-charcoal-soft">{tr.meta}</span>
                 </button>
               ))}
+            </div>
+          </section>
+
+          <section className="space-y-3">
+            <Label className="text-xs uppercase tracking-[0.2em] text-charcoal-soft">
+              Dauer · Preis
+            </Label>
+            <div className="grid grid-cols-2 gap-2 sm:grid-cols-4">
+              {DURATION_OPTIONS.map((opt) => {
+                const selected = durationMin === opt.minutes;
+                return (
+                  <button
+                    type="button"
+                    key={opt.minutes}
+                    onClick={() => {
+                      setDurationMin(opt.minutes);
+                      setTime(null);
+                    }}
+                    aria-pressed={selected}
+                    className={cn(
+                      "flex flex-col items-start rounded-sm border px-3 py-3 text-left transition",
+                      selected
+                        ? "border-gold bg-gold-soft/40"
+                        : "border-border hover:border-gold/60"
+                    )}
+                  >
+                    <span className="text-[0.68rem] uppercase tracking-[0.22em] text-charcoal-soft">
+                      {opt.label}
+                    </span>
+                    <span className="mt-1 font-serif text-lg text-charcoal">
+                      CHF {priceFor(opt.minutes)}.–
+                    </span>
+                  </button>
+                );
+              })}
             </div>
           </section>
 

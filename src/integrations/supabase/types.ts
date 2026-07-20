@@ -19,6 +19,7 @@ export type Database = {
           client_id: string | null
           created_at: string
           day: string
+          duration_minutes: number
           id: string
           notes: string | null
           silent: boolean
@@ -30,6 +31,7 @@ export type Database = {
           client_id?: string | null
           created_at?: string
           day: string
+          duration_minutes?: number
           id?: string
           notes?: string | null
           silent?: boolean
@@ -41,6 +43,7 @@ export type Database = {
           client_id?: string | null
           created_at?: string
           day?: string
+          duration_minutes?: number
           id?: string
           notes?: string | null
           silent?: boolean
@@ -105,8 +108,10 @@ export type Database = {
           booking_id: string | null
           client_id: string
           created_at: string
+          duration_minutes: number | null
           id: string
           treatment_date: string | null
+          treatment_name: string | null
         }
         Insert: {
           author_id?: string | null
@@ -115,8 +120,10 @@ export type Database = {
           booking_id?: string | null
           client_id: string
           created_at?: string
+          duration_minutes?: number | null
           id?: string
           treatment_date?: string | null
+          treatment_name?: string | null
         }
         Update: {
           author_id?: string | null
@@ -125,8 +132,10 @@ export type Database = {
           booking_id?: string | null
           client_id?: string
           created_at?: string
+          duration_minutes?: number | null
           id?: string
           treatment_date?: string | null
+          treatment_name?: string | null
         }
         Relationships: [
           {
