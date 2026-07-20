@@ -14,15 +14,7 @@ import {
 } from "@/components/admin/body-map";
 import { Button } from "@/components/ui/button";
 import { toast } from "sonner";
-import { DURATION_OPTIONS, formatDuration, formatSwissDate, priceFor } from "@/lib/pricing";
-import { cn } from "@/lib/utils";
-
-const TREATMENT_OPTIONS = [
-  "Home-Office Deep Release",
-  "Traditional Thai Stretch · Mit Öl",
-  "Traditional Thai Stretch · Ohne Öl",
-  "Sport Massage",
-];
+import { formatDuration, formatSwissDate } from "@/lib/pricing";
 
 export const Route = createFileRoute("/_authenticated/admin/clients/$id")({
   component: ClientDetail,
@@ -39,8 +31,6 @@ function ClientDetail() {
   const [treatmentDate, setTreatmentDate] = useState<string>(
     () => new Date().toISOString().slice(0, 10)
   );
-  const [manualTreatment, setManualTreatment] = useState<string>(TREATMENT_OPTIONS[0]);
-  const [manualDuration, setManualDuration] = useState<number>(60);
   const [bodyMap, setBodyMap] = useState<BodyMapState>(EMPTY_BODY_MAP);
   const [busy, setBusy] = useState(false);
 
@@ -72,8 +62,8 @@ function ClientDetail() {
           bookingId: linkBookingId || null,
           bodyHtml,
           treatmentDate: linkBookingId ? null : treatmentDate,
-          treatmentName: linkBookingId ? null : manualTreatment,
-          durationMinutes: linkBookingId ? null : manualDuration,
+          treatmentName: null,
+          durationMinutes: null,
           bodyMap,
         },
       });
@@ -81,8 +71,6 @@ function ClientDetail() {
       setBodyHtml("");
       setLinkBookingId("");
       setTreatmentDate(new Date().toISOString().slice(0, 10));
-      setManualTreatment(TREATMENT_OPTIONS[0]);
-      setManualDuration(60);
       setBodyMap(EMPTY_BODY_MAP);
       qc.invalidateQueries({ queryKey: ["admin", "client", id] });
     } catch (err) {
@@ -164,63 +152,17 @@ function ClientDetail() {
               </div>
             )}
             {!linkBookingId && (
-              <div className="mt-4 grid gap-4 sm:grid-cols-2">
-                <div>
-                  <label className="text-xs uppercase tracking-[0.2em] text-charcoal-soft">
-                    Behandlungsdatum
-                  </label>
-                  <input
-                    type="date"
-                    value={treatmentDate}
-                    onChange={(e) => setTreatmentDate(e.target.value)}
-                    max={new Date().toISOString().slice(0, 10)}
-                    className="mt-2 w-full rounded-sm border border-input bg-background px-3 py-2 text-sm"
-                  />
-                </div>
-                <div>
-                  <label className="text-xs uppercase tracking-[0.2em] text-charcoal-soft">
-                    Behandlung
-                  </label>
-                  <select
-                    value={manualTreatment}
-                    onChange={(e) => setManualTreatment(e.target.value)}
-                    className="mt-2 w-full rounded-sm border border-input bg-background px-3 py-2 text-sm"
-                  >
-                    {TREATMENT_OPTIONS.map((tr) => (
-                      <option key={tr} value={tr}>
-                        {tr}
-                      </option>
-                    ))}
-                  </select>
-                </div>
-                <div className="sm:col-span-2">
-                  <label className="text-xs uppercase tracking-[0.2em] text-charcoal-soft">
-                    Dauer · Preis
-                  </label>
-                  <div className="mt-2 grid grid-cols-4 gap-2">
-                    {DURATION_OPTIONS.map((opt) => {
-                      const selected = manualDuration === opt.minutes;
-                      return (
-                        <button
-                          key={opt.minutes}
-                          type="button"
-                          onClick={() => setManualDuration(opt.minutes)}
-                          className={cn(
-                            "flex flex-col items-start rounded-sm border px-3 py-2 text-left transition",
-                            selected ? "border-gold bg-gold-soft/40" : "border-border hover:border-gold/60"
-                          )}
-                        >
-                          <span className="text-[0.62rem] uppercase tracking-[0.2em] text-charcoal-soft">
-                            {opt.label}
-                          </span>
-                          <span className="mt-1 font-serif text-base text-charcoal">
-                            CHF {priceFor(opt.minutes)}.–
-                          </span>
-                        </button>
-                      );
-                    })}
-                  </div>
-                </div>
+              <div className="mt-4">
+                <label className="text-xs uppercase tracking-[0.2em] text-charcoal-soft">
+                  Behandlungsdatum
+                </label>
+                <input
+                  type="date"
+                  value={treatmentDate}
+                  onChange={(e) => setTreatmentDate(e.target.value)}
+                  max={new Date().toISOString().slice(0, 10)}
+                  className="mt-2 w-full rounded-sm border border-input bg-background px-3 py-2 text-sm sm:w-64"
+                />
               </div>
             )}
             <div className="mt-4">

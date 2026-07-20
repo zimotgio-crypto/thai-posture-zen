@@ -1,4 +1,4 @@
-import { useState } from "react";
+import { useEffect, useState } from "react";
 import { useServerFn } from "@tanstack/react-start";
 import { useQueryClient } from "@tanstack/react-query";
 import { Dialog, DialogContent, DialogDescription, DialogHeader, DialogTitle } from "@/components/ui/dialog";
@@ -8,14 +8,13 @@ import { Button } from "@/components/ui/button";
 import { Switch } from "@/components/ui/switch";
 import { addBooking } from "@/lib/admin.functions";
 import { toast } from "sonner";
-import { DURATION_OPTIONS, priceFor } from "@/lib/pricing";
+import { optionsForTreatment, priceForTreatment } from "@/lib/pricing";
 import { cn } from "@/lib/utils";
 
-const TREATMENTS = [
-  "Home-Office Deep Release",
-  "Traditional Thai Stretch · Mit Öl",
-  "Traditional Thai Stretch · Ohne Öl",
-  "Sport Massage",
+const TREATMENTS: { id: string; label: string }[] = [
+  { id: "deep-release", label: "Home-Office Deep Release" },
+  { id: "thai-stretch-oil", label: "Traditional Thai Stretch · Mit Öl" },
+  { id: "zuzwiler", label: "Sport Massage" },
 ];
 
 export function AddBookingDialog({
@@ -31,8 +30,16 @@ export function AddBookingDialog({
   const addBookingFn = useServerFn(addBooking);
   const [busy, setBusy] = useState(false);
   const [block, setBlock] = useState(false);
-  const [treatment, setTreatment] = useState(TREATMENTS[0]);
+  const [treatmentId, setTreatmentId] = useState(TREATMENTS[0].id);
   const [durationMin, setDurationMin] = useState<number>(60);
+  const durationOptions = optionsForTreatment(treatmentId);
+  useEffect(() => {
+    const opts = optionsForTreatment(treatmentId);
+    if (!opts.find((o) => o.minutes === durationMin)) {
+      const fallback = opts.find((o) => o.minutes === 60) ?? opts[0];
+      if (fallback) setDurationMin(fallback.minutes);
+    }
+  }, [treatmentId, durationMin]);
   const [day, setDay] = useState(defaultDay ?? new Date().toISOString().slice(0, 10));
   const [time, setTime] = useState("10:00");
   const [silent, setSilent] = useState(false);
@@ -48,9 +55,11 @@ export function AddBookingDialog({
     e.preventDefault();
     setBusy(true);
     try {
+      const treatmentLabel =
+        TREATMENTS.find((t) => t.id === treatmentId)?.label ?? TREATMENTS[0].label;
       await addBookingFn({
         data: {
-          treatment,
+          treatment: treatmentLabel,
           day,
           time,
           durationMinutes: durationMin,
@@ -105,8 +114,8 @@ export function AddBookingDialog({
           {!block && (
             <div className="space-y-2">
               <Label>Dauer · Preis</Label>
-              <div className="grid grid-cols-4 gap-2">
-                {DURATION_OPTIONS.map((opt) => {
+              <div className={cn("grid gap-2", durationOptions.length >= 4 ? "grid-cols-4" : "grid-cols-3")}>
+                {durationOptions.map((opt) => {
                   const selected = durationMin === opt.minutes;
                   return (
                     <button
@@ -122,7 +131,7 @@ export function AddBookingDialog({
                         {opt.label}
                       </span>
                       <span className="mt-1 font-serif text-base text-charcoal">
-                        CHF {priceFor(opt.minutes)}.–
+                        CHF {priceForTreatment(treatmentId, opt.minutes)}.–
                       </span>
                     </button>
                   );
@@ -135,13 +144,13 @@ export function AddBookingDialog({
               <div className="space-y-2">
                 <Label>Behandlung</Label>
                 <select
-                  value={treatment}
-                  onChange={(e) => setTreatment(e.target.value)}
+                  value={treatmentId}
+                  onChange={(e) => setTreatmentId(e.target.value)}
                   className="w-full rounded-sm border border-input bg-background px-3 py-2 text-sm"
                 >
                   {TREATMENTS.map((t) => (
-                    <option key={t} value={t}>
-                      {t}
+                    <option key={t.id} value={t.id}>
+                      {t.label}
                     </option>
                   ))}
                 </select>
