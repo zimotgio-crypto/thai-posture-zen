@@ -101,6 +101,7 @@ export type Database = {
         Row: {
           author_id: string | null
           body_html: string
+          body_map: Json
           booking_id: string | null
           client_id: string
           created_at: string
@@ -110,6 +111,7 @@ export type Database = {
         Insert: {
           author_id?: string | null
           body_html: string
+          body_map?: Json
           booking_id?: string | null
           client_id: string
           created_at?: string
@@ -119,6 +121,7 @@ export type Database = {
         Update: {
           author_id?: string | null
           body_html?: string
+          body_map?: Json
           booking_id?: string | null
           client_id?: string
           created_at?: string
