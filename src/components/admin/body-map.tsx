@@ -120,6 +120,8 @@ function BodyOutline({
   small?: boolean;
 }) {
   const gradId = useId();
+  const isBack = label.toLowerCase().startsWith("back") || label.toLowerCase().startsWith("rück");
+  const details = isBack ? BACK_DETAILS : FRONT_DETAILS;
   return (
     <div className="flex flex-col items-center gap-2">
       {!small && (
@@ -148,14 +150,20 @@ function BodyOutline({
             <stop offset="100%" stopColor="rgb(220 38 38)" stopOpacity="0" />
           </radialGradient>
         </defs>
-        <path
-          d={BODY_PATH}
-          fill="rgba(0,0,0,0.02)"
-          stroke="currentColor"
-          strokeWidth={small ? 1.2 : 0.8}
-          strokeLinejoin="round"
+        <g
           className="text-charcoal-soft"
-        />
+          fill="none"
+          stroke="currentColor"
+          strokeWidth={small ? 1.2 : 1}
+          strokeLinecap="round"
+          strokeLinejoin="round"
+        >
+          <path d={SILHOUETTE_D} fill="rgba(0,0,0,0.02)" />
+          {!small &&
+            details.map((d, i) => (
+              <path key={i} d={d} strokeWidth={0.6} opacity={0.75} />
+            ))}
+        </g>
         {points.map((p, i) => {
           const cx = p.x;
           const cy = (p.y / 100) * 220;
