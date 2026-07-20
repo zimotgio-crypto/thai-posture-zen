@@ -14,15 +14,7 @@ import {
 } from "@/components/admin/body-map";
 import { Button } from "@/components/ui/button";
 import { toast } from "sonner";
-import { DURATION_OPTIONS, formatDuration, formatSwissDate, priceFor } from "@/lib/pricing";
-import { cn } from "@/lib/utils";
-
-const TREATMENT_OPTIONS = [
-  "Home-Office Deep Release",
-  "Traditional Thai Stretch · Mit Öl",
-  "Traditional Thai Stretch · Ohne Öl",
-  "Sport Massage",
-];
+import { formatDuration, formatSwissDate } from "@/lib/pricing";
 
 export const Route = createFileRoute("/_authenticated/admin/clients/$id")({
   component: ClientDetail,
@@ -39,8 +31,6 @@ function ClientDetail() {
   const [treatmentDate, setTreatmentDate] = useState<string>(
     () => new Date().toISOString().slice(0, 10)
   );
-  const [manualTreatment, setManualTreatment] = useState<string>(TREATMENT_OPTIONS[0]);
-  const [manualDuration, setManualDuration] = useState<number>(60);
   const [bodyMap, setBodyMap] = useState<BodyMapState>(EMPTY_BODY_MAP);
   const [busy, setBusy] = useState(false);
 
@@ -72,8 +62,8 @@ function ClientDetail() {
           bookingId: linkBookingId || null,
           bodyHtml,
           treatmentDate: linkBookingId ? null : treatmentDate,
-          treatmentName: linkBookingId ? null : manualTreatment,
-          durationMinutes: linkBookingId ? null : manualDuration,
+          treatmentName: null,
+          durationMinutes: null,
           bodyMap,
         },
       });
@@ -81,8 +71,6 @@ function ClientDetail() {
       setBodyHtml("");
       setLinkBookingId("");
       setTreatmentDate(new Date().toISOString().slice(0, 10));
-      setManualTreatment(TREATMENT_OPTIONS[0]);
-      setManualDuration(60);
       setBodyMap(EMPTY_BODY_MAP);
       qc.invalidateQueries({ queryKey: ["admin", "client", id] });
     } catch (err) {
