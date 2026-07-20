@@ -2,9 +2,16 @@ import { createFileRoute, Link } from "@tanstack/react-router";
 import { useServerFn } from "@tanstack/react-start";
 import { useQuery, useQueryClient } from "@tanstack/react-query";
 import { useMemo, useState } from "react";
-import { ArrowLeft, MapPin, Phone, Mail, Sparkles } from "lucide-react";
+import { ArrowLeft, MapPin, Phone, Mail, Sparkles, Target } from "lucide-react";
 import { getClient, addSessionLog } from "@/lib/admin.functions";
 import { TiptapEditor } from "@/components/admin/tiptap-editor";
+import {
+  BodyMapEditor,
+  BodyMapThumbnail,
+  EMPTY_BODY_MAP,
+  parseBodyMap,
+  type BodyMapState,
+} from "@/components/admin/body-map";
 import { Button } from "@/components/ui/button";
 import { toast } from "sonner";
 
@@ -28,6 +35,7 @@ function ClientDetail() {
   const [treatmentDate, setTreatmentDate] = useState<string>(
     () => new Date().toISOString().slice(0, 10)
   );
+  const [bodyMap, setBodyMap] = useState<BodyMapState>(EMPTY_BODY_MAP);
   const [busy, setBusy] = useState(false);
 
   const q = useQuery({
@@ -58,12 +66,14 @@ function ClientDetail() {
           bookingId: linkBookingId || null,
           bodyHtml,
           treatmentDate: linkBookingId ? null : treatmentDate,
+          bodyMap,
         },
       });
       toast.success("Notiz gespeichert");
       setBodyHtml("");
       setLinkBookingId("");
       setTreatmentDate(new Date().toISOString().slice(0, 10));
+      setBodyMap(EMPTY_BODY_MAP);
       qc.invalidateQueries({ queryKey: ["admin", "client", id] });
     } catch (err) {
       toast.error(err instanceof Error ? err.message : "Fehler");
@@ -164,6 +174,17 @@ function ClientDetail() {
                 placeholder="z.B. Verhärtung im oberen Trapezmuskel gelöst, Haltung leicht verbessert…"
               />
             </div>
+            <div className="mt-6 rounded-sm border border-border/60 bg-card p-5">
+              <div className="flex items-center gap-2 text-[0.7rem] uppercase tracking-[0.3em] text-gold-deep">
+                <Target className="h-3.5 w-3.5" /> Körperkartierung
+              </div>
+              <p className="mt-2 text-sm text-charcoal-soft">
+                Klicken Sie auf die Körperumrisse, um Schmerz- oder Problemstellen zu markieren.
+              </p>
+              <div className="mt-4">
+                <BodyMapEditor value={bodyMap} onChange={setBodyMap} />
+              </div>
+            </div>
             <div className="mt-4 flex justify-end">
               <Button
                 onClick={saveNote}
@@ -190,10 +211,15 @@ function ClientDetail() {
                 const label = linked?.treatment ?? "Manuelle Notiz";
                 return (
                   <article key={l.id} className="rounded-sm border border-border/60 bg-card p-5">
-                    <div className="text-[0.7rem] uppercase tracking-[0.22em] text-charcoal-soft">
-                      <span>{formatSwissDate(headerDate)}</span>
-                      <span className="mx-2 text-gold-deep">·</span>
-                      <span className="font-semibold tracking-[0.18em] text-gold-deep">{label}</span>
+                    <div className="flex items-start justify-between gap-4">
+                      <div className="text-[0.7rem] uppercase tracking-[0.22em] text-charcoal-soft">
+                        <span>{formatSwissDate(headerDate)}</span>
+                        <span className="mx-2 text-gold-deep">·</span>
+                        <span className="font-semibold tracking-[0.18em] text-gold-deep">{label}</span>
+                      </div>
+                      <BodyMapThumbnail
+                        value={parseBodyMap((l as { body_map?: unknown }).body_map)}
+                      />
                     </div>
                     <div
                       className="prose prose-sm mt-3 max-w-none text-charcoal"
