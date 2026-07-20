@@ -1,0 +1,1 @@
+ALTER TABLE public.session_logs ADD COLUMN IF NOT EXISTS treatment_date date;

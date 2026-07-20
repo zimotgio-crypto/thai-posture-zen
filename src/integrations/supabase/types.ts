@@ -105,6 +105,7 @@ export type Database = {
           client_id: string
           created_at: string
           id: string
+          treatment_date: string | null
         }
         Insert: {
           author_id?: string | null
@@ -113,6 +114,7 @@ export type Database = {
           client_id: string
           created_at?: string
           id?: string
+          treatment_date?: string | null
         }
         Update: {
           author_id?: string | null
@@ -121,6 +123,7 @@ export type Database = {
           client_id?: string
           created_at?: string
           id?: string
+          treatment_date?: string | null
         }
         Relationships: [
           {
