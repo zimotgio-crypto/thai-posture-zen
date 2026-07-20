@@ -397,6 +397,66 @@ function ClientProfileSheet({ client, onClose }: { client: ClientRow; onClose: (
             </select>
           </div>
         )}
+        {!linkBookingId && (
+          <div className="grid gap-4 sm:grid-cols-2">
+            <div>
+              <label className="text-xs uppercase tracking-[0.2em] text-charcoal-soft">
+                Behandlungsdatum
+              </label>
+              <input
+                type="date"
+                value={treatmentDate}
+                onChange={(e) => setTreatmentDate(e.target.value)}
+                max={new Date().toISOString().slice(0, 10)}
+                className="mt-2 w-full rounded-sm border border-input bg-background px-3 py-2 text-sm"
+              />
+            </div>
+            <div>
+              <label className="text-xs uppercase tracking-[0.2em] text-charcoal-soft">
+                Behandlung
+              </label>
+              <select
+                value={manualTreatment}
+                onChange={(e) => setManualTreatment(e.target.value)}
+                className="mt-2 w-full rounded-sm border border-input bg-background px-3 py-2 text-sm"
+              >
+                {TREATMENT_OPTIONS.map((tr) => (
+                  <option key={tr} value={tr}>
+                    {tr}
+                  </option>
+                ))}
+              </select>
+            </div>
+            <div className="sm:col-span-2">
+              <label className="text-xs uppercase tracking-[0.2em] text-charcoal-soft">
+                Dauer · Preis
+              </label>
+              <div className="mt-2 grid grid-cols-4 gap-2">
+                {DURATION_OPTIONS.map((opt) => {
+                  const selected = manualDuration === opt.minutes;
+                  return (
+                    <button
+                      key={opt.minutes}
+                      type="button"
+                      onClick={() => setManualDuration(opt.minutes)}
+                      className={cn(
+                        "flex flex-col items-start rounded-sm border px-3 py-2 text-left transition",
+                        selected ? "border-gold bg-gold-soft/40" : "border-border hover:border-gold/60"
+                      )}
+                    >
+                      <span className="text-[0.62rem] uppercase tracking-[0.2em] text-charcoal-soft">
+                        {opt.label}
+                      </span>
+                      <span className="mt-1 font-serif text-base text-charcoal">
+                        CHF {priceFor(opt.minutes)}.–
+                      </span>
+                    </button>
+                  );
+                })}
+              </div>
+            </div>
+          </div>
+        )}
         <TiptapEditor
           value={bodyHtml}
           onChange={setBodyHtml}
