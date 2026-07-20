@@ -492,26 +492,39 @@ function ClientProfileSheet({ client, onClose }: { client: ClientRow; onClose: (
               Noch keine Einträge im Massagetagebuch.
             </p>
           )}
-          {logs.map((l) => (
-            <article key={l.id} className="rounded-sm border border-border/60 bg-card p-5">
-              <div className="flex items-start justify-between gap-4">
-                <div className="text-[0.65rem] uppercase tracking-[0.22em] text-charcoal-soft">
-                  {new Date(l.created_at).toLocaleString("de-CH", {
-                    dateStyle: "medium",
-                    timeStyle: "short",
-                  })}
+          {logs.map((l) => {
+            const linked = (l as {
+              bookings?: { day: string; treatment: string; duration_minutes?: number | null } | null;
+            }).bookings ?? null;
+            const tDate = (l as { treatment_date?: string | null }).treatment_date ?? null;
+            const tName = (l as { treatment_name?: string | null }).treatment_name ?? null;
+            const tDur = (l as { duration_minutes?: number | null }).duration_minutes ?? null;
+            const headerDate = linked?.day ?? tDate ?? l.created_at.slice(0, 10);
+            const label = linked
+              ? `${linked.treatment}${linked.duration_minutes ? ` (${formatDuration(linked.duration_minutes)})` : ""}`
+              : tName
+                ? `${tName}${tDur ? ` (${formatDuration(tDur)})` : ""}`
+                : "Manuelle Notiz";
+            return (
+              <article key={l.id} className="rounded-sm border border-border/60 bg-card p-5">
+                <div className="flex items-start justify-between gap-4">
+                  <div className="text-[0.7rem] uppercase tracking-[0.22em] text-charcoal-soft">
+                    <span>{formatSwissDate(headerDate)}</span>
+                    <span className="mx-2 text-gold-deep">·</span>
+                    <span className="font-semibold tracking-[0.18em] text-gold-deep">{label}</span>
+                  </div>
+                  <BodyMapThumbnail
+                    value={parseBodyMap((l as { body_map?: unknown }).body_map)}
+                  />
                 </div>
-                <BodyMapThumbnail
-                  value={parseBodyMap((l as { body_map?: unknown }).body_map)}
+                <div
+                  className="prose prose-sm mt-3 max-w-none text-charcoal"
+                  // biome-ignore lint/security/noDangerouslySetInnerHtml: rich-text notes authored by admin
+                  dangerouslySetInnerHTML={{ __html: l.body_html }}
                 />
-              </div>
-              <div
-                className="prose prose-sm mt-3 max-w-none text-charcoal"
-                // biome-ignore lint/security/noDangerouslySetInnerHtml: rich-text notes authored by admin
-                dangerouslySetInnerHTML={{ __html: l.body_html }}
-              />
-            </article>
-          ))}
+              </article>
+            );
+          })}
         </div>
       </section>
 
