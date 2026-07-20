@@ -287,6 +287,41 @@ export function BookingModal({
 
           <section className="space-y-3">
             <Label className="text-xs uppercase tracking-[0.2em] text-charcoal-soft">
+              Dauer · Preis
+            </Label>
+            <div className="grid grid-cols-2 gap-2 sm:grid-cols-4">
+              {DURATION_OPTIONS.map((opt) => {
+                const selected = durationMin === opt.minutes;
+                return (
+                  <button
+                    type="button"
+                    key={opt.minutes}
+                    onClick={() => {
+                      setDurationMin(opt.minutes);
+                      setTime(null);
+                    }}
+                    aria-pressed={selected}
+                    className={cn(
+                      "flex flex-col items-start rounded-sm border px-3 py-3 text-left transition",
+                      selected
+                        ? "border-gold bg-gold-soft/40"
+                        : "border-border hover:border-gold/60"
+                    )}
+                  >
+                    <span className="text-[0.68rem] uppercase tracking-[0.22em] text-charcoal-soft">
+                      {opt.label}
+                    </span>
+                    <span className="mt-1 font-serif text-lg text-charcoal">
+                      CHF {priceFor(opt.minutes)}.–
+                    </span>
+                  </button>
+                );
+              })}
+            </div>
+          </section>
+
+          <section className="space-y-3">
+            <Label className="text-xs uppercase tracking-[0.2em] text-charcoal-soft">
               {t.booking.date}
             </Label>
             <div className="rounded-sm border border-border/60 bg-card p-4 sm:p-5">
