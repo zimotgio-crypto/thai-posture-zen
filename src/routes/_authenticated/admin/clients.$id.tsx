@@ -8,6 +8,11 @@ import { TiptapEditor } from "@/components/admin/tiptap-editor";
 import { Button } from "@/components/ui/button";
 import { toast } from "sonner";
 
+function formatSwissDate(iso: string): string {
+  const [y, m, d] = iso.slice(0, 10).split("-");
+  return `${d}.${m}.${y}`;
+}
+
 export const Route = createFileRoute("/_authenticated/admin/clients/$id")({
   component: ClientDetail,
 });
@@ -20,6 +25,9 @@ function ClientDetail() {
 
   const [bodyHtml, setBodyHtml] = useState("");
   const [linkBookingId, setLinkBookingId] = useState<string>("");
+  const [treatmentDate, setTreatmentDate] = useState<string>(
+    () => new Date().toISOString().slice(0, 10)
+  );
   const [busy, setBusy] = useState(false);
 
   const q = useQuery({
@@ -49,11 +57,13 @@ function ClientDetail() {
           clientId: id,
           bookingId: linkBookingId || null,
           bodyHtml,
+          treatmentDate: linkBookingId ? null : treatmentDate,
         },
       });
       toast.success("Notiz gespeichert");
       setBodyHtml("");
       setLinkBookingId("");
+      setTreatmentDate(new Date().toISOString().slice(0, 10));
       qc.invalidateQueries({ queryKey: ["admin", "client", id] });
     } catch (err) {
       toast.error(err instanceof Error ? err.message : "Fehler");
@@ -133,6 +143,20 @@ function ClientDetail() {
                 </select>
               </div>
             )}
+            {!linkBookingId && (
+              <div className="mt-4">
+                <label className="text-xs uppercase tracking-[0.2em] text-charcoal-soft">
+                  Behandlungsdatum
+                </label>
+                <input
+                  type="date"
+                  value={treatmentDate}
+                  onChange={(e) => setTreatmentDate(e.target.value)}
+                  max={new Date().toISOString().slice(0, 10)}
+                  className="mt-2 w-full rounded-sm border border-input bg-background px-3 py-2 text-sm"
+                />
+              </div>
+            )}
             <div className="mt-4">
               <TiptapEditor
                 value={bodyHtml}
@@ -159,21 +183,26 @@ function ClientDetail() {
                   Noch keine Einträge im Massagetagebuch.
                 </p>
               )}
-              {logs.map((l) => (
-                <article key={l.id} className="rounded-sm border border-border/60 bg-card p-5">
-                  <div className="text-[0.65rem] uppercase tracking-[0.22em] text-charcoal-soft">
-                    {new Date(l.created_at).toLocaleString("de-CH", {
-                      dateStyle: "medium",
-                      timeStyle: "short",
-                    })}
-                  </div>
-                  <div
-                    className="prose prose-sm mt-3 max-w-none text-charcoal"
-                    // biome-ignore lint/security/noDangerouslySetInnerHtml: rich-text notes authored by admin
-                    dangerouslySetInnerHTML={{ __html: l.body_html }}
-                  />
-                </article>
-              ))}
+              {logs.map((l) => {
+                const linked = (l as { bookings?: { day: string; treatment: string } | null }).bookings ?? null;
+                const tDate = (l as { treatment_date?: string | null }).treatment_date ?? null;
+                const headerDate = linked?.day ?? tDate ?? l.created_at.slice(0, 10);
+                const label = linked?.treatment ?? "Manuelle Notiz";
+                return (
+                  <article key={l.id} className="rounded-sm border border-border/60 bg-card p-5">
+                    <div className="text-[0.7rem] uppercase tracking-[0.22em] text-charcoal-soft">
+                      <span>{formatSwissDate(headerDate)}</span>
+                      <span className="mx-2 text-gold-deep">·</span>
+                      <span className="font-semibold tracking-[0.18em] text-gold-deep">{label}</span>
+                    </div>
+                    <div
+                      className="prose prose-sm mt-3 max-w-none text-charcoal"
+                      // biome-ignore lint/security/noDangerouslySetInnerHtml: rich-text notes authored by admin
+                      dangerouslySetInnerHTML={{ __html: l.body_html }}
+                    />
+                  </article>
+                );
+              })}
             </div>
           </div>
         </div>

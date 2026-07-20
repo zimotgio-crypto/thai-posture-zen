@@ -236,7 +236,7 @@ export const getClient = createServerFn({ method: "GET" })
         .order("time", { ascending: false }),
       admin
         .from("session_logs")
-        .select("id, body_html, created_at, booking_id")
+        .select("id, body_html, created_at, booking_id, treatment_date, bookings:booking_id (day, treatment)")
         .eq("client_id", data.id)
         .order("created_at", { ascending: false }),
     ]);
@@ -251,6 +251,7 @@ const addNoteInput = z.object({
   clientId: z.string().uuid(),
   bookingId: z.string().uuid().nullish(),
   bodyHtml: z.string().trim().min(1).max(20000),
+  treatmentDate: z.string().regex(/^\d{4}-\d{2}-\d{2}$/).nullish(),
 });
 export const addSessionLog = createServerFn({ method: "POST" })
   .middleware([requireSupabaseAuth])
@@ -262,6 +263,7 @@ export const addSessionLog = createServerFn({ method: "POST" })
       booking_id: data.bookingId ?? null,
       author_id: context.userId,
       body_html: data.bodyHtml,
+      treatment_date: data.bookingId ? null : (data.treatmentDate ?? null),
     });
     if (error) throw new Error(error.message);
     return { ok: true as const };
