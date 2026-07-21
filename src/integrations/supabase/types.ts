@@ -110,6 +110,9 @@ export type Database = {
           created_at: string
           duration_minutes: number | null
           id: string
+          mobility: Json
+          pain_level: number | null
+          tension: Json
           treatment_date: string | null
           treatment_name: string | null
         }
@@ -122,6 +125,9 @@ export type Database = {
           created_at?: string
           duration_minutes?: number | null
           id?: string
+          mobility?: Json
+          pain_level?: number | null
+          tension?: Json
           treatment_date?: string | null
           treatment_name?: string | null
         }
@@ -134,6 +140,9 @@ export type Database = {
           created_at?: string
           duration_minutes?: number | null
           id?: string
+          mobility?: Json
+          pain_level?: number | null
+          tension?: Json
           treatment_date?: string | null
           treatment_name?: string | null
         }

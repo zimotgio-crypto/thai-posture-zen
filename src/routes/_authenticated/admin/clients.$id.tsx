@@ -12,6 +12,18 @@ import {
   parseBodyMap,
   type BodyMapState,
 } from "@/components/admin/body-map";
+import {
+  FindingsList,
+  MobilityEditor,
+  MOBILITY_LABELS,
+  PainBadge,
+  PainScale,
+  TensionEditor,
+  TENSION_LABELS,
+  parseRecord,
+  type MobilityState,
+  type TensionState,
+} from "@/components/admin/assessment";
 import { Button } from "@/components/ui/button";
 import { toast } from "sonner";
 import { formatDuration, formatSwissDate } from "@/lib/pricing";
@@ -40,6 +52,9 @@ function ClientDetail() {
   const [bodyHtml, setBodyHtml] = useState("");
   const [linkBookingId, setLinkBookingId] = useState<string>("");
   const [bodyMap, setBodyMap] = useState<BodyMapState>(EMPTY_BODY_MAP);
+  const [painLevel, setPainLevel] = useState<number | null>(null);
+  const [mobility, setMobility] = useState<MobilityState>({});
+  const [tension, setTension] = useState<TensionState>({});
   const [busy, setBusy] = useState(false);
 
   const q = useQuery({
@@ -68,12 +83,18 @@ function ClientDetail() {
           treatmentName: null,
           durationMinutes: null,
           bodyMap,
+          painLevel,
+          mobility,
+          tension,
         },
       });
       toast.success("Notiz gespeichert");
       setBodyHtml("");
       setLinkBookingId("");
       setBodyMap(EMPTY_BODY_MAP);
+      setPainLevel(null);
+      setMobility({});
+      setTension({});
       qc.invalidateQueries({ queryKey: ["admin", "client", id] });
     } catch (err) {
       toast.error(err instanceof Error ? err.message : "Fehler");
@@ -161,6 +182,23 @@ function ClientDetail() {
               />
             </div>
             <div className="mt-6 rounded-sm border border-border/60 bg-card p-5">
+              <PainScale value={painLevel} onChange={setPainLevel} />
+            </div>
+            <div className="mt-6 rounded-sm border border-border/60 bg-card p-5">
+              <div className="text-[0.7rem] uppercase tracking-[0.3em] text-gold-deep">Beweglichkeit</div>
+              <p className="mt-1 text-xs text-charcoal-soft">Bewegungsausmass und Gelenkbeweglichkeit.</p>
+              <div className="mt-4">
+                <MobilityEditor value={mobility} onChange={setMobility} />
+              </div>
+            </div>
+            <div className="mt-6 rounded-sm border border-border/60 bg-card p-5">
+              <div className="text-[0.7rem] uppercase tracking-[0.3em] text-gold-deep">Spannung & Gewebetonus</div>
+              <p className="mt-1 text-xs text-charcoal-soft">Muskelspannung, Gewebefestigkeit und Körperhaltung.</p>
+              <div className="mt-4">
+                <TensionEditor value={tension} onChange={setTension} />
+              </div>
+            </div>
+            <div className="mt-6 rounded-sm border border-border/60 bg-card p-5">
               <div className="flex items-center gap-2 text-[0.7rem] uppercase tracking-[0.3em] text-gold-deep">
                 <Target className="h-3.5 w-3.5" /> Körperkartierung
               </div>
@@ -197,6 +235,9 @@ function ClientDetail() {
                 const tDate = (l as { treatment_date?: string | null }).treatment_date ?? null;
                 const tName = (l as { treatment_name?: string | null }).treatment_name ?? null;
                 const tDur = (l as { duration_minutes?: number | null }).duration_minutes ?? null;
+                const pain = (l as { pain_level?: number | null }).pain_level ?? null;
+                const mob = parseRecord((l as { mobility?: unknown }).mobility);
+                const ten = parseRecord((l as { tension?: unknown }).tension);
                 const headerDate = linked?.day ?? tDate ?? l.created_at.slice(0, 10);
                 const label = linked
                   ? `${linked.treatment}${linked.duration_minutes ? ` (${formatDuration(linked.duration_minutes)})` : ""}`
@@ -215,11 +256,22 @@ function ClientDetail() {
                         value={parseBodyMap((l as { body_map?: unknown }).body_map)}
                       />
                     </div>
+                    {pain != null && (
+                      <div className="mt-3">
+                        <PainBadge value={pain} />
+                      </div>
+                    )}
                     <div
                       className="prose prose-sm mt-3 max-w-none text-charcoal"
                       // biome-ignore lint/security/noDangerouslySetInnerHtml: rich-text notes authored by admin
                       dangerouslySetInnerHTML={{ __html: l.body_html }}
                     />
+                    {(Object.keys(mob).length > 0 || Object.keys(ten).length > 0) && (
+                      <div className="mt-4 grid gap-4 border-t border-border/50 pt-4 sm:grid-cols-2">
+                        <FindingsList title="Beweglichkeit" labels={MOBILITY_LABELS} data={mob} />
+                        <FindingsList title="Spannung & Gewebetonus" labels={TENSION_LABELS} data={ten} />
+                      </div>
+                    )}
                   </article>
                 );
               })}

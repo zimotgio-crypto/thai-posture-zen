@@ -238,7 +238,7 @@ export const getClient = createServerFn({ method: "GET" })
         .order("time", { ascending: false }),
       admin
         .from("session_logs")
-        .select("id, body_html, created_at, booking_id, treatment_date, treatment_name, duration_minutes, body_map, bookings:booking_id (day, treatment, duration_minutes)")
+        .select("id, body_html, created_at, booking_id, treatment_date, treatment_name, duration_minutes, body_map, pain_level, mobility, tension, bookings:booking_id (day, treatment, duration_minutes)")
         .eq("client_id", data.id)
         .order("created_at", { ascending: false }),
     ]);
@@ -266,6 +266,9 @@ const addNoteInput = z.object({
   treatmentName: z.string().trim().max(100).nullish(),
   durationMinutes: z.number().int().min(15).max(240).nullish(),
   bodyMap: bodyMapSchema.optional(),
+  painLevel: z.number().int().min(1).max(10).nullish(),
+  mobility: z.record(z.string().max(60), z.string().max(120)).optional(),
+  tension: z.record(z.string().max(60), z.string().max(120)).optional(),
 });
 export const addSessionLog = createServerFn({ method: "POST" })
   .middleware([requireSupabaseAuth])
@@ -281,6 +284,9 @@ export const addSessionLog = createServerFn({ method: "POST" })
       treatment_name: data.bookingId ? null : (data.treatmentName ?? null),
       duration_minutes: data.bookingId ? null : (data.durationMinutes ?? null),
       body_map: data.bodyMap ?? { front: [], back: [] },
+      pain_level: data.painLevel ?? null,
+      mobility: data.mobility ?? {},
+      tension: data.tension ?? {},
     });
     if (error) throw new Error(error.message);
     return { ok: true as const };
