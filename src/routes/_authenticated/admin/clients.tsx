@@ -1,7 +1,7 @@
 import { createFileRoute } from "@tanstack/react-router";
 import { useServerFn } from "@tanstack/react-start";
 import { useQuery, useQueryClient } from "@tanstack/react-query";
-import { useEffect, useMemo, useState } from "react";
+import { useEffect, useState } from "react";
 import { Search, ChevronRight, Plus, Sparkles, Trash2, Target } from "lucide-react";
 import { addSessionLog, deleteClient, getClient, listClients, updateClient } from "@/lib/admin.functions";
 import { Input } from "@/components/ui/input";
@@ -28,6 +28,17 @@ import {
 } from "@/components/ui/alert-dialog";
 import { toast } from "sonner";
 import { formatDuration, formatSwissDate } from "@/lib/pricing";
+
+function formatBookingOption(b: {
+  day: string;
+  time: string;
+  treatment: string;
+  duration_minutes?: number | null;
+}) {
+  const time = b.time.slice(0, 5);
+  const dur = b.duration_minutes ? ` (${formatDuration(b.duration_minutes)})` : "";
+  return `${formatSwissDate(b.day)}, ${time} — ${b.treatment}${dur}`;
+}
 
 export const Route = createFileRoute("/_authenticated/admin/clients")({
   component: ClientsPage,
@@ -183,9 +194,6 @@ function ClientProfileSheet({ client, onClose }: { client: ClientRow; onClose: (
   const deleteClientFn = useServerFn(deleteClient);
   const [bodyHtml, setBodyHtml] = useState("");
   const [linkBookingId, setLinkBookingId] = useState("");
-  const [treatmentDate, setTreatmentDate] = useState<string>(
-    () => new Date().toISOString().slice(0, 10)
-  );
   const [bodyMap, setBodyMap] = useState(EMPTY_BODY_MAP);
   const [busy, setBusy] = useState(false);
   const [savingProfile, setSavingProfile] = useState(false);
@@ -223,10 +231,6 @@ function ClientProfileSheet({ client, onClose }: { client: ClientRow; onClose: (
   }, [q.data?.client]);
   const bookings = q.data?.bookings ?? [];
   const logs = q.data?.logs ?? [];
-  const pastBookings = useMemo(
-    () => bookings.filter((b) => new Date(`${b.day}T${b.time}`) < new Date()),
-    [bookings]
-  );
 
   async function saveNote() {
     const text = bodyHtml.replace(/<[^>]+>/g, "").trim();
@@ -241,7 +245,7 @@ function ClientProfileSheet({ client, onClose }: { client: ClientRow; onClose: (
           clientId: client.id,
           bookingId: linkBookingId || null,
           bodyHtml,
-          treatmentDate: linkBookingId ? null : treatmentDate,
+          treatmentDate: linkBookingId ? null : new Date().toISOString().slice(0, 10),
           treatmentName: null,
           durationMinutes: null,
           bodyMap,
@@ -250,7 +254,6 @@ function ClientProfileSheet({ client, onClose }: { client: ClientRow; onClose: (
       toast.success("Notiz gespeichert");
       setBodyHtml("");
       setLinkBookingId("");
-      setTreatmentDate(new Date().toISOString().slice(0, 10));
       setBodyMap(EMPTY_BODY_MAP);
       qc.invalidateQueries({ queryKey: ["admin", "client", client.id] });
     } catch (err) {
@@ -366,7 +369,7 @@ function ClientProfileSheet({ client, onClose }: { client: ClientRow; onClose: (
           </div>
           <h2 className="mt-2 font-serif text-2xl text-charcoal">Neuer Eintrag</h2>
         </div>
-        {pastBookings.length > 0 && (
+        {bookings.length > 0 && (
           <div>
             <label className="text-xs uppercase tracking-[0.2em] text-charcoal-soft">
               Termin verknüpfen (optional)
@@ -377,26 +380,12 @@ function ClientProfileSheet({ client, onClose }: { client: ClientRow; onClose: (
               className="mt-2 w-full rounded-sm border border-input bg-background px-3 py-2 text-sm"
             >
               <option value="">— keiner —</option>
-              {pastBookings.map((b) => (
+              {bookings.map((b) => (
                 <option key={b.id} value={b.id}>
-                  {b.day} · {b.time} · {b.treatment}
+                  {formatBookingOption(b)}
                 </option>
               ))}
             </select>
-          </div>
-        )}
-        {!linkBookingId && (
-          <div>
-            <label className="text-xs uppercase tracking-[0.2em] text-charcoal-soft">
-              Behandlungsdatum
-            </label>
-            <input
-              type="date"
-              value={treatmentDate}
-              onChange={(e) => setTreatmentDate(e.target.value)}
-              max={new Date().toISOString().slice(0, 10)}
-              className="mt-2 w-full rounded-sm border border-input bg-background px-3 py-2 text-sm sm:w-64"
-            />
           </div>
         )}
         <TiptapEditor
