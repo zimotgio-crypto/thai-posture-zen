@@ -1,7 +1,7 @@
 import { createFileRoute, Link } from "@tanstack/react-router";
 import { useServerFn } from "@tanstack/react-start";
 import { useQuery, useQueryClient } from "@tanstack/react-query";
-import { useMemo, useState } from "react";
+import { useState } from "react";
 import { ArrowLeft, MapPin, Phone, Mail, Sparkles, Target } from "lucide-react";
 import { getClient, addSessionLog } from "@/lib/admin.functions";
 import { TiptapEditor } from "@/components/admin/tiptap-editor";
@@ -16,6 +16,17 @@ import { Button } from "@/components/ui/button";
 import { toast } from "sonner";
 import { formatDuration, formatSwissDate } from "@/lib/pricing";
 
+function formatBookingOption(b: {
+  day: string;
+  time: string;
+  treatment: string;
+  duration_minutes?: number | null;
+}) {
+  const time = b.time.slice(0, 5);
+  const dur = b.duration_minutes ? ` (${formatDuration(b.duration_minutes)})` : "";
+  return `${formatSwissDate(b.day)}, ${time} — ${b.treatment}${dur}`;
+}
+
 export const Route = createFileRoute("/_authenticated/admin/clients/$id")({
   component: ClientDetail,
 });
@@ -28,9 +39,6 @@ function ClientDetail() {
 
   const [bodyHtml, setBodyHtml] = useState("");
   const [linkBookingId, setLinkBookingId] = useState<string>("");
-  const [treatmentDate, setTreatmentDate] = useState<string>(
-    () => new Date().toISOString().slice(0, 10)
-  );
   const [bodyMap, setBodyMap] = useState<BodyMapState>(EMPTY_BODY_MAP);
   const [busy, setBusy] = useState(false);
 
@@ -42,11 +50,6 @@ function ClientDetail() {
   const bookings = q.data?.bookings ?? [];
   const logs = q.data?.logs ?? [];
   const client = q.data?.client;
-
-  const pastBookings = useMemo(
-    () => bookings.filter((b) => new Date(`${b.day}T${b.time}`) < new Date()),
-    [bookings]
-  );
 
   async function saveNote() {
     const text = bodyHtml.replace(/<[^>]+>/g, "").trim();
@@ -61,7 +64,7 @@ function ClientDetail() {
           clientId: id,
           bookingId: linkBookingId || null,
           bodyHtml,
-          treatmentDate: linkBookingId ? null : treatmentDate,
+          treatmentDate: linkBookingId ? null : new Date().toISOString().slice(0, 10),
           treatmentName: null,
           durationMinutes: null,
           bodyMap,
@@ -70,7 +73,6 @@ function ClientDetail() {
       toast.success("Notiz gespeichert");
       setBodyHtml("");
       setLinkBookingId("");
-      setTreatmentDate(new Date().toISOString().slice(0, 10));
       setBodyMap(EMPTY_BODY_MAP);
       qc.invalidateQueries({ queryKey: ["admin", "client", id] });
     } catch (err) {
@@ -132,7 +134,7 @@ function ClientDetail() {
               <Sparkles className="h-3.5 w-3.5" /> Massagetagebuch
             </div>
             <h2 className="mt-2 font-serif text-2xl text-charcoal">Neuer Eintrag</h2>
-            {pastBookings.length > 0 && (
+            {bookings.length > 0 && (
               <div className="mt-4">
                 <label className="text-xs uppercase tracking-[0.2em] text-charcoal-soft">
                   Termin verknüpfen (optional)
@@ -143,26 +145,12 @@ function ClientDetail() {
                   className="mt-2 w-full rounded-sm border border-input bg-background px-3 py-2 text-sm"
                 >
                   <option value="">— keiner —</option>
-                  {pastBookings.map((b) => (
+                  {bookings.map((b) => (
                     <option key={b.id} value={b.id}>
-                      {b.day} · {b.time} · {b.treatment}
+                      {formatBookingOption(b)}
                     </option>
                   ))}
                 </select>
-              </div>
-            )}
-            {!linkBookingId && (
-              <div className="mt-4">
-                <label className="text-xs uppercase tracking-[0.2em] text-charcoal-soft">
-                  Behandlungsdatum
-                </label>
-                <input
-                  type="date"
-                  value={treatmentDate}
-                  onChange={(e) => setTreatmentDate(e.target.value)}
-                  max={new Date().toISOString().slice(0, 10)}
-                  className="mt-2 w-full rounded-sm border border-input bg-background px-3 py-2 text-sm sm:w-64"
-                />
               </div>
             )}
             <div className="mt-4">
