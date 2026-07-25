@@ -537,6 +537,11 @@ export function ClientProfileView({
             document.body,
           )
         : null}
+      <PainTrendDialog
+        open={showPainTrend}
+        onOpenChange={setShowPainTrend}
+        logs={logs as never}
+      />
     </div>
   );
 }
