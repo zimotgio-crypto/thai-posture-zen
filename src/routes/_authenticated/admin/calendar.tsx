@@ -49,7 +49,7 @@ function CalendarPage() {
   const [debugDay, setDebugDay] = useState(() => ymd(new Date()));
   const [debugOpen, setDebugOpen] = useState(false);
   const [debugLoading, setDebugLoading] = useState(false);
-  const [debugData, setDebugData] = useState<unknown>(null);
+  const [debugJson, setDebugJson] = useState<string | null>(null);
   const [debugError, setDebugError] = useState<string | null>(null);
 
   const days = useMemo(() => {
@@ -96,9 +96,9 @@ function CalendarPage() {
     setDebugError(null);
     try {
       const res = await debugFn({ data: { day: debugDay } });
-      setDebugData(res);
+      setDebugJson(JSON.stringify(res, null, 2));
     } catch (err) {
-      setDebugData(null);
+      setDebugJson(null);
       setDebugError(err instanceof Error ? err.message : "Google-Diagnose fehlgeschlagen");
     } finally {
       setDebugLoading(false);
@@ -195,7 +195,7 @@ function CalendarPage() {
           >
             {debugLoading ? "Prüfe…" : "Google-Diagnose"}
           </Button>
-          {debugData && (
+          {debugJson && (
             <button
               onClick={() => setDebugOpen((v) => !v)}
               className="h-9 rounded-sm border border-border/60 px-3 text-[0.68rem] uppercase tracking-[0.2em] text-charcoal-soft hover:text-charcoal"
@@ -205,9 +205,9 @@ function CalendarPage() {
           )}
         </div>
         {debugError && <p className="mt-3 text-sm text-destructive">{debugError}</p>}
-        {debugOpen && debugData && (
+        {debugOpen && debugJson && (
           <pre className="mt-4 max-h-96 overflow-auto rounded-sm border border-border/60 bg-ivory p-4 text-xs leading-relaxed text-charcoal-soft">
-            {JSON.stringify(debugData, null, 2)}
+            {debugJson}
           </pre>
         )}
       </div>

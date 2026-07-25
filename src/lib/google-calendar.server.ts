@@ -49,13 +49,14 @@ type CreateInput = {
   source: "online" | "manual" | "block";
 };
 
-type GoogleException = { message: string; stack?: string };
+type JsonValue = string | number | boolean | null | JsonValue[] | { [key: string]: JsonValue };
+type GoogleException = { message: string; stack: string | null };
 
 function normalizeException(err: unknown): GoogleException {
   if (err instanceof Error) {
-    return { message: err.message, stack: err.stack };
+    return { message: err.message, stack: err.stack ?? null };
   }
-  return { message: String(err) };
+  return { message: String(err), stack: null };
 }
 
 function freeBusyRequestBody(day: string) {
@@ -72,9 +73,9 @@ function freeBusyRequestBody(day: string) {
   };
 }
 
-function parseJsonBody(text: string): unknown | null {
+function parseJsonBody(text: string): JsonValue | null {
   try {
-    return JSON.parse(text) as unknown;
+    return JSON.parse(text) as JsonValue;
   } catch {
     return null;
   }
@@ -117,9 +118,9 @@ function deriveIntervalsFromFreeBusy(
   return out;
 }
 
-function extractCalendarErrors(json: unknown): unknown {
+function extractCalendarErrors(json: unknown): JsonValue | null {
   const calendarId = CALENDAR_ID();
-  const root = json as { calendars?: Record<string, { errors?: unknown }> };
+  const root = json as { calendars?: Record<string, { errors?: JsonValue }> };
   return root.calendars?.[calendarId]?.errors ?? null;
 }
 
@@ -227,7 +228,7 @@ export async function debugGoogleCalendarDay(day: string): Promise<{
     status: number;
     statusText: string;
     bodyText: string;
-    bodyJson: unknown | null;
+    bodyJson: JsonValue | null;
   } | null;
   derivedIntervals: { time: string; duration: number }[];
   exceptions: GoogleException[];
@@ -240,7 +241,7 @@ export async function debugGoogleCalendarDay(day: string): Promise<{
     status: number;
     statusText: string;
     bodyText: string;
-    bodyJson: unknown | null;
+    bodyJson: JsonValue | null;
   } | null = null;
   let derivedIntervals: { time: string; duration: number }[] = [];
 
