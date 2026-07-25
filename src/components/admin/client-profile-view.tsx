@@ -112,6 +112,10 @@ export function ClientProfileView({
     city: fallback?.city ?? "",
   });
   const [savingProfile, setSavingProfile] = useState(false);
+  const [showPainTrend, setShowPainTrend] = useState(false);
+  const hasPainData = logs.some(
+    (l) => (l as { pain_level?: number | null }).pain_level != null,
+  );
 
   useEffect(() => {
     if (q.data?.client) {
