@@ -80,8 +80,17 @@ function CalendarPage() {
   });
   const gBusy = useQuery({
     queryKey: ["admin", "google-busy", from, to],
-    queryFn: () => gBusyFn({ data: { from, to } }),
+    queryFn: async () => {
+      try {
+        return await gBusyFn({ data: { from, to } });
+      } catch (err) {
+        console.error("[calendar] google busy fetch failed", err);
+        return [];
+      }
+    },
     enabled: gStatus.data?.configured === true,
+    throwOnError: false,
+    retry: false,
   });
 
   const del = useServerFn(deleteBooking);
