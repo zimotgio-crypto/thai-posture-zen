@@ -18,6 +18,7 @@ import { Route as IndexRouteImport } from './routes/index'
 import { Route as AuthenticatedAdminRouteRouteImport } from './routes/_authenticated/admin/route'
 import { Route as AuthenticatedAdminIndexRouteImport } from './routes/_authenticated/admin/index'
 import { Route as ApiPublicWhatsappRouteImport } from './routes/api/public/whatsapp'
+import { Route as ApiPublicPingRouteImport } from './routes/api/public/ping'
 import { Route as AuthenticatedAdminClientsRouteImport } from './routes/_authenticated/admin/clients'
 import { Route as AuthenticatedAdminCalendarRouteImport } from './routes/_authenticated/admin/calendar'
 import { Route as AuthenticatedAdminClientsIdRouteImport } from './routes/_authenticated/admin/clients.$id'
@@ -66,6 +67,11 @@ const ApiPublicWhatsappRoute = ApiPublicWhatsappRouteImport.update({
   path: '/api/public/whatsapp',
   getParentRoute: () => rootRouteImport,
 } as any)
+const ApiPublicPingRoute = ApiPublicPingRouteImport.update({
+  id: '/api/public/ping',
+  path: '/api/public/ping',
+  getParentRoute: () => rootRouteImport,
+} as any)
 const AuthenticatedAdminClientsRoute =
   AuthenticatedAdminClientsRouteImport.update({
     id: '/clients',
@@ -94,6 +100,7 @@ export interface FileRoutesByFullPath {
   '/admin': typeof AuthenticatedAdminRouteRouteWithChildren
   '/admin/calendar': typeof AuthenticatedAdminCalendarRoute
   '/admin/clients': typeof AuthenticatedAdminClientsRouteWithChildren
+  '/api/public/ping': typeof ApiPublicPingRoute
   '/api/public/whatsapp': typeof ApiPublicWhatsappRoute
   '/admin/': typeof AuthenticatedAdminIndexRoute
   '/admin/clients/$id': typeof AuthenticatedAdminClientsIdRoute
@@ -106,6 +113,7 @@ export interface FileRoutesByTo {
   '/sitemap.xml': typeof SitemapDotxmlRoute
   '/admin/calendar': typeof AuthenticatedAdminCalendarRoute
   '/admin/clients': typeof AuthenticatedAdminClientsRouteWithChildren
+  '/api/public/ping': typeof ApiPublicPingRoute
   '/api/public/whatsapp': typeof ApiPublicWhatsappRoute
   '/admin': typeof AuthenticatedAdminIndexRoute
   '/admin/clients/$id': typeof AuthenticatedAdminClientsIdRoute
@@ -121,6 +129,7 @@ export interface FileRoutesById {
   '/_authenticated/admin': typeof AuthenticatedAdminRouteRouteWithChildren
   '/_authenticated/admin/calendar': typeof AuthenticatedAdminCalendarRoute
   '/_authenticated/admin/clients': typeof AuthenticatedAdminClientsRouteWithChildren
+  '/api/public/ping': typeof ApiPublicPingRoute
   '/api/public/whatsapp': typeof ApiPublicWhatsappRoute
   '/_authenticated/admin/': typeof AuthenticatedAdminIndexRoute
   '/_authenticated/admin/clients/$id': typeof AuthenticatedAdminClientsIdRoute
@@ -136,6 +145,7 @@ export interface FileRouteTypes {
     | '/admin'
     | '/admin/calendar'
     | '/admin/clients'
+    | '/api/public/ping'
     | '/api/public/whatsapp'
     | '/admin/'
     | '/admin/clients/$id'
@@ -148,6 +158,7 @@ export interface FileRouteTypes {
     | '/sitemap.xml'
     | '/admin/calendar'
     | '/admin/clients'
+    | '/api/public/ping'
     | '/api/public/whatsapp'
     | '/admin'
     | '/admin/clients/$id'
@@ -162,6 +173,7 @@ export interface FileRouteTypes {
     | '/_authenticated/admin'
     | '/_authenticated/admin/calendar'
     | '/_authenticated/admin/clients'
+    | '/api/public/ping'
     | '/api/public/whatsapp'
     | '/_authenticated/admin/'
     | '/_authenticated/admin/clients/$id'
@@ -174,6 +186,7 @@ export interface RootRouteChildren {
   HomeOfficeRoute: typeof HomeOfficeRoute
   KontaktRoute: typeof KontaktRoute
   SitemapDotxmlRoute: typeof SitemapDotxmlRoute
+  ApiPublicPingRoute: typeof ApiPublicPingRoute
   ApiPublicWhatsappRoute: typeof ApiPublicWhatsappRoute
 }
 
@@ -240,6 +253,13 @@ declare module '@tanstack/react-router' {
       path: '/api/public/whatsapp'
       fullPath: '/api/public/whatsapp'
       preLoaderRoute: typeof ApiPublicWhatsappRouteImport
+      parentRoute: typeof rootRouteImport
+    }
+    '/api/public/ping': {
+      id: '/api/public/ping'
+      path: '/api/public/ping'
+      fullPath: '/api/public/ping'
+      preLoaderRoute: typeof ApiPublicPingRouteImport
       parentRoute: typeof rootRouteImport
     }
     '/_authenticated/admin/clients': {
@@ -316,6 +336,7 @@ const rootRouteChildren: RootRouteChildren = {
   HomeOfficeRoute: HomeOfficeRoute,
   KontaktRoute: KontaktRoute,
   SitemapDotxmlRoute: SitemapDotxmlRoute,
+  ApiPublicPingRoute: ApiPublicPingRoute,
   ApiPublicWhatsappRoute: ApiPublicWhatsappRoute,
 }
 export const routeTree = rootRouteImport
