@@ -85,6 +85,7 @@ function deriveIntervalsFromFreeBusy(
   day: string,
   json: unknown,
 ): { time: string; duration: number }[] {
+  if (!json || typeof json !== "object") return [];
   const calendarId = CALENDAR_ID();
   const root = json as {
     calendars?: Record<string, { busy?: { start: string; end: string }[] }>;
@@ -119,6 +120,7 @@ function deriveIntervalsFromFreeBusy(
 }
 
 function extractCalendarErrors(json: unknown): JsonValue | null {
+  if (!json || typeof json !== "object") return null;
   const calendarId = CALENDAR_ID();
   const root = json as { calendars?: Record<string, { errors?: JsonValue }> };
   return root.calendars?.[calendarId]?.errors ?? null;
