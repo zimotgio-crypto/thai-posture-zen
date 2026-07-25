@@ -7,6 +7,7 @@ import { Label } from "@/components/ui/label";
 import { Button } from "@/components/ui/button";
 import { addClient } from "@/lib/admin.functions";
 import { toast } from "sonner";
+import { useAdminT } from "@/lib/admin-i18n";
 
 export function AddClientDialog({
   open,
@@ -16,6 +17,7 @@ export function AddClientDialog({
   onOpenChange: (v: boolean) => void;
 }) {
   const qc = useQueryClient();
+  const t = useAdminT();
   const addClientFn = useServerFn(addClient);
   const [busy, setBusy] = useState(false);
   const [firstName, setFirstName] = useState("");
@@ -43,12 +45,12 @@ export function AddClientDialog({
       await addClientFn({
         data: { firstName, lastName, email: email.toLowerCase(), phone, street, zip, city },
       });
-      toast.success("Kunde angelegt");
+      toast.success(t.addClient.created);
       qc.invalidateQueries({ queryKey: ["admin", "clients"] });
       reset();
       onOpenChange(false);
     } catch (err) {
-      toast.error(err instanceof Error ? err.message : "Fehler");
+      toast.error(err instanceof Error ? err.message : t.common.error);
     } finally {
       setBusy(false);
     }
@@ -59,57 +61,57 @@ export function AddClientDialog({
       <DialogContent className="max-w-xl bg-ivory">
         <DialogHeader>
           <DialogTitle className="font-serif text-2xl font-normal text-charcoal">
-            Neuen Kunden anlegen
+            {t.addClient.title}
           </DialogTitle>
           <DialogDescription>
-            Erfasse einen neuen Kunden für die Kundendatenbank.
+            {t.addClient.description}
           </DialogDescription>
         </DialogHeader>
         <form onSubmit={submit} className="space-y-5 max-h-[70vh] overflow-y-auto pr-1">
           <div className="grid grid-cols-2 gap-3">
             <div className="space-y-2">
-              <Label>Vorname *</Label>
+              <Label>{t.addBooking.firstName}</Label>
               <Input value={firstName} onChange={(e) => setFirstName(e.target.value)} placeholder="Max" required />
             </div>
             <div className="space-y-2">
-              <Label>Nachname *</Label>
+              <Label>{t.addBooking.lastName}</Label>
               <Input value={lastName} onChange={(e) => setLastName(e.target.value)} placeholder="Muster" required />
             </div>
           </div>
           <div className="grid grid-cols-2 gap-3">
             <div className="space-y-2">
-              <Label>E-Mail *</Label>
+              <Label>{t.addBooking.email}</Label>
               <Input type="email" value={email} onChange={(e) => setEmail(e.target.value)} placeholder="dein@mail.ch" required />
             </div>
             <div className="space-y-2">
-              <Label>Telefon *</Label>
+              <Label>{t.addBooking.phone}</Label>
               <Input value={phone} onChange={(e) => setPhone(e.target.value)} placeholder="+41 79 000 00 00" required />
             </div>
           </div>
           <div className="space-y-2">
-            <Label>Strasse / Nr. *</Label>
+            <Label>{t.addBooking.street}</Label>
             <Input value={street} onChange={(e) => setStreet(e.target.value)} placeholder="Musterstrasse 12" required />
           </div>
           <div className="grid grid-cols-2 gap-3">
             <div className="space-y-2">
-              <Label>PLZ *</Label>
+              <Label>{t.addBooking.zip}</Label>
               <Input value={zip} onChange={(e) => setZip(e.target.value)} placeholder="9524" required />
             </div>
             <div className="space-y-2">
-              <Label>Ort *</Label>
+              <Label>{t.addBooking.city}</Label>
               <Input value={city} onChange={(e) => setCity(e.target.value)} placeholder="Zuzwil" required />
             </div>
           </div>
           <div className="flex justify-end gap-3 border-t border-border/60 pt-4">
             <Button type="button" variant="ghost" onClick={() => onOpenChange(false)}>
-              Abbrechen
+              {t.common.cancel}
             </Button>
             <Button
               type="submit"
               disabled={busy}
               className="btn-gold rounded-sm px-6 py-5 text-xs uppercase tracking-[0.2em] disabled:opacity-50"
             >
-              Speichern
+              {t.common.save}
             </Button>
           </div>
         </form>
