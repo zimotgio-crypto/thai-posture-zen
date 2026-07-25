@@ -205,13 +205,6 @@ const debugGoogleInput = z.object({
   day: z.string().regex(/^\d{4}-\d{2}-\d{2}$/),
 });
 
-function serializeDebugException(err: unknown) {
-  if (err instanceof Error) {
-    return { message: err.message, stack: err.stack ?? null };
-  }
-  return { message: String(err), stack: null };
-}
-
 export const debugGoogleCalendar = createServerFn({ method: "GET" })
   .middleware([requireSupabaseAuth])
   .inputValidator((data: unknown) => debugGoogleInput.parse(data))
@@ -227,7 +220,10 @@ export const debugGoogleCalendar = createServerFn({ method: "GET" })
     try {
       listBookedTimesResult = await listBookedTimesForDay(data.day);
     } catch (err) {
-      const normalized = serializeDebugException(err);
+      const normalized =
+        err instanceof Error
+          ? { message: err.message, stack: err.stack ?? null }
+          : { message: String(err), stack: null };
       exceptions.push(normalized);
       console.error("[debugGoogleCalendar] listBookedTimes failed", normalized);
     }
