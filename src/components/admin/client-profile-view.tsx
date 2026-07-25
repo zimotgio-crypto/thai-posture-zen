@@ -657,6 +657,7 @@ function SessionDocument({
           </div>
         </footer>
       </article>
+      </div>
     </div>
   );
 }
