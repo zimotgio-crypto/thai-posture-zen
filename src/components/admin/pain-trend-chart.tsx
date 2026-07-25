@@ -11,7 +11,22 @@ import {
 import { Dialog, DialogContent, DialogHeader, DialogTitle } from "@/components/ui/dialog";
 import { Switch } from "@/components/ui/switch";
 import { Label } from "@/components/ui/label";
-import { PAIN_COLORS } from "@/components/admin/assessment";
+import {
+  PAIN_COLORS,
+  TENSION_ZONES,
+  MOBILITY_ZONES,
+  parseZoneScores,
+} from "@/components/admin/assessment";
+import {
+  Select,
+  SelectContent,
+  SelectGroup,
+  SelectItem,
+  SelectLabel,
+  SelectSeparator,
+  SelectTrigger,
+  SelectValue,
+} from "@/components/ui/select";
 import { formatSwissDate } from "@/lib/pricing";
 import { cn } from "@/lib/utils";
 
@@ -21,6 +36,8 @@ export type PainTrendLog = {
   treatment_date: string | null;
   treatment_name: string | null;
   created_at: string;
+  mobility: unknown;
+  tension: unknown;
   bookings?: { day: string; treatment: string; duration_minutes?: number | null } | null;
 };
 
@@ -31,14 +48,47 @@ export type PainTrendPoint = {
   pain: number;
 };
 
-export function derivePainTrendPoints(logs: PainTrendLog[]): PainTrendPoint[] {
+type MetricSource = "aggregate" | "tension" | "mobility";
+export type MetricOption = { value: string; label: string; source: MetricSource };
+
+const METRIC_OPTIONS: { group: string; options: MetricOption[] }[] = [
+  {
+    group: "Gesamt",
+    options: [{ value: "aggregate", label: "Max. Spannung (Gesamt)", source: "aggregate" }],
+  },
+  {
+    group: "Spannung & Schmerz",
+    options: Object.entries(TENSION_ZONES).map(([value, label]) => ({
+      value,
+      label,
+      source: "tension" as const,
+    })),
+  },
+  {
+    group: "Beweglichkeit & Gelenke",
+    options: Object.entries(MOBILITY_ZONES).map(([value, label]) => ({
+      value,
+      label,
+      source: "mobility" as const,
+    })),
+  },
+];
+
+export function derivePainTrendPoints(logs: PainTrendLog[], metric: MetricOption): PainTrendPoint[] {
   const pts: PainTrendPoint[] = [];
   for (const l of logs) {
-    if (l.pain_level == null) continue;
+    let value: number | null = null;
+    if (metric.source === "aggregate") {
+      value = l.pain_level;
+    } else {
+      const scores = parseZoneScores(metric.source === "tension" ? l.tension : l.mobility);
+      value = scores[metric.value] ?? null;
+    }
+    if (value == null) continue;
     const linked = l.bookings ?? null;
     const headerDate = linked?.day ?? l.treatment_date ?? l.created_at.slice(0, 10);
     const label = linked?.treatment ?? l.treatment_name ?? "Manuelle Notiz";
-    pts.push({ id: l.id, date: headerDate, label, pain: l.pain_level });
+    pts.push({ id: l.id, date: headerDate, label, pain: value });
   }
   pts.sort((a, b) => a.date.localeCompare(b.date));
   return pts;
@@ -116,7 +166,15 @@ function CustomDot(props: { cx?: number; cy?: number; payload?: ChartRow }) {
   );
 }
 
-function CustomTooltip({ active, payload }: { active?: boolean; payload?: Array<{ payload: ChartRow }> }) {
+function CustomTooltip({
+  active,
+  payload,
+  metricLabel,
+}: {
+  active?: boolean;
+  payload?: Array<{ payload: ChartRow }>;
+  metricLabel: string;
+}) {
   if (!active || !payload || payload.length === 0) return null;
   const row = payload[0].payload;
   return (
@@ -124,7 +182,7 @@ function CustomTooltip({ active, payload }: { active?: boolean; payload?: Array<
       <p className="font-medium">{row.xLabel}</p>
       <p className="text-charcoal-soft">{row.title}</p>
       <p className="mt-1">
-        Schmerz: <span className="font-semibold" style={{ color: colorForPain(row.pain) }}>{row.pain}</span>/10
+        {metricLabel}: <span className="font-semibold" style={{ color: colorForPain(row.pain) }}>{row.pain}</span>/10
       </p>
     </div>
   );
@@ -147,8 +205,9 @@ export function PainTrendDialog({
 }) {
   const [range, setRange] = useState<Range>("all");
   const [monthly, setMonthly] = useState(false);
+  const [metric, setMetric] = useState<MetricOption>(METRIC_OPTIONS[0].options[0]);
 
-  const points = useMemo(() => derivePainTrendPoints(logs), [logs]);
+  const points = useMemo(() => derivePainTrendPoints(logs, metric), [logs, metric]);
   const filtered = useMemo(() => filterByRange(points, range), [points, range]);
   const rows = useMemo(
     () => (monthly ? aggregateMonthly(filtered) : toDailyRows(filtered)),
@@ -156,12 +215,14 @@ export function PainTrendDialog({
   );
 
   const manyTicks = rows.length > 8;
+  const yAxisLabel = metric.label.length > 16 ? `${metric.label.slice(0, 16)}…` : metric.label;
 
   return (
     <Dialog open={open} onOpenChange={onOpenChange}>
       <DialogContent className="sm:max-w-3xl">
         <DialogHeader>
           <DialogTitle>Schmerzverlauf</DialogTitle>
+          <p className="text-xs uppercase tracking-[0.2em] text-charcoal-soft">{metric.label}</p>
         </DialogHeader>
 
         <div className="flex flex-wrap items-center gap-2">
@@ -183,6 +244,30 @@ export function PainTrendDialog({
               </button>
             );
           })}
+          <Select
+            value={metric.value}
+            onValueChange={(v) => {
+              const found = METRIC_OPTIONS.flatMap((g) => g.options).find((o) => o.value === v);
+              if (found) setMetric(found);
+            }}
+          >
+            <SelectTrigger className="ml-auto h-8 w-[240px] text-xs">
+              <SelectValue />
+            </SelectTrigger>
+            <SelectContent>
+              {METRIC_OPTIONS.map((g, i) => (
+                <SelectGroup key={g.group}>
+                  {i > 0 && <SelectSeparator />}
+                  <SelectLabel>{g.group}</SelectLabel>
+                  {g.options.map((o) => (
+                    <SelectItem key={o.value} value={o.value}>
+                      {o.label}
+                    </SelectItem>
+                  ))}
+                </SelectGroup>
+              ))}
+            </SelectContent>
+          </Select>
         </div>
 
         <div className="flex items-center gap-3">
@@ -213,9 +298,9 @@ export function PainTrendDialog({
                   domain={[1, 10]}
                   ticks={[1, 2, 3, 4, 5, 6, 7, 8, 9, 10]}
                   tick={{ fontSize: 11 }}
-                  label={{ value: "Schmerz", angle: -90, position: "insideLeft", style: { fontSize: 11, fill: "var(--charcoal-soft)" } }}
+                  label={{ value: yAxisLabel, angle: -90, position: "insideLeft", style: { fontSize: 11, fill: "var(--charcoal-soft)" } }}
                 />
-                <Tooltip content={<CustomTooltip />} cursor={{ stroke: "var(--border, #e5e5e5)" }} />
+                <Tooltip content={<CustomTooltip metricLabel={metric.label} />} cursor={{ stroke: "var(--border, #e5e5e5)" }} />
                 <Line
                   type="monotone"
                   dataKey="pain"
