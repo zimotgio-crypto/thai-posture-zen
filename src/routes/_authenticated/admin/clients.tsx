@@ -1,56 +1,14 @@
 import { createFileRoute } from "@tanstack/react-router";
 import { useServerFn } from "@tanstack/react-start";
-import { useQuery, useQueryClient } from "@tanstack/react-query";
-import { useEffect, useState } from "react";
-import { Search, ChevronRight, Plus, Sparkles, Trash2, Target } from "lucide-react";
-import { addSessionLog, deleteClient, getClient, listClients, updateClient } from "@/lib/admin.functions";
+import { useQuery } from "@tanstack/react-query";
+import { useState } from "react";
+import { Search, ChevronRight, Plus } from "lucide-react";
+import { listClients } from "@/lib/admin.functions";
 import { Input } from "@/components/ui/input";
 import { Button } from "@/components/ui/button";
-import { Label } from "@/components/ui/label";
 import { AddClientDialog } from "@/components/admin/add-client-dialog";
-import { TiptapEditor } from "@/components/admin/tiptap-editor";
-import {
-  BodyMapEditor,
-  BodyMapThumbnail,
-  EMPTY_BODY_MAP,
-  parseBodyMap,
-} from "@/components/admin/body-map";
-import {
-  FindingsList,
-  MobilityEditor,
-  MOBILITY_LABELS,
-  PainBadge,
-  PainScale,
-  TensionEditor,
-  TENSION_LABELS,
-  parseRecord,
-  type MobilityState,
-  type TensionState,
-} from "@/components/admin/assessment";
-import { Sheet, SheetContent, SheetHeader, SheetTitle } from "@/components/ui/sheet";
-import {
-  AlertDialog,
-  AlertDialogAction,
-  AlertDialogCancel,
-  AlertDialogContent,
-  AlertDialogDescription,
-  AlertDialogFooter,
-  AlertDialogHeader,
-  AlertDialogTitle,
-} from "@/components/ui/alert-dialog";
-import { toast } from "sonner";
-import { formatDuration, formatSwissDate } from "@/lib/pricing";
-
-function formatBookingOption(b: {
-  day: string;
-  time: string;
-  treatment: string;
-  duration_minutes?: number | null;
-}) {
-  const time = b.time.slice(0, 5);
-  const dur = b.duration_minutes ? ` (${formatDuration(b.duration_minutes)})` : "";
-  return `${formatSwissDate(b.day)}, ${time} — ${b.treatment}${dur}`;
-}
+import { Sheet, SheetContent } from "@/components/ui/sheet";
+import { ClientProfileView } from "@/components/admin/client-profile-view";
 
 export const Route = createFileRoute("/_authenticated/admin/clients")({
   component: ClientsPage,
@@ -190,7 +148,11 @@ function ClientsPage() {
       <Sheet open={Boolean(selectedClient)} onOpenChange={(open) => !open && setSelectedClient(null)}>
         <SheetContent side="right" className="!w-[92vw] !max-w-none overflow-y-auto sm:!w-[760px]">
           {selectedClient && (
-            <ClientProfileSheet client={selectedClient} onClose={() => setSelectedClient(null)} />
+            <ClientProfileView
+              clientId={selectedClient.id}
+              fallback={selectedClient}
+              onDeleted={() => setSelectedClient(null)}
+            />
           )}
         </SheetContent>
       </Sheet>
