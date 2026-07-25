@@ -2,7 +2,62 @@ import { JWT } from "google-auth-library";
 
 const CALENDAR_ID = () => process.env.GOOGLE_CALENDAR_ID ?? "";
 const SA_EMAIL = () => process.env.GOOGLE_SERVICE_ACCOUNT_EMAIL ?? "";
-const SA_KEY = () => (process.env.GOOGLE_PRIVATE_KEY ?? "").replace(/\\n/g, "\n");
+const PEM_BEGIN = "-----BEGIN PRIVATE KEY-----";
+const PEM_END = "-----END PRIVATE KEY-----";
+
+function normalizePrivateKey(raw: string | undefined): string {
+  if (!raw) return "";
+  let value = raw.trim();
+  if (value.length >= 2) {
+    const first = value[0];
+    const last = value[value.length - 1];
+    if ((first === '"' && last === '"') || (first === "'" && last === "'")) {
+      value = value.slice(1, -1);
+    }
+  }
+  value = value.replace(/\\n/g, "\n");
+  if (!value.includes("\n")) {
+    const beginIdx = value.indexOf(PEM_BEGIN);
+    const endIdx = value.indexOf(PEM_END);
+    if (beginIdx !== -1 && endIdx !== -1) {
+      const body = value.slice(beginIdx + PEM_BEGIN.length, endIdx).replace(/\s+/g, "");
+      const wrapped = body.match(/.{1,64}/g)?.join("\n") ?? "";
+      value = `${PEM_BEGIN}\n${wrapped}\n${PEM_END}\n`;
+    }
+  }
+  if (!value.endsWith("\n")) value = `${value}\n`;
+  return value;
+}
+
+const SA_KEY = () => normalizePrivateKey(process.env.GOOGLE_PRIVATE_KEY);
+
+function describeKeyShape(): {
+  rawLength: number;
+  normalizedLength: number;
+  startsWithBeginMarker: boolean;
+  endsWithEndMarker: boolean;
+  newlineCount: number;
+  containsLiteralBackslashN: boolean;
+  hasSurroundingQuotes: boolean;
+} {
+  const raw = process.env.GOOGLE_PRIVATE_KEY ?? "";
+  const trimmed = raw.trim();
+  const hasSurroundingQuotes =
+    trimmed.length >= 2 &&
+    ((trimmed.startsWith('"') && trimmed.endsWith('"')) ||
+      (trimmed.startsWith("'") && trimmed.endsWith("'")));
+  const normalized = normalizePrivateKey(raw);
+  return {
+    rawLength: raw.length,
+    normalizedLength: normalized.length,
+    startsWithBeginMarker: normalized.startsWith(PEM_BEGIN),
+    endsWithEndMarker:
+      normalized.endsWith(PEM_END) || normalized.endsWith(`${PEM_END}\n`),
+    newlineCount: (normalized.match(/\n/g) ?? []).length,
+    containsLiteralBackslashN: /\\n/.test(raw),
+    hasSurroundingQuotes,
+  };
+}
 
 export function isGoogleConfigured(): boolean {
   return Boolean(CALENDAR_ID() && SA_EMAIL() && SA_KEY());
