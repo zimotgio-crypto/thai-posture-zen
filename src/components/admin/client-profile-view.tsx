@@ -2,7 +2,7 @@ import { useEffect, useMemo, useState } from "react";
 import { createPortal } from "react-dom";
 import { useServerFn } from "@tanstack/react-start";
 import { useQuery, useQueryClient } from "@tanstack/react-query";
-import { Pencil, Phone, Mail, MapPin, Sparkles, Target, Trash2, Printer, X } from "lucide-react";
+import { Pencil, Phone, Mail, MapPin, Sparkles, Target, Trash2, Printer, X, TrendingUp } from "lucide-react";
 import { addSessionLog, deleteClient, getClient, updateClient } from "@/lib/admin.functions";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
@@ -42,6 +42,7 @@ import {
   BehandlungsprotokollContent,
   BehandlungsprotokollPrintLayout,
 } from "@/components/admin/behandlungsprotokoll-print-layout";
+import { PainTrendDialog } from "@/components/admin/pain-trend-chart";
 import { toast } from "sonner";
 import { formatDuration, formatSwissDate } from "@/lib/pricing";
 
@@ -111,6 +112,10 @@ export function ClientProfileView({
     city: fallback?.city ?? "",
   });
   const [savingProfile, setSavingProfile] = useState(false);
+  const [showPainTrend, setShowPainTrend] = useState(false);
+  const hasPainData = logs.some(
+    (l) => (l as { pain_level?: number | null }).pain_level != null,
+  );
 
   useEffect(() => {
     if (q.data?.client) {
@@ -327,6 +332,18 @@ export function ClientProfileView({
         </TabsList>
 
         <TabsContent value="history" className="space-y-3">
+          {hasPainData && (
+            <div className="flex justify-end">
+              <button
+                type="button"
+                onClick={() => setShowPainTrend(true)}
+                className="inline-flex items-center gap-2 rounded-sm border border-border/60 px-3 py-2 text-[0.7rem] uppercase tracking-[0.2em] text-charcoal-soft transition-colors hover:border-gold-deep/60 hover:text-gold-deep"
+              >
+                <TrendingUp className="h-3.5 w-3.5" />
+                Schmerzverlauf anzeigen
+              </button>
+            </div>
+          )}
           {q.isLoading && (
             <p className="rounded-sm border border-dashed border-border/70 px-4 py-8 text-center text-sm text-charcoal-soft">
               Lade Verlauf…
@@ -520,6 +537,11 @@ export function ClientProfileView({
             document.body,
           )
         : null}
+      <PainTrendDialog
+        open={showPainTrend}
+        onOpenChange={setShowPainTrend}
+        logs={logs as never}
+      />
     </div>
   );
 }
