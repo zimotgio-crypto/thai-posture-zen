@@ -21,6 +21,9 @@ export const submitBooking = createServerFn({ method: "POST" })
   .inputValidator((data: unknown) => submitInput.parse(data))
   .handler(async ({ data }) => {
     const { supabaseAdmin } = await import("@/integrations/supabase/client.server");
+    const { getGoogleBusyIntervals, createGoogleEvent } = await import(
+      "@/lib/google-calendar.server"
+    );
     const BUFFER = 30;
 
     // Reject overlap using each booking's own duration (+30 min buffer).
@@ -40,18 +43,54 @@ export const submitBooking = createServerFn({ method: "POST" })
       return { ok: false as const, reason: "conflict" as const };
     }
 
+    // Also block against private Google Calendar events.
+    const gBusy = await getGoogleBusyIntervals(data.day);
+    const gConflict = gBusy.some((b) => {
+      const s = toMinutes(b.time);
+      const block = b.duration + BUFFER;
+      return requested < s + block && requested + newBlock > s;
+    });
+    if (gConflict) {
+      return { ok: false as const, reason: "conflict" as const };
+    }
+
     const client = await getOrCreateClient(supabaseAdmin, data);
 
-    const insert = await supabaseAdmin.from("bookings").insert({
-      client_id: client.id,
-      treatment: data.treatment,
-      day: data.day,
-      time: data.time,
-      duration_minutes: data.durationMinutes,
-      silent: data.silent,
-      source: "online",
-    });
+    const insert = await supabaseAdmin
+      .from("bookings")
+      .insert({
+        client_id: client.id,
+        treatment: data.treatment,
+        day: data.day,
+        time: data.time,
+        duration_minutes: data.durationMinutes,
+        silent: data.silent,
+        source: "online",
+      })
+      .select("id")
+      .single();
     if (insert.error) throw new Error(insert.error.message);
+
+    // Best-effort: mirror into Google Calendar. Never fail the booking.
+    try {
+      const eventId = await createGoogleEvent({
+        day: data.day,
+        time: data.time,
+        durationMinutes: data.durationMinutes,
+        treatment: data.treatment,
+        clientName: `${data.firstName} ${data.lastName}`.trim(),
+        clientPhone: data.phone,
+        source: "online",
+      });
+      if (eventId && insert.data?.id) {
+        await supabaseAdmin
+          .from("bookings")
+          .update({ google_event_id: eventId })
+          .eq("id", insert.data.id);
+      }
+    } catch (err) {
+      console.error("[submitBooking] google mirror failed", err);
+    }
 
     return { ok: true as const };
   });
@@ -66,15 +105,28 @@ export const listBookedTimes = createServerFn({ method: "GET" })
   .inputValidator((data: unknown) => listInput.parse(data))
   .handler(async ({ data }) => {
     const { supabaseAdmin } = await import("@/integrations/supabase/client.server");
+    const { getGoogleBusyIntervals } = await import(
+      "@/lib/google-calendar.server"
+    );
     const { data: rows, error } = await supabaseAdmin
       .from("bookings")
       .select("time, duration_minutes")
       .eq("day", data.day);
     if (error) throw new Error(error.message);
-    return (rows ?? []).map((r) => ({
+    const dbSlots = (rows ?? []).map((r) => ({
       time: r.time as string,
       duration: (r as { duration_minutes?: number | null }).duration_minutes ?? 60,
     }));
+    const gSlots = await getGoogleBusyIntervals(data.day);
+    const seen = new Set<string>();
+    const out: { time: string; duration: number }[] = [];
+    for (const s of [...dbSlots, ...gSlots]) {
+      const key = `${s.time}|${s.duration}`;
+      if (seen.has(key)) continue;
+      seen.add(key);
+      out.push(s);
+    }
+    return out;
   });
 
 function toMinutes(hhmm: string): number {
