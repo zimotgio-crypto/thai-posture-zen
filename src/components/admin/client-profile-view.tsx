@@ -499,7 +499,7 @@ export function ClientProfileView({
       </AlertDialog>
 
       <Dialog open={Boolean(openLog)} onOpenChange={(v) => !v && setOpenLogId(null)}>
-        <DialogContent className="sm:max-w-2xl max-h-[85vh] overflow-y-auto p-0 bg-transparent border-0 shadow-none">
+        <DialogContent className="sm:max-w-5xl max-h-[90vh] overflow-hidden p-0 bg-transparent border-0 shadow-none [&>button:last-child]:hidden">
           {openLog && (
             <SessionDocument
               log={openLog}
@@ -544,8 +544,8 @@ function SessionDocument({
   const map = parseBodyMap(log.body_map);
 
   return (
-    <div className="relative">
-      <div className="print-hide absolute -top-3 -right-3 z-10 flex items-center gap-2">
+    <div className="relative flex max-h-[90vh] flex-col">
+      <div className="print-hide sticky top-0 z-10 flex items-center gap-2 border-b border-border/60 bg-ivory/95 px-4 py-2 backdrop-blur">
         <button
           type="button"
           onClick={() => window.print()}
@@ -557,12 +557,13 @@ function SessionDocument({
           type="button"
           onClick={onClose}
           aria-label="Schliessen"
-          className="inline-flex h-8 w-8 items-center justify-center rounded-sm border border-border/60 bg-card text-charcoal-soft shadow-sm transition hover:text-charcoal"
+          className="ml-auto inline-flex h-8 w-8 items-center justify-center rounded-sm border border-border/60 bg-card text-charcoal-soft shadow-sm transition hover:text-charcoal"
         >
           <X className="h-4 w-4" />
         </button>
       </div>
 
+      <div className="overflow-y-auto max-h-[calc(90vh-3.5rem)]">
       <article
         className="print-area bg-ivory p-8 sm:p-10 shadow-[0_10px_40px_-15px_rgba(0,0,0,0.25)] border border-border/60"
       >
@@ -656,6 +657,7 @@ function SessionDocument({
           </div>
         </footer>
       </article>
+      </div>
     </div>
   );
 }
