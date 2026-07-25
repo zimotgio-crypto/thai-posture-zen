@@ -3,7 +3,7 @@ import { useServerFn } from "@tanstack/react-start";
 import { useQuery, useQueryClient } from "@tanstack/react-query";
 import { useMemo, useState } from "react";
 import { ChevronLeft, ChevronRight, Trash2, Volume2, VolumeX } from "lucide-react";
-import { listBookingsInRange, deleteBooking } from "@/lib/admin.functions";
+import { listBookingsInRange, deleteBooking, getGoogleCalendarStatus } from "@/lib/admin.functions";
 import { Link } from "@tanstack/react-router";
 import { cn } from "@/lib/utils";
 import { toast } from "sonner";
@@ -59,6 +59,12 @@ function CalendarPage() {
   const to = ymd(days[days.length - 1]);
 
   const listFn = useServerFn(listBookingsInRange);
+  const statusFn = useServerFn(getGoogleCalendarStatus);
+  const gStatus = useQuery({
+    queryKey: ["google-calendar-status"],
+    queryFn: () => statusFn(),
+    staleTime: 5 * 60 * 1000,
+  });
   const bookings = useQuery({
     queryKey: ["admin", "bookings", from, to],
     queryFn: () => listFn({ data: { from, to } }),
@@ -117,6 +123,18 @@ function CalendarPage() {
             <ChevronRight className="h-4 w-4" />
           </button>
           <h1 className="ml-2 font-serif text-2xl text-charcoal capitalize">{rangeLabel}</h1>
+          <span
+            className={cn(
+              "ml-2 rounded-sm border px-2 py-1 text-[0.65rem] uppercase tracking-[0.2em]",
+              gStatus.data?.configured
+                ? "border-gold/60 text-gold"
+                : "border-border/60 text-charcoal-soft"
+            )}
+          >
+            {gStatus.data?.configured
+              ? "Google Calendar verbunden"
+              : "Google Calendar nicht konfiguriert"}
+          </span>
         </div>
         <div className="inline-flex rounded-sm border border-border/60 bg-card p-1">
           {(["day", "week"] as const).map((v) => (
