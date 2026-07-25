@@ -207,3 +207,29 @@
     filter: brightness(1.05);
   }
 }
+
+@media print {
+  body * {
+    visibility: hidden !important;
+  }
+  .print-area,
+  .print-area * {
+    visibility: visible !important;
+  }
+  .print-area {
+    position: absolute !important;
+    inset: 0 !important;
+    width: 100% !important;
+    max-width: none !important;
+    max-height: none !important;
+    overflow: visible !important;
+    background: white !important;
+    box-shadow: none !important;
+    border: none !important;
+    padding: 24px !important;
+    margin: 0 !important;
+  }
+  .print-hide {
+    display: none !important;
+  }
+}
