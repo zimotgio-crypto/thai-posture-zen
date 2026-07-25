@@ -1,7 +1,6 @@
 import { JWT } from "google-auth-library";
 
 const CALENDAR_ID = () => process.env.GOOGLE_CALENDAR_ID ?? "";
-const SA_EMAIL = () => process.env.GOOGLE_SERVICE_ACCOUNT_EMAIL ?? "";
 const PEM_BEGIN = "-----BEGIN PRIVATE KEY-----";
 const PEM_END = "-----END PRIVATE KEY-----";
 
@@ -29,7 +28,39 @@ function normalizePrivateKey(raw: string | undefined): string {
   return value;
 }
 
-const SA_KEY = () => normalizePrivateKey(process.env.GOOGLE_PRIVATE_KEY);
+function parseServiceAccountJson(): { email: string; key: string } | null {
+  const raw = process.env.GOOGLE_SERVICE_ACCOUNT_JSON;
+  if (!raw) return null;
+  let value = raw.trim();
+  if (value.length >= 2) {
+    const first = value[0];
+    const last = value[value.length - 1];
+    if ((first === '"' && last === '"') || (first === "'" && last === "'")) {
+      value = value.slice(1, -1);
+    }
+  }
+  try {
+    const parsed = JSON.parse(value) as { client_email?: string; private_key?: string };
+    const email = parsed.client_email?.trim() ?? "";
+    const key = normalizePrivateKey(parsed.private_key);
+    if (!email || !key) return null;
+    return { email, key };
+  } catch {
+    return null;
+  }
+}
+
+function getCredentials(): { email: string; key: string } {
+  const fromJson = parseServiceAccountJson();
+  if (fromJson) return fromJson;
+  return {
+    email: process.env.GOOGLE_SERVICE_ACCOUNT_EMAIL ?? "",
+    key: normalizePrivateKey(process.env.GOOGLE_PRIVATE_KEY),
+  };
+}
+
+const SA_EMAIL = () => getCredentials().email;
+const SA_KEY = () => getCredentials().key;
 
 function describeKeyShape(): {
   rawLength: number;
@@ -39,14 +70,23 @@ function describeKeyShape(): {
   newlineCount: number;
   containsLiteralBackslashN: boolean;
   hasSurroundingQuotes: boolean;
+  source: "json" | "pem" | "none";
 } {
-  const raw = process.env.GOOGLE_PRIVATE_KEY ?? "";
+  const fromJson = parseServiceAccountJson();
+  const source: "json" | "pem" | "none" = fromJson
+    ? "json"
+    : process.env.GOOGLE_PRIVATE_KEY
+      ? "pem"
+      : "none";
+  const raw = fromJson
+    ? fromJson.key
+    : (process.env.GOOGLE_PRIVATE_KEY ?? "");
   const trimmed = raw.trim();
   const hasSurroundingQuotes =
     trimmed.length >= 2 &&
     ((trimmed.startsWith('"') && trimmed.endsWith('"')) ||
       (trimmed.startsWith("'") && trimmed.endsWith("'")));
-  const normalized = normalizePrivateKey(raw);
+  const normalized = fromJson ? fromJson.key : normalizePrivateKey(raw);
   return {
     rawLength: raw.length,
     normalizedLength: normalized.length,
@@ -54,8 +94,9 @@ function describeKeyShape(): {
     endsWithEndMarker:
       normalized.endsWith(PEM_END) || normalized.endsWith(`${PEM_END}\n`),
     newlineCount: (normalized.match(/\n/g) ?? []).length,
-    containsLiteralBackslashN: /\\n/.test(raw),
+    containsLiteralBackslashN: /\\n/.test(process.env.GOOGLE_PRIVATE_KEY ?? ""),
     hasSurroundingQuotes,
+    source,
   };
 }
 
