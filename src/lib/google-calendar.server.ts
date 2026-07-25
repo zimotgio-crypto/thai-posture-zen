@@ -169,6 +169,92 @@ function freeBusyRequestBody(day: string) {
   };
 }
 
+function freeBusyRangeRequestBody(from: string, to: string) {
+  const timeMin = new Date(`${from}T00:00:00Z`);
+  timeMin.setUTCHours(timeMin.getUTCHours() - 3);
+  const timeMax = new Date(`${to}T23:59:59Z`);
+  timeMax.setUTCHours(timeMax.getUTCHours() + 3);
+  return {
+    timeMin: timeMin.toISOString(),
+    timeMax: timeMax.toISOString(),
+    timeZone: "Europe/Zurich",
+    items: [{ id: CALENDAR_ID() }],
+  };
+}
+
+function deriveRangeIntervalsFromFreeBusy(
+  json: unknown,
+): { day: string; time: string; duration: number }[] {
+  if (!json || typeof json !== "object") return [];
+  const calendarId = CALENDAR_ID();
+  const root = json as {
+    calendars?: Record<string, { busy?: { start: string; end: string }[] }>;
+  };
+  const busy = root.calendars?.[calendarId]?.busy ?? [];
+  const fmt = new Intl.DateTimeFormat("de-CH", {
+    timeZone: "Europe/Zurich",
+    hour: "2-digit",
+    minute: "2-digit",
+    hour12: false,
+    year: "numeric",
+    month: "2-digit",
+    day: "2-digit",
+  });
+  const out: { day: string; time: string; duration: number }[] = [];
+  for (const b of busy) {
+    const start = new Date(b.start);
+    const end = new Date(b.end);
+    const parts = fmt.formatToParts(start);
+    const get = (t: string) => parts.find((p) => p.type === t)?.value ?? "";
+    const day = `${get("year")}-${get("month")}-${get("day")}`;
+    const hh = get("hour");
+    const mm = get("minute");
+    const duration = Math.max(
+      1,
+      Math.round((end.getTime() - start.getTime()) / 60000),
+    );
+    out.push({ day, time: `${hh}:${mm}`, duration });
+  }
+  return out;
+}
+
+export async function getGoogleBusyIntervalsInRange(
+  from: string,
+  to: string,
+): Promise<{ day: string; time: string; duration: number }[]> {
+  if (!isGoogleConfigured()) return [];
+  try {
+    const token = await getAuthToken();
+    if (!token) return [];
+    const res = await fetch("https://www.googleapis.com/calendar/v3/freeBusy", {
+      method: "POST",
+      headers: {
+        Authorization: `Bearer ${token}`,
+        "Content-Type": "application/json",
+      },
+      body: JSON.stringify(freeBusyRangeRequestBody(from, to)),
+      signal: AbortSignal.timeout(5000),
+    });
+    const text = await res.text().catch(() => "");
+    const json = parseJsonBody(text);
+    if (!res.ok) {
+      console.error(`[google-calendar] freeBusy range failed ${res.status}: ${text}`);
+      return [];
+    }
+    const calendarErrors = extractCalendarErrors(json);
+    if (calendarErrors) {
+      console.error("[google-calendar] freeBusy range calendar errors", {
+        calendarErrors,
+        rawResponse: json ?? text,
+      });
+    }
+    return deriveRangeIntervalsFromFreeBusy(json);
+  } catch (err) {
+    console.error("[google-calendar] freeBusy range error", normalizeException(err));
+    return [];
+  }
+}
+
 function parseJsonBody(text: string): JsonValue | null {
   try {
     return JSON.parse(text) as JsonValue;

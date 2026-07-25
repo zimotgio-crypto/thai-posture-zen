@@ -201,6 +201,22 @@ export const getGoogleCalendarStatus = createServerFn({ method: "GET" })
     return { configured: isGoogleConfigured() };
   });
 
+export const listGoogleBusyInRange = createServerFn({ method: "GET" })
+  .middleware([requireSupabaseAuth])
+  .inputValidator((data: unknown) => rangeInput.parse(data))
+  .handler(async ({ data, context }) => {
+    await assertAdmin(context.userId);
+    try {
+      const { getGoogleBusyIntervalsInRange } = await import(
+        "@/lib/google-calendar.server"
+      );
+      return await getGoogleBusyIntervalsInRange(data.from, data.to);
+    } catch (err) {
+      console.error("[listGoogleBusyInRange] failed", err);
+      return [];
+    }
+  });
+
 const debugGoogleInput = z.object({
   day: z.string().regex(/^\d{4}-\d{2}-\d{2}$/),
 });

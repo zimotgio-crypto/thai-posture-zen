@@ -3,7 +3,7 @@ import { useServerFn } from "@tanstack/react-start";
 import { useQuery, useQueryClient } from "@tanstack/react-query";
 import { useMemo, useState } from "react";
 import { ChevronLeft, ChevronRight, Trash2, Volume2, VolumeX } from "lucide-react";
-import { listBookingsInRange, deleteBooking, getGoogleCalendarStatus, debugGoogleCalendar } from "@/lib/admin.functions";
+import { listBookingsInRange, deleteBooking, getGoogleCalendarStatus, debugGoogleCalendar, listGoogleBusyInRange } from "@/lib/admin.functions";
 import { Link } from "@tanstack/react-router";
 import { cn } from "@/lib/utils";
 import { toast } from "sonner";
@@ -68,6 +68,7 @@ function CalendarPage() {
   const listFn = useServerFn(listBookingsInRange);
   const statusFn = useServerFn(getGoogleCalendarStatus);
   const debugFn = useServerFn(debugGoogleCalendar);
+  const gBusyFn = useServerFn(listGoogleBusyInRange);
   const gStatus = useQuery({
     queryKey: ["google-calendar-status"],
     queryFn: () => statusFn(),
@@ -76,6 +77,11 @@ function CalendarPage() {
   const bookings = useQuery({
     queryKey: ["admin", "bookings", from, to],
     queryFn: () => listFn({ data: { from, to } }),
+  });
+  const gBusy = useQuery({
+    queryKey: ["admin", "google-busy", from, to],
+    queryFn: () => gBusyFn({ data: { from, to } }),
+    enabled: gStatus.data?.configured === true,
   });
 
   const del = useServerFn(deleteBooking);
@@ -267,7 +273,8 @@ function CalendarPage() {
                   const [hh, mm] = (b.time as string).split(":").map(Number);
                   const start = hh * 60 + mm;
                   const top = ((start - OPEN_MIN) / ROW_MIN) * ROW_PX;
-                  const height = (90 / ROW_MIN) * ROW_PX - 4;
+                  const dur = (b as { duration_minutes?: number | null }).duration_minutes ?? 60;
+                  const height = (dur / ROW_MIN) * ROW_PX - 4;
                   const isBlock = b.source === "block";
                   const client = (b as unknown as { clients?: { id: string; first_name: string; last_name: string; phone: string } }).clients;
                   return (
@@ -311,10 +318,48 @@ function CalendarPage() {
                     </div>
                   );
                 })}
+                {(gBusy.data ?? [])
+                  .filter((g) => g.day === dayKey)
+                  .filter(
+                    (g) => !dayBookings.some((b) => (b.time as string) === g.time),
+                  )
+                  .map((g, idx) => {
+                    const [hh, mm] = g.time.split(":").map(Number);
+                    const start = hh * 60 + mm;
+                    const top = ((start - OPEN_MIN) / ROW_MIN) * ROW_PX;
+                    const height = (g.duration / ROW_MIN) * ROW_PX - 4;
+                    return (
+                      <div
+                        key={`gbusy-${dayKey}-${idx}`}
+                        style={{ top: top + 2, height, left: 4, right: 4 }}
+                        className="absolute rounded-sm border border-charcoal/30 bg-charcoal/5 p-2 text-[0.72rem] leading-tight text-charcoal-soft overflow-hidden"
+                      >
+                        <div className="font-medium">{g.time}</div>
+                        <div className="mt-0.5 uppercase text-[0.6rem] tracking-widest">
+                          Privat – belegt
+                        </div>
+                      </div>
+                    );
+                  })}
               </div>
             );
           })}
         </div>
+      </div>
+
+      <div className="mt-4 flex flex-wrap items-center gap-4 text-[0.65rem] uppercase tracking-[0.22em] text-charcoal-soft">
+        <span className="inline-flex items-center gap-2">
+          <span className="inline-block h-3 w-3 rounded-sm border border-gold bg-gold-soft/70" />
+          Buchung
+        </span>
+        <span className="inline-flex items-center gap-2">
+          <span className="inline-block h-3 w-3 rounded-sm border border-charcoal/30 bg-charcoal/5" />
+          Privater Google-Termin
+        </span>
+        <span className="inline-flex items-center gap-2">
+          <span className="inline-block h-3 w-3 rounded-sm border border-charcoal/40 bg-charcoal/10" />
+          Manuell blockiert
+        </span>
       </div>
 
       {bookings.isError && (
