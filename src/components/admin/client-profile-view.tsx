@@ -499,7 +499,7 @@ export function ClientProfileView({
       </AlertDialog>
 
       <Dialog open={Boolean(openLog)} onOpenChange={(v) => !v && setOpenLogId(null)}>
-        <DialogContent className="sm:max-w-2xl max-h-[85vh] overflow-y-auto p-0 bg-transparent border-0 shadow-none">
+        <DialogContent className="sm:max-w-5xl max-h-[90vh] overflow-hidden p-0 bg-transparent border-0 shadow-none [&>button:last-child]:hidden">
           {openLog && (
             <SessionDocument
               log={openLog}
