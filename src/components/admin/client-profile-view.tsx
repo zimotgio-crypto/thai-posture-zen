@@ -27,16 +27,15 @@ import {
   type BodyMapState,
 } from "@/components/admin/body-map";
 import {
-  FindingsList,
-  MobilityEditor,
-  MOBILITY_LABELS,
   PainBadge,
-  PainScale,
-  TensionEditor,
-  TENSION_LABELS,
-  parseRecord,
-  type MobilityState,
-  type TensionState,
+  ZoneScaleGrid,
+  ZoneScoreBadgeGrid,
+  parseZoneScores,
+  initialZoneScores,
+  TENSION_ZONES,
+  MOBILITY_ZONES,
+  TENSION_ZONES_LIST,
+  MOBILITY_ZONES_LIST,
 } from "@/components/admin/assessment";
 import { toast } from "sonner";
 import { formatDuration, formatSwissDate } from "@/lib/pricing";
@@ -126,9 +125,12 @@ export function ClientProfileView({
   const [bodyHtml, setBodyHtml] = useState("");
   const [linkBookingId, setLinkBookingId] = useState("");
   const [bodyMap, setBodyMap] = useState<BodyMapState>(EMPTY_BODY_MAP);
-  const [painLevel, setPainLevel] = useState<number | null>(null);
-  const [mobility, setMobility] = useState<MobilityState>({});
-  const [tension, setTension] = useState<TensionState>({});
+  const [tensionZones, setTensionZones] = useState<Record<string, number>>(() =>
+    initialZoneScores(TENSION_ZONES_LIST),
+  );
+  const [mobilityZones, setMobilityZones] = useState<Record<string, number>>(() =>
+    initialZoneScores(MOBILITY_ZONES_LIST),
+  );
   const [busy, setBusy] = useState(false);
 
   const [confirmDelete, setConfirmDelete] = useState(false);
@@ -160,18 +162,16 @@ export function ClientProfileView({
           treatmentName: null,
           durationMinutes: null,
           bodyMap,
-          painLevel,
-          mobility,
-          tension,
+          tensionZones,
+          mobilityZones,
         },
       });
       toast.success("Notiz gespeichert");
       setBodyHtml("");
       setLinkBookingId("");
       setBodyMap(EMPTY_BODY_MAP);
-      setPainLevel(null);
-      setMobility({});
-      setTension({});
+      setTensionZones(initialZoneScores(TENSION_ZONES_LIST));
+      setMobilityZones(initialZoneScores(MOBILITY_ZONES_LIST));
       qc.invalidateQueries({ queryKey: ["admin", "client", clientId] });
     } catch (err) {
       toast.error(err instanceof Error ? err.message : "Fehler");
