@@ -2,7 +2,7 @@ import { useEffect, useMemo, useState } from "react";
 import { createPortal } from "react-dom";
 import { useServerFn } from "@tanstack/react-start";
 import { useQuery, useQueryClient } from "@tanstack/react-query";
-import { Pencil, Phone, Mail, MapPin, Sparkles, Target, Trash2, Printer, X } from "lucide-react";
+import { Pencil, Phone, Mail, MapPin, Sparkles, Target, Trash2, Printer, X, TrendingUp } from "lucide-react";
 import { addSessionLog, deleteClient, getClient, updateClient } from "@/lib/admin.functions";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
@@ -42,6 +42,7 @@ import {
   BehandlungsprotokollContent,
   BehandlungsprotokollPrintLayout,
 } from "@/components/admin/behandlungsprotokoll-print-layout";
+import { PainTrendDialog } from "@/components/admin/pain-trend-chart";
 import { toast } from "sonner";
 import { formatDuration, formatSwissDate } from "@/lib/pricing";
 
