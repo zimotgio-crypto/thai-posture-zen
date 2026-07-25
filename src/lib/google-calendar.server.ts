@@ -49,6 +49,80 @@ type CreateInput = {
   source: "online" | "manual" | "block";
 };
 
+type GoogleException = { message: string; stack?: string };
+
+function normalizeException(err: unknown): GoogleException {
+  if (err instanceof Error) {
+    return { message: err.message, stack: err.stack };
+  }
+  return { message: String(err) };
+}
+
+function freeBusyRequestBody(day: string) {
+  // Generous UTC window that safely covers the full Zurich day regardless of DST.
+  const timeMin = new Date(`${day}T00:00:00Z`);
+  timeMin.setUTCHours(timeMin.getUTCHours() - 3);
+  const timeMax = new Date(`${day}T23:59:59Z`);
+  timeMax.setUTCHours(timeMax.getUTCHours() + 3);
+  return {
+    timeMin: timeMin.toISOString(),
+    timeMax: timeMax.toISOString(),
+    timeZone: "Europe/Zurich",
+    items: [{ id: CALENDAR_ID() }],
+  };
+}
+
+function parseJsonBody(text: string): unknown | null {
+  try {
+    return JSON.parse(text) as unknown;
+  } catch {
+    return null;
+  }
+}
+
+function deriveIntervalsFromFreeBusy(
+  day: string,
+  json: unknown,
+): { time: string; duration: number }[] {
+  const calendarId = CALENDAR_ID();
+  const root = json as {
+    calendars?: Record<string, { busy?: { start: string; end: string }[] }>;
+  };
+  const busy = root.calendars?.[calendarId]?.busy ?? [];
+  const fmt = new Intl.DateTimeFormat("de-CH", {
+    timeZone: "Europe/Zurich",
+    hour: "2-digit",
+    minute: "2-digit",
+    hour12: false,
+    year: "numeric",
+    month: "2-digit",
+    day: "2-digit",
+  });
+  const out: { time: string; duration: number }[] = [];
+  for (const b of busy) {
+    const start = new Date(b.start);
+    const end = new Date(b.end);
+    const parts = fmt.formatToParts(start);
+    const get = (t: string) => parts.find((p) => p.type === t)?.value ?? "";
+    const localDay = `${get("year")}-${get("month")}-${get("day")}`;
+    if (localDay !== day) continue;
+    const hh = get("hour");
+    const mm = get("minute");
+    const duration = Math.max(
+      1,
+      Math.round((end.getTime() - start.getTime()) / 60000),
+    );
+    out.push({ time: `${hh}:${mm}`, duration });
+  }
+  return out;
+}
+
+function extractCalendarErrors(json: unknown): unknown {
+  const calendarId = CALENDAR_ID();
+  const root = json as { calendars?: Record<string, { errors?: unknown }> };
+  return root.calendars?.[calendarId]?.errors ?? null;
+}
+
 export async function createGoogleEvent(input: CreateInput): Promise<string | null> {
   if (!isGoogleConfigured()) return null;
   try {
@@ -84,7 +158,7 @@ export async function createGoogleEvent(input: CreateInput): Promise<string | nu
     const json = (await res.json()) as { id?: string };
     return json.id ?? null;
   } catch (err) {
-    console.error("[google-calendar] createEvent error", err);
+    console.error("[google-calendar] createEvent error", normalizeException(err));
     return null;
   }
 }
@@ -105,7 +179,7 @@ export async function deleteGoogleEvent(eventId: string): Promise<void> {
       console.error(`[google-calendar] deleteEvent failed ${res.status}: ${text}`);
     }
   } catch (err) {
-    console.error("[google-calendar] deleteEvent error", err);
+    console.error("[google-calendar] deleteEvent error", normalizeException(err));
   }
 }
 
@@ -116,63 +190,104 @@ export async function getGoogleBusyIntervals(
   try {
     const token = await getAuthToken();
     if (!token) return [];
-    // Generous UTC window that safely covers the full Zurich day regardless of DST.
-    const timeMin = new Date(`${day}T00:00:00Z`);
-    timeMin.setUTCHours(timeMin.getUTCHours() - 3);
-    const timeMax = new Date(`${day}T23:59:59Z`);
-    timeMax.setUTCHours(timeMax.getUTCHours() + 3);
     const res = await fetch("https://www.googleapis.com/calendar/v3/freeBusy", {
       method: "POST",
       headers: {
         Authorization: `Bearer ${token}`,
         "Content-Type": "application/json",
       },
-      body: JSON.stringify({
-        timeMin: timeMin.toISOString(),
-        timeMax: timeMax.toISOString(),
-        timeZone: "Europe/Zurich",
-        items: [{ id: CALENDAR_ID() }],
-      }),
+      body: JSON.stringify(freeBusyRequestBody(day)),
       signal: AbortSignal.timeout(5000),
     });
+    const text = await res.text().catch(() => "");
+    const json = parseJsonBody(text);
     if (!res.ok) {
-      const text = await res.text().catch(() => "");
       console.error(`[google-calendar] freeBusy failed ${res.status}: ${text}`);
       return [];
     }
-    const json = (await res.json()) as {
-      calendars?: Record<string, { busy?: { start: string; end: string }[] }>;
-    };
-    const busy =
-      json.calendars?.[CALENDAR_ID()]?.busy ?? [];
-    const fmt = new Intl.DateTimeFormat("de-CH", {
-      timeZone: "Europe/Zurich",
-      hour: "2-digit",
-      minute: "2-digit",
-      hour12: false,
-      year: "numeric",
-      month: "2-digit",
-      day: "2-digit",
-    });
-    const out: { time: string; duration: number }[] = [];
-    for (const b of busy) {
-      const start = new Date(b.start);
-      const end = new Date(b.end);
-      const parts = fmt.formatToParts(start);
-      const get = (t: string) => parts.find((p) => p.type === t)?.value ?? "";
-      const localDay = `${get("year")}-${get("month")}-${get("day")}`;
-      if (localDay !== day) continue;
-      const hh = get("hour");
-      const mm = get("minute");
-      const duration = Math.max(
-        1,
-        Math.round((end.getTime() - start.getTime()) / 60000),
-      );
-      out.push({ time: `${hh}:${mm}`, duration });
+    const calendarErrors = extractCalendarErrors(json);
+    if (calendarErrors) {
+      console.error("[google-calendar] freeBusy calendar errors", {
+        calendarErrors,
+        rawResponse: json ?? text,
+      });
     }
-    return out;
+    return deriveIntervalsFromFreeBusy(day, json);
   } catch (err) {
-    console.error("[google-calendar] freeBusy error", err);
+    console.error("[google-calendar] freeBusy error", normalizeException(err));
     return [];
   }
+}
+
+export async function debugGoogleCalendarDay(day: string): Promise<{
+  configured: boolean;
+  accessTokenOk: boolean;
+  freeBusyRaw: {
+    ok: boolean;
+    status: number;
+    statusText: string;
+    bodyText: string;
+    bodyJson: unknown | null;
+  } | null;
+  derivedIntervals: { time: string; duration: number }[];
+  exceptions: GoogleException[];
+}> {
+  const exceptions: GoogleException[] = [];
+  const configured = isGoogleConfigured();
+  let accessTokenOk = false;
+  let freeBusyRaw: {
+    ok: boolean;
+    status: number;
+    statusText: string;
+    bodyText: string;
+    bodyJson: unknown | null;
+  } | null = null;
+  let derivedIntervals: { time: string; duration: number }[] = [];
+
+  try {
+    const token = await getAuthToken();
+    accessTokenOk = Boolean(token);
+    if (!token) {
+      return { configured, accessTokenOk, freeBusyRaw, derivedIntervals, exceptions };
+    }
+
+    const res = await fetch("https://www.googleapis.com/calendar/v3/freeBusy", {
+      method: "POST",
+      headers: {
+        Authorization: `Bearer ${token}`,
+        "Content-Type": "application/json",
+      },
+      body: JSON.stringify(freeBusyRequestBody(day)),
+      signal: AbortSignal.timeout(5000),
+    });
+    const bodyText = await res.text();
+    const bodyJson = parseJsonBody(bodyText);
+    freeBusyRaw = {
+      ok: res.ok,
+      status: res.status,
+      statusText: res.statusText,
+      bodyText,
+      bodyJson,
+    };
+
+    if (!res.ok) {
+      console.error(`[google-calendar] debug freeBusy failed ${res.status}: ${bodyText}`);
+    }
+    const calendarErrors = extractCalendarErrors(bodyJson);
+    if (calendarErrors) {
+      console.error("[google-calendar] debug freeBusy calendar errors", {
+        calendarErrors,
+        rawResponse: bodyJson ?? bodyText,
+      });
+    }
+    if (res.ok && bodyJson) {
+      derivedIntervals = deriveIntervalsFromFreeBusy(day, bodyJson);
+    }
+  } catch (err) {
+    const normalized = normalizeException(err);
+    exceptions.push(normalized);
+    console.error("[google-calendar] debug freeBusy exception", normalized);
+  }
+
+  return { configured, accessTokenOk, freeBusyRaw, derivedIntervals, exceptions };
 }

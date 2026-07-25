@@ -104,29 +104,8 @@ const listInput = z.object({
 export const listBookedTimes = createServerFn({ method: "GET" })
   .inputValidator((data: unknown) => listInput.parse(data))
   .handler(async ({ data }) => {
-    const { supabaseAdmin } = await import("@/integrations/supabase/client.server");
-    const { getGoogleBusyIntervals } = await import(
-      "@/lib/google-calendar.server"
-    );
-    const { data: rows, error } = await supabaseAdmin
-      .from("bookings")
-      .select("time, duration_minutes")
-      .eq("day", data.day);
-    if (error) throw new Error(error.message);
-    const dbSlots = (rows ?? []).map((r) => ({
-      time: r.time as string,
-      duration: (r as { duration_minutes?: number | null }).duration_minutes ?? 60,
-    }));
-    const gSlots = await getGoogleBusyIntervals(data.day);
-    const seen = new Set<string>();
-    const out: { time: string; duration: number }[] = [];
-    for (const s of [...dbSlots, ...gSlots]) {
-      const key = `${s.time}|${s.duration}`;
-      if (seen.has(key)) continue;
-      seen.add(key);
-      out.push(s);
-    }
-    return out;
+    const { listBookedTimesForDay } = await import("@/lib/booking-availability.server");
+    return listBookedTimesForDay(data.day);
   });
 
 function toMinutes(hhmm: string): number {
