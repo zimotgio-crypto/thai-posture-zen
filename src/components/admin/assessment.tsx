@@ -68,15 +68,18 @@ export function ZoneScaleGrid({
         <span>{leftHint}</span>
         <span>{rightHint}</span>
       </div>
-      <div className="grid grid-cols-1 gap-x-6 gap-y-3 md:grid-cols-2">
+      <div className="grid grid-cols-1 gap-x-8 gap-y-5 md:grid-cols-2">
         {zones.map((z) => {
           const current = value[z.key] ?? 1;
           return (
-            <div key={z.key} className="flex items-center gap-3">
-              <div className="w-[40%] shrink-0 truncate text-xs text-charcoal" title={z.label}>
+            <div key={z.key} className="flex flex-col gap-2">
+              <div
+                className="whitespace-nowrap text-[0.7rem] font-medium uppercase tracking-[0.14em] text-charcoal"
+                title={z.label}
+              >
                 {z.label}
               </div>
-              <div className="flex flex-1 items-center gap-1">
+              <div className="flex flex-nowrap items-center gap-1.5">
                 {Array.from({ length: 10 }, (_, i) => i + 1).map((n) => {
                   const active = current === n;
                   return (
@@ -87,7 +90,7 @@ export function ZoneScaleGrid({
                       aria-pressed={active}
                       aria-label={`${z.label}: ${n}`}
                       className={cn(
-                        "h-6 w-6 rounded-sm border text-[0.65rem] font-medium transition",
+                        "h-8 w-8 shrink-0 rounded-sm border text-[0.72rem] font-medium transition",
                         active
                           ? "text-white border-transparent shadow-sm"
                           : "text-charcoal border-border/60 bg-card hover:border-gold-deep/50",
