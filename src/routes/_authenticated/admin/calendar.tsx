@@ -433,7 +433,7 @@ function BookingDetailsDialog({
   onDelete,
 }: {
   booking: BookingRow | null;
-  treatments: { id: string; label: string }[];
+  treatments: ReadonlyArray<{ id: string; label: string }>;
   onClose: () => void;
   onDelete: (id: string) => void | Promise<void>;
 }) {
