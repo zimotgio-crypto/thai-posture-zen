@@ -142,6 +142,15 @@ export function BodyMapThumbnail({ value }: { value: BodyMapState }) {
   );
 }
 
+export function BodyMapView({ value }: { value: BodyMapState }) {
+  return (
+    <div className="grid grid-cols-2 gap-4">
+      <BodyOutline view="front" label="Front" points={value.front} />
+      <BodyOutline view="back" label="Back" points={value.back} />
+    </div>
+  );
+}
+
 export function parseBodyMap(raw: unknown): BodyMapState {
   if (!raw || typeof raw !== "object") return EMPTY_BODY_MAP;
   const r = raw as { front?: unknown; back?: unknown };
