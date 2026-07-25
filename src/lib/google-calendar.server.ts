@@ -325,6 +325,7 @@ export async function createGoogleEvent(input: CreateInput): Promise<string | nu
         dateTime: addMinutesIso(input.day, input.time, input.durationMinutes),
         timeZone: "Europe/Zurich",
       },
+      colorId: input.source === "block" ? "8" : "5",
     };
     const res = await fetch(url, {
       method: "POST",
