@@ -2,7 +2,7 @@ import { useEffect, useMemo, useState } from "react";
 import { createPortal } from "react-dom";
 import { useServerFn } from "@tanstack/react-start";
 import { useQuery, useQueryClient } from "@tanstack/react-query";
-import { Pencil, Sparkles, Target, Trash2, Printer, X } from "lucide-react";
+import { Pencil, Phone, Mail, MapPin, Sparkles, Target, Trash2, Printer, X } from "lucide-react";
 import { addSessionLog, deleteClient, getClient, updateClient } from "@/lib/admin.functions";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
@@ -22,14 +22,19 @@ import {
 import { TiptapEditor } from "@/components/admin/tiptap-editor";
 import {
   BodyMapEditor,
+  BodyMapView,
   EMPTY_BODY_MAP,
+  parseBodyMap,
   type BodyMapState,
 } from "@/components/admin/body-map";
 import {
   PainBadge,
   ZoneScaleGrid,
+  ZoneScoreBadgeGrid,
   parseZoneScores,
   initialZoneScores,
+  TENSION_ZONES,
+  MOBILITY_ZONES,
   TENSION_ZONES_LIST,
   MOBILITY_ZONES_LIST,
 } from "@/components/admin/assessment";
@@ -38,6 +43,7 @@ import {
   BehandlungsprotokollPrintLayout,
 } from "@/components/admin/behandlungsprotokoll-print-layout";
 import { toast } from "sonner";
+import { formatDuration, formatSwissDate } from "@/lib/pricing";
 
 type ClientLike = {
   id: string;
