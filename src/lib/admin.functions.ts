@@ -98,7 +98,10 @@ export const addBooking = createServerFn({ method: "POST" })
   .inputValidator((data: unknown) => addBookingInput.parse(data))
   .handler(async ({ data, context }) => {
     const admin = await assertAdmin(context.userId);
+    const { createGoogleEvent } = await import("@/lib/google-calendar.server");
     let clientId: string | null = data.clientId ?? null;
+    let clientName = "";
+    let clientPhone: string | null = null;
     if (data.block) {
       clientId = null;
     } else if (!clientId) {
@@ -115,17 +118,54 @@ export const addBooking = createServerFn({ method: "POST" })
         city: data.city,
       });
       clientId = client.id;
+      clientName = `${data.firstName} ${data.lastName}`.trim();
+      clientPhone = data.phone;
     }
-    const insert = await admin.from("bookings").insert({
-      client_id: clientId,
-      treatment: data.block ? "Blockiert" : data.treatment,
-      day: data.day,
-      time: data.time,
-      duration_minutes: data.durationMinutes,
-      silent: data.silent,
-      source: data.block ? "block" : "manual",
-    });
+    if (clientId && !clientName) {
+      const { data: c } = await admin
+        .from("clients")
+        .select("first_name, last_name, phone")
+        .eq("id", clientId)
+        .maybeSingle();
+      if (c) {
+        clientName = `${c.first_name} ${c.last_name}`.trim();
+        clientPhone = c.phone;
+      }
+    }
+    const source = data.block ? ("block" as const) : ("manual" as const);
+    const insert = await admin
+      .from("bookings")
+      .insert({
+        client_id: clientId,
+        treatment: data.block ? "Blockiert" : data.treatment,
+        day: data.day,
+        time: data.time,
+        duration_minutes: data.durationMinutes,
+        silent: data.silent,
+        source,
+      })
+      .select("id")
+      .single();
     if (insert.error) throw new Error(insert.error.message);
+    try {
+      const eventId = await createGoogleEvent({
+        day: data.day,
+        time: data.time,
+        durationMinutes: data.durationMinutes,
+        treatment: data.block ? "Blockiert" : data.treatment,
+        clientName,
+        clientPhone,
+        source,
+      });
+      if (eventId && insert.data?.id) {
+        await admin
+          .from("bookings")
+          .update({ google_event_id: eventId })
+          .eq("id", insert.data.id);
+      }
+    } catch (err) {
+      console.error("[addBooking] google mirror failed", err);
+    }
     return { ok: true as const };
   });
 
@@ -135,9 +175,30 @@ export const deleteBooking = createServerFn({ method: "POST" })
   .inputValidator((data: unknown) => deleteBookingInput.parse(data))
   .handler(async ({ data, context }) => {
     const admin = await assertAdmin(context.userId);
+    const { deleteGoogleEvent } = await import("@/lib/google-calendar.server");
+    const { data: row } = await admin
+      .from("bookings")
+      .select("google_event_id")
+      .eq("id", data.id)
+      .maybeSingle();
+    if (row?.google_event_id) {
+      try {
+        await deleteGoogleEvent(row.google_event_id);
+      } catch (err) {
+        console.error("[deleteBooking] google delete failed", err);
+      }
+    }
     const { error } = await admin.from("bookings").delete().eq("id", data.id);
     if (error) throw new Error(error.message);
     return { ok: true as const };
+  });
+
+export const getGoogleCalendarStatus = createServerFn({ method: "GET" })
+  .middleware([requireSupabaseAuth])
+  .handler(async ({ context }) => {
+    await assertAdmin(context.userId);
+    const { isGoogleConfigured } = await import("@/lib/google-calendar.server");
+    return { configured: isGoogleConfigured() };
   });
 
 const listClientsInput = z.object({ q: z.string().trim().max(120).optional() });
