@@ -186,6 +186,9 @@ export const translations = {
       success: "Termin-Anfrage gesendet",
       weekdays: ["So", "Mo", "Di", "Mi", "Do", "Fr", "Sa"],
       locale: "de-CH",
+      selected: "Ausgewählt",
+      durationLabel: "Dauer",
+      timeUnit: "Uhr",
       treatments: [
         { id: "deep-release", label: "Home-Office Deep Release", meta: "" },
         { id: "thai-stretch-oil", label: "Traditional Thai Stretch · Mit Öl", meta: "" },
@@ -376,6 +379,9 @@ export const translations = {
       success: "Appointment request sent",
       weekdays: ["Sun", "Mon", "Tue", "Wed", "Thu", "Fri", "Sat"],
       locale: "en-GB",
+      selected: "Selected",
+      durationLabel: "Duration",
+      timeUnit: "",
       treatments: [
         { id: "deep-release", label: "Home-Office Deep Release", meta: "" },
         { id: "thai-stretch-oil", label: "Traditional Thai Stretch · With oil", meta: "" },

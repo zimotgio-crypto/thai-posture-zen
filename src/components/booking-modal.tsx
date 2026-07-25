@@ -10,14 +10,7 @@ import { Check, Sparkles, ChevronLeft, ChevronRight } from "lucide-react";
 import { toast } from "sonner";
 import { cn } from "@/lib/utils";
 import { useT } from "@/lib/i18n";
-import { optionsForTreatment, priceForTreatment, BUFFER_MIN } from "@/lib/pricing";
-import {
-  Select,
-  SelectTrigger,
-  SelectValue,
-  SelectContent,
-  SelectItem,
-} from "@/components/ui/select";
+import { optionsForTreatment, priceForTreatment, BUFFER_MIN, formatDuration } from "@/lib/pricing";
 
 function ymd(d: Date) {
   const y = d.getFullYear();
@@ -492,35 +485,51 @@ export function BookingModal({
                 {t.booking.noSlots}
               </p>
             ) : (
-              <Select
-                value={time ?? undefined}
-                onValueChange={(v) => {
-                  setTime(v);
-                  setTimeError(false);
-                }}
-              >
-                <SelectTrigger
+              <>
+                <div
                   className={cn(
-                    "w-full rounded-sm",
-                    timeError && "border-destructive focus:ring-destructive"
+                    "max-h-64 overflow-y-auto rounded-sm border p-2",
+                    timeError ? "border-destructive" : "border-border/70"
                   )}
                 >
-                  <SelectValue placeholder="Uhrzeit wählen" />
-                </SelectTrigger>
-                <SelectContent className="max-h-72">
-                  {slots
-                    .filter((s) => !s.disabled)
-                    .map((s) => {
-                      const [hh, mm] = s.time.split(":").map(Number);
-                      const end = hh * 60 + mm + durationMin;
-                      return (
-                        <SelectItem key={s.time} value={s.time}>
-                          {s.time} – {fmt(end)}
-                        </SelectItem>
-                      );
-                    })}
-                </SelectContent>
-              </Select>
+                  <div className="grid grid-cols-3 gap-2 sm:grid-cols-4">
+                    {slots
+                      .filter((s) => !s.disabled)
+                      .map((s) => {
+                        const isSelected = time === s.time;
+                        return (
+                          <button
+                            key={s.time}
+                            type="button"
+                            aria-pressed={isSelected}
+                            onClick={() => {
+                              setTime(s.time);
+                              setTimeError(false);
+                            }}
+                            className={cn(
+                              "rounded-sm border px-2 py-2 text-sm transition-colors",
+                              isSelected
+                                ? "border-gold bg-gold text-primary-foreground"
+                                : "border-border hover:border-gold/60"
+                            )}
+                          >
+                            {s.time}
+                          </button>
+                        );
+                      })}
+                  </div>
+                </div>
+                {time && (() => {
+                  const [hh, mm] = time.split(":").map(Number);
+                  const end = fmt(hh * 60 + mm + durationMin);
+                  const unit = t.booking.timeUnit ? ` ${t.booking.timeUnit}` : "";
+                  return (
+                    <p className="rounded-sm border border-gold/40 bg-gold-soft/20 px-4 py-2.5 text-sm text-charcoal">
+                      {t.booking.selected}: {time} – {end}{unit} ({t.booking.durationLabel}: {formatDuration(durationMin)})
+                    </p>
+                  );
+                })()}
+              </>
             )}
           </section>
 
