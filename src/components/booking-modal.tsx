@@ -10,7 +10,14 @@ import { Check, Sparkles, ChevronLeft, ChevronRight } from "lucide-react";
 import { toast } from "sonner";
 import { cn } from "@/lib/utils";
 import { useT } from "@/lib/i18n";
-import { optionsForTreatment, priceForTreatment } from "@/lib/pricing";
+import { optionsForTreatment, priceForTreatment, BUFFER_MIN } from "@/lib/pricing";
+import {
+  Select,
+  SelectTrigger,
+  SelectValue,
+  SelectContent,
+  SelectItem,
+} from "@/components/ui/select";
 
 function ymd(d: Date) {
   const y = d.getFullYear();
@@ -53,8 +60,7 @@ const HOURS: ({ open: number; close: number } | null)[] = [
   { open: 10 * 60, close: 18 * 60 }, // Sat
 ];
 
-const SLOT_STEP = 30;          // minutes between start times
-const BUFFER_MIN = 30;         // clean-up / prep buffer
+const SLOT_STEP = 15;          // minutes between start times
 
 function fmt(min: number) {
   const h = Math.floor(min / 60);
