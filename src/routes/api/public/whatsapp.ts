@@ -2,6 +2,21 @@
 // GET  -> Meta verification handshake.
 // POST -> incoming messages/status updates. Always responds 200 to Meta.
 import { createFileRoute } from "@tanstack/react-router";
+import { createHmac, timingSafeEqual } from "node:crypto";
+
+function verifySignature(rawBody: string, header: string | null, appSecret: string): boolean {
+  if (!header || !header.startsWith("sha256=")) return false;
+  const provided = header.slice("sha256=".length).trim();
+  const expected = createHmac("sha256", appSecret).update(rawBody, "utf8").digest("hex");
+  const a = Buffer.from(provided, "hex");
+  const b = Buffer.from(expected, "hex");
+  if (a.length !== b.length || a.length === 0) return false;
+  try {
+    return timingSafeEqual(a, b);
+  } catch {
+    return false;
+  }
+}
 
 export const Route = createFileRoute("/api/public/whatsapp")({
   server: {
@@ -19,8 +34,21 @@ export const Route = createFileRoute("/api/public/whatsapp")({
       },
 
       POST: async ({ request }) => {
+        const rawBody = await request.text();
+
+        const appSecret = process.env.WHATSAPP_APP_SECRET;
+        if (!appSecret) {
+          console.error("[whatsapp webhook] WHATSAPP_APP_SECRET not set — rejecting");
+          return new Response("Forbidden", { status: 403 });
+        }
+        const signature = request.headers.get("x-hub-signature-256");
+        if (!verifySignature(rawBody, signature, appSecret)) {
+          console.error("[whatsapp webhook] invalid signature");
+          return new Response("Forbidden", { status: 403 });
+        }
+
         try {
-          const body = (await request.json()) as {
+          const body = JSON.parse(rawBody) as {
             entry?: Array<{
               changes?: Array<{
                 value?: { messages?: Array<Record<string, unknown>> };
