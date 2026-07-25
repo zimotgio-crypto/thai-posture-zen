@@ -412,6 +412,141 @@ function CalendarPage() {
           {bookings.error instanceof Error ? bookings.error.message : "Fehler beim Laden"}
         </p>
       )}
+
+      <BookingDetailsDialog
+        booking={selected}
+        treatments={t.booking.treatments}
+        onClose={() => setSelected(null)}
+        onDelete={async (id) => {
+          await handleDelete(id);
+          setSelected(null);
+        }}
+      />
+    </div>
+  );
+}
+
+function BookingDetailsDialog({
+  booking,
+  treatments,
+  onClose,
+  onDelete,
+}: {
+  booking: BookingRow | null;
+  treatments: { id: string; label: string }[];
+  onClose: () => void;
+  onDelete: (id: string) => void | Promise<void>;
+}) {
+  const open = !!booking;
+  if (!booking) {
+    return (
+      <Dialog open={false} onOpenChange={() => onClose()}>
+        <DialogContent />
+      </Dialog>
+    );
+  }
+  const isBlock = booking.source === "block";
+  const dur = booking.duration_minutes ?? 60;
+  const [hh, mm] = booking.time.split(":").map(Number);
+  const endMin = hh * 60 + mm + dur;
+  const endStr = `${String(Math.floor(endMin / 60)).padStart(2, "0")}:${String(endMin % 60).padStart(2, "0")}`;
+  const treatmentId = treatments.find((tr) => tr.label === booking.treatment)?.id;
+  const price = treatmentId ? priceForTreatment(treatmentId, dur) : 0;
+  const client = booking.clients;
+  const sourceLabel =
+    booking.source === "online"
+      ? "Online-Buchung"
+      : booking.source === "manual"
+        ? "Manuell"
+        : booking.source === "block"
+          ? "Blockiert"
+          : booking.source ?? "—";
+
+  return (
+    <Dialog open={open} onOpenChange={(v) => !v && onClose()}>
+      <DialogContent className="max-w-lg border-border/60 bg-ivory p-0 sm:rounded-sm">
+        <div className="border-b border-border/60 px-6 py-5">
+          <DialogHeader className="space-y-1 text-left">
+            <DialogTitle className="font-serif text-2xl font-normal text-charcoal">
+              {isBlock ? "Blockierte Zeit" : "Termin"}
+            </DialogTitle>
+            <DialogDescription className="text-charcoal-soft/80">
+              {formatSwissDate(booking.day)} · {booking.time.slice(0, 5)} – {endStr}
+            </DialogDescription>
+          </DialogHeader>
+        </div>
+        <div className="space-y-4 px-6 py-5 text-sm text-charcoal">
+          <DetailRow label="Dauer" value={formatDuration(dur)} />
+          {!isBlock && (
+            <>
+              <DetailRow label="Behandlung" value={booking.treatment} />
+              {price > 0 && <DetailRow label="Preis" value={`CHF ${price}.–`} />}
+              {client && (
+                <>
+                  <DetailRow
+                    label="Kunde"
+                    value={`${client.first_name} ${client.last_name}`.trim() || "—"}
+                  />
+                  {client.phone && <DetailRow label="Telefon" value={client.phone} />}
+                  {client.email && <DetailRow label="E-Mail" value={client.email} />}
+                  {(client.street || client.zip || client.city) && (
+                    <DetailRow
+                      label="Adresse"
+                      value={[client.street, [client.zip, client.city].filter(Boolean).join(" ")]
+                        .filter(Boolean)
+                        .join(", ")}
+                    />
+                  )}
+                </>
+              )}
+              <DetailRow
+                label="Silent Treatment"
+                value={booking.silent ? "Ja" : "Nein"}
+              />
+              <DetailRow label="Quelle" value={sourceLabel} />
+              {booking.notes && (
+                <div className="grid gap-1">
+                  <span className="text-[0.65rem] uppercase tracking-[0.22em] text-charcoal-soft">
+                    Notizen
+                  </span>
+                  <p className="whitespace-pre-wrap rounded-sm border border-border/60 bg-card p-3 text-sm text-charcoal">
+                    {booking.notes}
+                  </p>
+                </div>
+              )}
+            </>
+          )}
+        </div>
+        <div className="flex flex-wrap items-center justify-between gap-3 border-t border-border/60 px-6 py-4">
+          {!isBlock && client ? (
+            <Button asChild variant="outline" className="rounded-sm">
+              <Link to="/admin/clients/$id" params={{ id: client.id }} onClick={onClose}>
+                Zum Kundenprofil
+              </Link>
+            </Button>
+          ) : (
+            <span />
+          )}
+          <Button
+            variant="destructive"
+            className="rounded-sm"
+            onClick={() => onDelete(booking.id)}
+          >
+            Termin löschen
+          </Button>
+        </div>
+      </DialogContent>
+    </Dialog>
+  );
+}
+
+function DetailRow({ label, value }: { label: string; value: string }) {
+  return (
+    <div className="grid grid-cols-[8rem_1fr] items-baseline gap-3">
+      <span className="text-[0.65rem] uppercase tracking-[0.22em] text-charcoal-soft">
+        {label}
+      </span>
+      <span className="text-charcoal">{value}</span>
     </div>
   );
 }
