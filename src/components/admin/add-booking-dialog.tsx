@@ -10,6 +10,7 @@ import { addBooking } from "@/lib/admin.functions";
 import { toast } from "sonner";
 import { optionsForTreatment, priceForTreatment } from "@/lib/pricing";
 import { cn } from "@/lib/utils";
+import { useAdminT } from "@/lib/admin-i18n";
 
 const TREATMENTS: { id: string; label: string }[] = [
   { id: "deep-release", label: "Home-Office Deep Release" },
@@ -27,6 +28,7 @@ export function AddBookingDialog({
   defaultDay?: string;
 }) {
   const qc = useQueryClient();
+  const t = useAdminT();
   const addBookingFn = useServerFn(addBooking);
   const [busy, setBusy] = useState(false);
   const [block, setBlock] = useState(false);
@@ -74,12 +76,12 @@ export function AddBookingDialog({
           city: block ? undefined : city,
         },
       });
-      toast.success(block ? "Zeit blockiert" : "Termin gespeichert");
+      toast.success(block ? t.addBooking.blockSaved : t.addBooking.bookingSaved);
       qc.invalidateQueries({ queryKey: ["admin", "bookings"] });
       qc.invalidateQueries({ queryKey: ["admin", "clients"] });
       onOpenChange(false);
     } catch (err) {
-      toast.error(err instanceof Error ? err.message : "Fehler");
+      toast.error(err instanceof Error ? err.message : t.common.error);
     } finally {
       setBusy(false);
     }
@@ -90,30 +92,30 @@ export function AddBookingDialog({
       <DialogContent className="max-w-xl bg-ivory">
         <DialogHeader>
           <DialogTitle className="font-serif text-2xl font-normal text-charcoal">
-            Termin hinzufügen
+            {t.addBooking.title}
           </DialogTitle>
           <DialogDescription>
-            Manuell erfassen (Telefon oder Walk-in) oder eine Zeit blockieren.
+            {t.addBooking.description}
           </DialogDescription>
         </DialogHeader>
         <form onSubmit={submit} className="space-y-5 max-h-[70vh] overflow-y-auto pr-1">
           <label className="flex items-center gap-3 rounded-sm border border-gold/40 bg-gold-soft/20 p-3">
             <Switch checked={block} onCheckedChange={setBlock} />
-            <span className="text-sm text-charcoal">Zeit blockieren (kein Kunde)</span>
+            <span className="text-sm text-charcoal">{t.addBooking.block}</span>
           </label>
           <div className="grid grid-cols-2 gap-3">
             <div className="space-y-2">
-              <Label>Datum</Label>
+              <Label>{t.addBooking.date}</Label>
               <Input type="date" value={day} onChange={(e) => setDay(e.target.value)} required />
             </div>
             <div className="space-y-2">
-              <Label>Uhrzeit</Label>
+              <Label>{t.addBooking.time}</Label>
               <Input type="time" value={time} onChange={(e) => setTime(e.target.value)} required />
             </div>
           </div>
           {!block && (
             <div className="space-y-2">
-              <Label>Dauer · Preis</Label>
+              <Label>{t.addBooking.durationPrice}</Label>
               <div className={cn("grid gap-2", durationOptions.length >= 4 ? "grid-cols-4" : "grid-cols-3")}>
                 {durationOptions.map((opt) => {
                   const selected = durationMin === opt.minutes;
@@ -142,7 +144,7 @@ export function AddBookingDialog({
           {!block && (
             <>
               <div className="space-y-2">
-                <Label>Behandlung</Label>
+                <Label>{t.addBooking.treatment}</Label>
                 <select
                   value={treatmentId}
                   onChange={(e) => setTreatmentId(e.target.value)}
@@ -157,7 +159,7 @@ export function AddBookingDialog({
               </div>
               <div className="grid grid-cols-2 gap-3">
                 <div className="space-y-2">
-                  <Label>Vorname *</Label>
+                  <Label>{t.addBooking.firstName}</Label>
                   <Input
                     value={firstName}
                     onChange={(e) => setFirstName(e.target.value)}
@@ -166,7 +168,7 @@ export function AddBookingDialog({
                   />
                 </div>
                 <div className="space-y-2">
-                  <Label>Nachname *</Label>
+                  <Label>{t.addBooking.lastName}</Label>
                   <Input
                     value={lastName}
                     onChange={(e) => setLastName(e.target.value)}
@@ -177,7 +179,7 @@ export function AddBookingDialog({
               </div>
               <div className="grid grid-cols-2 gap-3">
                 <div className="space-y-2">
-                  <Label>E-Mail *</Label>
+                  <Label>{t.addBooking.email}</Label>
                   <Input
                     type="email"
                     value={email}
@@ -187,7 +189,7 @@ export function AddBookingDialog({
                   />
                 </div>
                 <div className="space-y-2">
-                  <Label>Telefon *</Label>
+                  <Label>{t.addBooking.phone}</Label>
                   <Input
                     value={phone}
                     onChange={(e) => setPhone(e.target.value)}
@@ -197,7 +199,7 @@ export function AddBookingDialog({
                 </div>
               </div>
               <div className="space-y-2">
-                <Label>Strasse / Nr. *</Label>
+                <Label>{t.addBooking.street}</Label>
                 <Input
                   value={street}
                   onChange={(e) => setStreet(e.target.value)}
@@ -207,7 +209,7 @@ export function AddBookingDialog({
               </div>
               <div className="grid grid-cols-2 gap-3">
                 <div className="space-y-2">
-                  <Label>PLZ *</Label>
+                  <Label>{t.addBooking.zip}</Label>
                   <Input
                     value={zip}
                     onChange={(e) => setZip(e.target.value)}
@@ -216,7 +218,7 @@ export function AddBookingDialog({
                   />
                 </div>
                 <div className="space-y-2">
-                  <Label>Ort *</Label>
+                  <Label>{t.addBooking.city}</Label>
                   <Input
                     value={city}
                     onChange={(e) => setCity(e.target.value)}
@@ -227,20 +229,20 @@ export function AddBookingDialog({
               </div>
               <label className="flex items-center gap-3">
                 <Switch checked={silent} onCheckedChange={setSilent} />
-                <span className="text-sm text-charcoal">Silent Treatment</span>
+                <span className="text-sm text-charcoal">{t.addBooking.silent}</span>
               </label>
             </>
           )}
           <div className="flex justify-end gap-3 border-t border-border/60 pt-4">
             <Button type="button" variant="ghost" onClick={() => onOpenChange(false)}>
-              Abbrechen
+              {t.common.cancel}
             </Button>
             <Button
               type="submit"
               disabled={busy}
               className="btn-gold rounded-sm px-6 py-5 text-xs uppercase tracking-[0.2em] disabled:opacity-50"
             >
-              Speichern
+              {t.common.save}
             </Button>
           </div>
         </form>
