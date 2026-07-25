@@ -1,4 +1,4 @@
-import { useEffect, useMemo, useState } from "react";
+import { useEffect, useMemo, useRef, useState } from "react";
 import { useServerFn } from "@tanstack/react-start";
 import { submitBooking, listBookedTimes } from "@/lib/booking.functions";
 import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogDescription } from "@/components/ui/dialog";
@@ -145,6 +145,10 @@ export function BookingModal({
   const [zip, setZip] = useState("");
   const [city, setCity] = useState("");
   const [errors, setErrors] = useState<Record<string, boolean>>({});
+  const [dateError, setDateError] = useState(false);
+  const [timeError, setTimeError] = useState(false);
+  const dateSectionRef = useRef<HTMLElement | null>(null);
+  const timeSectionRef = useRef<HTMLElement | null>(null);
   const [bookedTimes, setBookedTimes] = useState<BookedSlot[]>([]);
   const [submitting, setSubmitting] = useState(false);
   const listBooked = useServerFn(listBookedTimes);
@@ -215,8 +219,20 @@ export function BookingModal({
       city: !city.trim(),
     };
     setErrors(nextErrors);
-    if (!day || !time || Object.values(nextErrors).some(Boolean)) {
+    setDateError(!day);
+    setTimeError(!time);
+    if (Object.values(nextErrors).some(Boolean)) {
       toast.error(t.booking.errAll);
+      return;
+    }
+    if (!day) {
+      toast.error("Bitte wähle ein Datum.");
+      dateSectionRef.current?.scrollIntoView({ behavior: "smooth", block: "center" });
+      return;
+    }
+    if (!time) {
+      toast.error("Bitte wähle eine Uhrzeit.");
+      timeSectionRef.current?.scrollIntoView({ behavior: "smooth", block: "center" });
       return;
     }
     setSubmitting(true);
@@ -257,9 +273,15 @@ export function BookingModal({
       setZip("");
       setCity("");
       setErrors({});
+      setDateError(false);
+      setTimeError(false);
     } catch (err) {
       console.error(err);
-      toast.error(t.booking.errAll);
+      toast.error(
+        err instanceof Error
+          ? err.message
+          : "Buchung fehlgeschlagen. Bitte später erneut versuchen."
+      );
     } finally {
       setSubmitting(false);
     }
