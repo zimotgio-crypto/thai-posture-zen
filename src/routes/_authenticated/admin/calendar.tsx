@@ -9,6 +9,37 @@ import { cn } from "@/lib/utils";
 import { toast } from "sonner";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
+import {
+  Dialog,
+  DialogContent,
+  DialogHeader,
+  DialogTitle,
+  DialogDescription,
+} from "@/components/ui/dialog";
+import { formatSwissDate, formatDuration, priceForTreatment } from "@/lib/pricing";
+import { useT } from "@/lib/i18n";
+
+type BookingRow = {
+  id: string;
+  day: string;
+  time: string;
+  treatment: string;
+  duration_minutes: number | null;
+  silent: boolean | null;
+  source: string | null;
+  notes: string | null;
+  client_id: string | null;
+  clients?: {
+    id: string;
+    first_name: string;
+    last_name: string;
+    phone: string;
+    email?: string | null;
+    street?: string | null;
+    zip?: string | null;
+    city?: string | null;
+  } | null;
+};
 
 export const Route = createFileRoute("/_authenticated/admin/calendar")({
   component: CalendarPage,
