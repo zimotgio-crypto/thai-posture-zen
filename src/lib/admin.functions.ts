@@ -201,6 +201,43 @@ export const getGoogleCalendarStatus = createServerFn({ method: "GET" })
     return { configured: isGoogleConfigured() };
   });
 
+const debugGoogleInput = z.object({
+  day: z.string().regex(/^\d{4}-\d{2}-\d{2}$/),
+});
+
+export const debugGoogleCalendar = createServerFn({ method: "GET" })
+  .middleware([requireSupabaseAuth])
+  .inputValidator((data: unknown) => debugGoogleInput.parse(data))
+  .handler(async ({ data, context }) => {
+    await assertAdmin(context.userId);
+    const [{ debugGoogleCalendarDay }, { listBookedTimesForDay }] = await Promise.all([
+      import("@/lib/google-calendar.server"),
+      import("@/lib/booking-availability.server"),
+    ]);
+    const google = await debugGoogleCalendarDay(data.day);
+    const exceptions = [...google.exceptions];
+    let listBookedTimesResult: { time: string; duration: number }[] | null = null;
+    try {
+      listBookedTimesResult = await listBookedTimesForDay(data.day);
+    } catch (err) {
+      const normalized =
+        err instanceof Error
+          ? { message: err.message, stack: err.stack ?? null }
+          : { message: String(err), stack: null };
+      exceptions.push(normalized);
+      console.error("[debugGoogleCalendar] listBookedTimes failed", normalized);
+    }
+    return {
+      day: data.day,
+      configured: google.configured,
+      accessTokenOk: google.accessTokenOk,
+      freeBusyRaw: google.freeBusyRaw,
+      derivedIntervals: google.derivedIntervals,
+      listBookedTimes: listBookedTimesResult,
+      exceptions,
+    };
+  });
+
 const listClientsInput = z.object({ q: z.string().trim().max(120).optional() });
 export const listClients = createServerFn({ method: "GET" })
   .middleware([requireSupabaseAuth])
