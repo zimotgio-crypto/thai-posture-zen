@@ -1,6 +1,7 @@
 import { createServerFn } from "@tanstack/react-start";
 import { z } from "zod";
 import { getOrCreateClient } from "@/lib/client-records";
+import { BUFFER_MIN } from "@/lib/pricing";
 
 const submitInput = z.object({
   treatment: z.string().min(1).max(100),
@@ -24,7 +25,7 @@ export const submitBooking = createServerFn({ method: "POST" })
     const { getGoogleBusyIntervals, createGoogleEvent } = await import(
       "@/lib/google-calendar.server"
     );
-    const BUFFER = 30;
+    const BUFFER = BUFFER_MIN;
 
     // Reject overlap using each booking's own duration (+30 min buffer).
     const dayRows = await supabaseAdmin

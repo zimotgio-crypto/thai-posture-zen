@@ -14,7 +14,7 @@ export const DURATION_OPTIONS: DurationOption[] = [
   { minutes: 120, price: 200, label: "120 Min.", meta: "120 Min. · CHF 200.–" },
 ];
 
-export const BUFFER_MIN = 30;
+export const BUFFER_MIN = 15;
 
 export function priceFor(minutes: number): number {
   return DURATION_OPTIONS.find((d) => d.minutes === minutes)?.price ?? 0;
