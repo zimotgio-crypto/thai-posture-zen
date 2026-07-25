@@ -212,24 +212,20 @@
   body * {
     visibility: hidden !important;
   }
-  .print-area,
-  .print-area * {
+  #print-root,
+  #print-root * {
     visibility: visible !important;
   }
-  .print-area {
+  #print-root {
     position: absolute !important;
     inset: 0 !important;
-    width: 100% !important;
-    max-width: none !important;
-    max-height: none !important;
-    overflow: visible !important;
-    background: white !important;
-    box-shadow: none !important;
-    border: none !important;
-    padding: 24px !important;
-    margin: 0 !important;
   }
-  .print-hide {
-    display: none !important;
+  * {
+    -webkit-print-color-adjust: exact !important;
+    print-color-adjust: exact !important;
+  }
+  @page {
+    size: A4 portrait;
+    margin: 14mm;
   }
 }

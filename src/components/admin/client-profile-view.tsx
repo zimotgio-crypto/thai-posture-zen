@@ -1,4 +1,5 @@
 import { useEffect, useMemo, useState } from "react";
+import { createPortal } from "react-dom";
 import { useServerFn } from "@tanstack/react-start";
 import { useQuery, useQueryClient } from "@tanstack/react-query";
 import { Pencil, Phone, Mail, MapPin, Sparkles, Target, Trash2, Printer, X } from "lucide-react";
@@ -37,6 +38,10 @@ import {
   TENSION_ZONES_LIST,
   MOBILITY_ZONES_LIST,
 } from "@/components/admin/assessment";
+import {
+  BehandlungsprotokollContent,
+  BehandlungsprotokollPrintLayout,
+} from "@/components/admin/behandlungsprotokoll-print-layout";
 import { toast } from "sonner";
 import { formatDuration, formatSwissDate } from "@/lib/pricing";
 
@@ -509,6 +514,12 @@ export function ClientProfileView({
           )}
         </DialogContent>
       </Dialog>
+      {typeof document !== "undefined" && openLog && client
+        ? createPortal(
+            <BehandlungsprotokollPrintLayout log={openLog} client={client} />,
+            document.body,
+          )
+        : null}
     </div>
   );
 }
@@ -535,17 +546,9 @@ function SessionDocument({
   client: ClientLike;
   onClose: () => void;
 }) {
-  const linked = log.bookings ?? null;
-  const headerDate = linked?.day ?? log.treatment_date ?? log.created_at.slice(0, 10);
-  const label = linked?.treatment ?? log.treatment_name ?? "Manuelle Notiz";
-  const dur = linked?.duration_minutes ?? log.duration_minutes ?? null;
-  const mob = parseZoneScores(log.mobility);
-  const ten = parseZoneScores(log.tension);
-  const map = parseBodyMap(log.body_map);
-
   return (
     <div className="relative flex max-h-[90vh] flex-col">
-      <div className="print-hide sticky top-0 z-10 flex items-center gap-2 border-b border-border/60 bg-ivory/95 px-4 py-2 backdrop-blur">
+      <div className="sticky top-0 z-10 flex items-center gap-2 border-b border-border/60 bg-ivory/95 px-4 py-2 backdrop-blur">
         <button
           type="button"
           onClick={() => window.print()}
@@ -565,97 +568,9 @@ function SessionDocument({
 
       <div className="overflow-y-auto max-h-[calc(90vh-3.5rem)]">
       <article
-        className="print-area bg-ivory p-8 sm:p-10 shadow-[0_10px_40px_-15px_rgba(0,0,0,0.25)] border border-border/60"
+        className="bg-ivory p-8 sm:p-10 shadow-[0_10px_40px_-15px_rgba(0,0,0,0.25)] border border-border/60"
       >
-        <header className="text-center">
-          <div className="font-serif text-xl text-charcoal">Thai Posture Lab</div>
-          <div className="mt-1 text-[0.62rem] uppercase tracking-[0.32em] text-gold-deep">Zuzwil</div>
-          <div className="gold-rule mt-4" />
-        </header>
-
-        <section className="mt-6 flex flex-wrap items-baseline justify-between gap-2">
-          <div>
-            <div className="text-[0.65rem] uppercase tracking-[0.28em] text-gold-deep">
-              Behandlungsprotokoll
-            </div>
-            <h2 className="mt-1 font-serif text-2xl text-charcoal">
-              {label}
-              {dur && <span className="text-charcoal-soft"> · {formatDuration(dur)}</span>}
-            </h2>
-          </div>
-          <div className="text-sm text-charcoal-soft">{formatSwissDate(headerDate)}</div>
-        </section>
-
-        <section className="mt-6 rounded-sm border border-border/60 bg-card/60 p-4">
-          <div className="text-[0.62rem] uppercase tracking-[0.28em] text-charcoal-soft">Kundin / Kunde</div>
-          <div className="mt-2 font-serif text-lg text-charcoal">{fullName(client)}</div>
-          <div className="mt-2 flex flex-wrap gap-x-5 gap-y-1 text-xs text-charcoal-soft">
-            {client.phone && (
-              <span className="inline-flex items-center gap-1.5">
-                <Phone className="h-3.5 w-3.5 text-gold-deep" /> {client.phone}
-              </span>
-            )}
-            {client.email && (
-              <span className="inline-flex items-center gap-1.5">
-                <Mail className="h-3.5 w-3.5 text-gold-deep" /> {client.email}
-              </span>
-            )}
-            {(client.street || client.zip || client.city) && (
-              <span className="inline-flex items-center gap-1.5">
-                <MapPin className="h-3.5 w-3.5 text-gold-deep" />
-                {[client.street, [client.zip, client.city].filter(Boolean).join(" ")]
-                  .filter(Boolean)
-                  .join(", ")}
-              </span>
-            )}
-          </div>
-        </section>
-
-        <section className="mt-6">
-          <div className="text-[0.62rem] uppercase tracking-[0.28em] text-gold-deep">Behandelte Zonen</div>
-          <div className="mt-3">
-            <BodyMapView value={map} />
-          </div>
-        </section>
-
-        <section className="mt-6">
-          <div className="text-[0.62rem] uppercase tracking-[0.28em] text-gold-deep">Notizen</div>
-          <div
-            className="prose prose-sm mt-2 max-w-none text-charcoal"
-            // biome-ignore lint/security/noDangerouslySetInnerHtml: rich-text notes authored by admin
-            dangerouslySetInnerHTML={{ __html: log.body_html }}
-          />
-        </section>
-
-        {Object.keys(ten).length > 0 && (
-          <section className="mt-6">
-            <div className="text-[0.62rem] uppercase tracking-[0.28em] text-gold-deep">Spannung & Schmerz</div>
-            <div className="mt-3">
-              <ZoneScoreBadgeGrid labels={TENSION_ZONES as unknown as Record<string, string>} data={ten} />
-            </div>
-          </section>
-        )}
-        {Object.keys(mob).length > 0 && (
-          <section className="mt-6">
-            <div className="text-[0.62rem] uppercase tracking-[0.28em] text-gold-deep">Beweglichkeit & Gelenke</div>
-            <div className="mt-3">
-              <ZoneScoreBadgeGrid labels={MOBILITY_ZONES as unknown as Record<string, string>} data={mob} />
-            </div>
-          </section>
-        )}
-
-        <footer className="mt-10 flex items-end justify-between gap-6 border-t border-border/60 pt-6 text-xs text-charcoal-soft">
-          <div>
-            <div className="text-[0.62rem] uppercase tracking-[0.28em] text-gold-deep">Status</div>
-            <div className="mt-1 text-sm text-charcoal">Abgeschlossen</div>
-          </div>
-          <div className="text-right">
-            <div className="mb-1 h-8 w-56 border-b border-charcoal/40" />
-            <div className="text-[0.62rem] uppercase tracking-[0.28em] text-charcoal-soft">
-              Therapeut / Therapeutin
-            </div>
-          </div>
-        </footer>
+        <BehandlungsprotokollContent log={log} client={client} />
       </article>
       </div>
     </div>
