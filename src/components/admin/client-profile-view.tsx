@@ -332,6 +332,18 @@ export function ClientProfileView({
         </TabsList>
 
         <TabsContent value="history" className="space-y-3">
+          {hasPainData && (
+            <div className="flex justify-end">
+              <button
+                type="button"
+                onClick={() => setShowPainTrend(true)}
+                className="inline-flex items-center gap-2 rounded-sm border border-border/60 px-3 py-2 text-[0.7rem] uppercase tracking-[0.2em] text-charcoal-soft transition-colors hover:border-gold-deep/60 hover:text-gold-deep"
+              >
+                <TrendingUp className="h-3.5 w-3.5" />
+                Schmerzverlauf anzeigen
+              </button>
+            </div>
+          )}
           {q.isLoading && (
             <p className="rounded-sm border border-dashed border-border/70 px-4 py-8 text-center text-sm text-charcoal-soft">
               Lade Verlauf…
