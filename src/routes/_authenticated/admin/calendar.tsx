@@ -2,7 +2,7 @@ import { createFileRoute } from "@tanstack/react-router";
 import { useServerFn } from "@tanstack/react-start";
 import { useQuery, useQueryClient } from "@tanstack/react-query";
 import { useMemo, useState } from "react";
-import { ChevronLeft, ChevronRight, Trash2, Volume2, VolumeX } from "lucide-react";
+import { ChevronLeft, ChevronRight, Volume2, VolumeX } from "lucide-react";
 import { listBookingsInRange, deleteBooking, getGoogleCalendarStatus, debugGoogleCalendar, listGoogleBusyInRange } from "@/lib/admin.functions";
 import { Link } from "@tanstack/react-router";
 import { cn } from "@/lib/utils";
