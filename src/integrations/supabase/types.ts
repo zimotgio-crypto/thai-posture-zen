@@ -187,6 +187,33 @@ export type Database = {
         }
         Relationships: []
       }
+      whatsapp_sessions: {
+        Row: {
+          created_at: string
+          draft: Json
+          last_message_id: string | null
+          phone: string
+          state: string
+          updated_at: string
+        }
+        Insert: {
+          created_at?: string
+          draft?: Json
+          last_message_id?: string | null
+          phone: string
+          state?: string
+          updated_at?: string
+        }
+        Update: {
+          created_at?: string
+          draft?: Json
+          last_message_id?: string | null
+          phone?: string
+          state?: string
+          updated_at?: string
+        }
+        Relationships: []
+      }
     }
     Views: {
       [_ in never]: never
