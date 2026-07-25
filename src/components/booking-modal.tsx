@@ -337,8 +337,28 @@ export function BookingModal({
                     type="button"
                     key={opt.minutes}
                     onClick={() => {
+                      const prevDuration = durationMin;
                       setDurationMin(opt.minutes);
-                      setTime(null);
+                      if (opt.minutes === prevDuration) return;
+                      if (!time || !day) {
+                        setTime(null);
+                        return;
+                      }
+                      const nextSlots = generateStartTimes(
+                        day,
+                        bookedTimes,
+                        nowMinutesToday,
+                        opt.minutes
+                      );
+                      const stillAvailable = nextSlots.some(
+                        (s) => s.time === time && !s.disabled
+                      );
+                      if (!stillAvailable) {
+                        setTime(null);
+                        toast.message(
+                          "Bitte Uhrzeit erneut wählen – die verfügbaren Zeiten haben sich durch die neue Dauer geändert."
+                        );
+                      }
                     }}
                     aria-pressed={selected}
                     className={cn(
@@ -360,11 +380,16 @@ export function BookingModal({
             </div>
           </section>
 
-          <section className="space-y-3">
+          <section ref={dateSectionRef} className="space-y-3">
             <Label className="text-xs uppercase tracking-[0.2em] text-charcoal-soft">
               {t.booking.date}
             </Label>
-            <div className="rounded-sm border border-border/60 bg-card p-4 sm:p-5">
+            <div
+              className={cn(
+                "rounded-sm border bg-card p-4 sm:p-5",
+                dateError ? "border-destructive" : "border-border/60"
+              )}
+            >
               <div className="flex items-center justify-between">
                 <button
                   type="button"
@@ -415,6 +440,8 @@ export function BookingModal({
                         if (isDisabled) return;
                         setDay(key);
                         setTime(null);
+                        setDateError(false);
+                        setTimeError(false);
                       }}
                       disabled={isDisabled}
                       aria-pressed={isSelected}
@@ -437,12 +464,17 @@ export function BookingModal({
             </div>
           </section>
 
-          <section className="space-y-3">
+          <section ref={timeSectionRef} className="space-y-3">
             <Label className="text-xs uppercase tracking-[0.2em] text-charcoal-soft">
               {t.booking.time}
             </Label>
             {!day ? (
-              <p className="rounded-sm border border-dashed border-border/70 px-4 py-6 text-center text-sm text-charcoal-soft">
+              <p
+                className={cn(
+                  "rounded-sm border border-dashed px-4 py-6 text-center text-sm text-charcoal-soft",
+                  timeError ? "border-destructive" : "border-border/70"
+                )}
+              >
                 {t.booking.pickDay}
               </p>
             ) : !dayHours ? (
@@ -454,14 +486,23 @@ export function BookingModal({
                 {t.booking.noSlots}
               </p>
             ) : (
-              <div className="grid grid-cols-3 gap-2 sm:grid-cols-4">
+              <div
+                className={cn(
+                  "grid grid-cols-3 gap-2 rounded-sm sm:grid-cols-4",
+                  timeError && "border border-destructive p-2"
+                )}
+              >
                 {slots.map((s) => {
                   const selected = time === s.time;
                   return (
                     <button
                       type="button"
                       key={s.time}
-                      onClick={() => !s.disabled && setTime(s.time)}
+                      onClick={() => {
+                        if (s.disabled) return;
+                        setTime(s.time);
+                        setTimeError(false);
+                      }}
                       disabled={s.disabled}
                       aria-label={s.disabled && s.reason === "booked" ? `${s.time} · ${t.booking.booked}` : s.time}
                       className={cn(
