@@ -266,15 +266,16 @@ const addNoteInput = z.object({
   treatmentName: z.string().trim().max(100).nullish(),
   durationMinutes: z.number().int().min(15).max(240).nullish(),
   bodyMap: bodyMapSchema.optional(),
-  painLevel: z.number().int().min(1).max(10).nullish(),
-  mobility: z.record(z.string().max(60), z.string().max(120)).optional(),
-  tension: z.record(z.string().max(60), z.string().max(120)).optional(),
+  tensionZones: z.record(z.string().max(60), z.number().int().min(1).max(10)).optional(),
+  mobilityZones: z.record(z.string().max(60), z.number().int().min(1).max(10)).optional(),
 });
 export const addSessionLog = createServerFn({ method: "POST" })
   .middleware([requireSupabaseAuth])
   .inputValidator((data: unknown) => addNoteInput.parse(data))
   .handler(async ({ data, context }) => {
     const admin = await assertAdmin(context.userId);
+    const tensionValues = Object.values(data.tensionZones ?? {});
+    const maxTension = tensionValues.length > 0 ? Math.max(...tensionValues) : null;
     const { error } = await admin.from("session_logs").insert({
       client_id: data.clientId,
       booking_id: data.bookingId ?? null,
@@ -284,9 +285,9 @@ export const addSessionLog = createServerFn({ method: "POST" })
       treatment_name: data.bookingId ? null : (data.treatmentName ?? null),
       duration_minutes: data.bookingId ? null : (data.durationMinutes ?? null),
       body_map: data.bodyMap ?? { front: [], back: [] },
-      pain_level: data.painLevel ?? null,
-      mobility: data.mobility ?? {},
-      tension: data.tension ?? {},
+      pain_level: maxTension,
+      mobility: data.mobilityZones ?? {},
+      tension: data.tensionZones ?? {},
     });
     if (error) throw new Error(error.message);
     return { ok: true as const };

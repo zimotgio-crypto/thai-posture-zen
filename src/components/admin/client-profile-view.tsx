@@ -27,16 +27,15 @@ import {
   type BodyMapState,
 } from "@/components/admin/body-map";
 import {
-  FindingsList,
-  MobilityEditor,
-  MOBILITY_LABELS,
   PainBadge,
-  PainScale,
-  TensionEditor,
-  TENSION_LABELS,
-  parseRecord,
-  type MobilityState,
-  type TensionState,
+  ZoneScaleGrid,
+  ZoneScoreBadgeGrid,
+  parseZoneScores,
+  initialZoneScores,
+  TENSION_ZONES,
+  MOBILITY_ZONES,
+  TENSION_ZONES_LIST,
+  MOBILITY_ZONES_LIST,
 } from "@/components/admin/assessment";
 import { toast } from "sonner";
 import { formatDuration, formatSwissDate } from "@/lib/pricing";
@@ -126,9 +125,12 @@ export function ClientProfileView({
   const [bodyHtml, setBodyHtml] = useState("");
   const [linkBookingId, setLinkBookingId] = useState("");
   const [bodyMap, setBodyMap] = useState<BodyMapState>(EMPTY_BODY_MAP);
-  const [painLevel, setPainLevel] = useState<number | null>(null);
-  const [mobility, setMobility] = useState<MobilityState>({});
-  const [tension, setTension] = useState<TensionState>({});
+  const [tensionZones, setTensionZones] = useState<Record<string, number>>(() =>
+    initialZoneScores(TENSION_ZONES_LIST),
+  );
+  const [mobilityZones, setMobilityZones] = useState<Record<string, number>>(() =>
+    initialZoneScores(MOBILITY_ZONES_LIST),
+  );
   const [busy, setBusy] = useState(false);
 
   const [confirmDelete, setConfirmDelete] = useState(false);
@@ -160,18 +162,16 @@ export function ClientProfileView({
           treatmentName: null,
           durationMinutes: null,
           bodyMap,
-          painLevel,
-          mobility,
-          tension,
+          tensionZones,
+          mobilityZones,
         },
       });
       toast.success("Notiz gespeichert");
       setBodyHtml("");
       setLinkBookingId("");
       setBodyMap(EMPTY_BODY_MAP);
-      setPainLevel(null);
-      setMobility({});
-      setTension({});
+      setTensionZones(initialZoneScores(TENSION_ZONES_LIST));
+      setMobilityZones(initialZoneScores(MOBILITY_ZONES_LIST));
       qc.invalidateQueries({ queryKey: ["admin", "client", clientId] });
     } catch (err) {
       toast.error(err instanceof Error ? err.message : "Fehler");
@@ -340,7 +340,9 @@ export function ClientProfileView({
               const tDate = (l as { treatment_date?: string | null }).treatment_date ?? null;
               const tName = (l as { treatment_name?: string | null }).treatment_name ?? null;
               const tDur = (l as { duration_minutes?: number | null }).duration_minutes ?? null;
-              const pain = (l as { pain_level?: number | null }).pain_level ?? null;
+              const tensionScores = parseZoneScores((l as { tension?: unknown }).tension);
+              const tensionValues = Object.values(tensionScores);
+              const maxTension = tensionValues.length > 0 ? Math.max(...tensionValues) : null;
               const headerDate = linked?.day ?? tDate ?? l.created_at.slice(0, 10);
               const label = linked
                 ? linked.treatment
@@ -366,7 +368,7 @@ export function ClientProfileView({
                         <div className="mt-0.5 truncate text-xs text-charcoal-soft">{preview}</div>
                       )}
                     </div>
-                    {pain != null && <PainBadge value={pain} />}
+                    {maxTension != null && <PainBadge value={maxTension} />}
                   </button>
                 </li>
               );
@@ -406,20 +408,29 @@ export function ClientProfileView({
             placeholder="z.B. Verhärtung im oberen Trapezmuskel gelöst, Haltung leicht verbessert…"
           />
           <div className="rounded-sm border border-border/60 bg-card p-5">
-            <PainScale value={painLevel} onChange={setPainLevel} />
-          </div>
-          <div className="rounded-sm border border-border/60 bg-card p-5">
-            <div className="text-[0.7rem] uppercase tracking-[0.3em] text-gold-deep">Beweglichkeit</div>
-            <p className="mt-1 text-xs text-charcoal-soft">Bewegungsausmass und Gelenkbeweglichkeit.</p>
+            <div className="text-[0.7rem] uppercase tracking-[0.3em] text-gold-deep">Spannung & Schmerz</div>
+            <p className="mt-1 text-xs text-charcoal-soft">Bewerte jede Zone von 1 (frei) bis 10 (schmerzhaft).</p>
             <div className="mt-4">
-              <MobilityEditor value={mobility} onChange={setMobility} />
+              <ZoneScaleGrid
+                zones={TENSION_ZONES_LIST}
+                value={tensionZones}
+                onChange={setTensionZones}
+                leftHint="1 (Frei / Unauffällig)"
+                rightHint="10 (Schmerzhaft / Verspannt)"
+              />
             </div>
           </div>
           <div className="rounded-sm border border-border/60 bg-card p-5">
-            <div className="text-[0.7rem] uppercase tracking-[0.3em] text-gold-deep">Spannung & Gewebetonus</div>
-            <p className="mt-1 text-xs text-charcoal-soft">Muskelspannung, Gewebefestigkeit und Körperhaltung.</p>
+            <div className="text-[0.7rem] uppercase tracking-[0.3em] text-gold-deep">Beweglichkeit & Gelenke</div>
+            <p className="mt-1 text-xs text-charcoal-soft">Bewertung des Bewegungsausmasses pro Region.</p>
             <div className="mt-4">
-              <TensionEditor value={tension} onChange={setTension} />
+              <ZoneScaleGrid
+                zones={MOBILITY_ZONES_LIST}
+                value={mobilityZones}
+                onChange={setMobilityZones}
+                leftHint="1 (Voll beweglich / Frei)"
+                rightHint="10 (Stark eingeschränkt / Blockiert)"
+              />
             </div>
           </div>
           <div className="rounded-sm border border-border/60 bg-card p-5">
@@ -528,8 +539,8 @@ function SessionDocument({
   const headerDate = linked?.day ?? log.treatment_date ?? log.created_at.slice(0, 10);
   const label = linked?.treatment ?? log.treatment_name ?? "Manuelle Notiz";
   const dur = linked?.duration_minutes ?? log.duration_minutes ?? null;
-  const mob = parseRecord(log.mobility);
-  const ten = parseRecord(log.tension);
+  const mob = parseZoneScores(log.mobility);
+  const ten = parseZoneScores(log.tension);
   const map = parseBodyMap(log.body_map);
 
   return (
@@ -615,20 +626,20 @@ function SessionDocument({
           />
         </section>
 
-        {(log.pain_level != null || Object.keys(mob).length > 0 || Object.keys(ten).length > 0) && (
+        {Object.keys(ten).length > 0 && (
           <section className="mt-6">
-            <div className="text-[0.62rem] uppercase tracking-[0.28em] text-gold-deep">Schmerzskala & Befunde</div>
-            {log.pain_level != null && (
-              <div className="mt-3">
-                <PainBadge value={log.pain_level} />
-              </div>
-            )}
-            {(Object.keys(mob).length > 0 || Object.keys(ten).length > 0) && (
-              <div className="mt-4 grid gap-4 sm:grid-cols-2">
-                <FindingsList title="Beweglichkeit" labels={MOBILITY_LABELS} data={mob} />
-                <FindingsList title="Spannung & Gewebetonus" labels={TENSION_LABELS} data={ten} />
-              </div>
-            )}
+            <div className="text-[0.62rem] uppercase tracking-[0.28em] text-gold-deep">Spannung & Schmerz</div>
+            <div className="mt-3">
+              <ZoneScoreBadgeGrid labels={TENSION_ZONES as unknown as Record<string, string>} data={ten} />
+            </div>
+          </section>
+        )}
+        {Object.keys(mob).length > 0 && (
+          <section className="mt-6">
+            <div className="text-[0.62rem] uppercase tracking-[0.28em] text-gold-deep">Beweglichkeit & Gelenke</div>
+            <div className="mt-3">
+              <ZoneScoreBadgeGrid labels={MOBILITY_ZONES as unknown as Record<string, string>} data={mob} />
+            </div>
           </section>
         )}
 

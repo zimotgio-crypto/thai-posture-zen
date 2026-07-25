@@ -1,157 +1,105 @@
 import { cn } from "@/lib/utils";
 
-export type MobilityState = Record<string, string>;
-export type TensionState = Record<string, string>;
+export type ZoneScores = Partial<Record<string, number>>;
 
-export const MOBILITY_GROUPS: { key: string; label: string; options: string[] }[] = [
-  {
-    key: "neck",
-    label: "Nacken / Halswirbelsäule-Drehung",
-    options: ["Frei", "Leicht eingeschränkt", "Stark eingeschränkt", "Schmerzhaft"],
-  },
-  {
-    key: "shoulder",
-    label: "Schulterbeweglichkeit (Überkopf)",
-    options: ["Volle Reichweite", "Eingeschränkt", "Schmerzausstrahlend"],
-  },
-  {
-    key: "lumbar",
-    label: "Lendenwirbelsäule / Rumpfvorbeuge",
-    options: ["Schmerzfrei möglich", "Ziehen im unteren Rücken", "Stark blockiert"],
-  },
-  {
-    key: "hip",
-    label: "Hüftöffnung / Drehung",
-    options: ["Gut / Frei", "Hüftbeuger verkürzt", "Anziehmuskeln eingeschränkt"],
-  },
-];
+export const TENSION_ZONES = {
+  kopf: "Kopf",
+  nacken: "Nacken",
+  schulterblatt: "Schulterblatt",
+  arme: "Arme",
+  haende: "Hände",
+  oberschenkel: "Oberschenkel",
+  fuesse: "Füsse",
+  waden: "Waden",
+  gesaess: "Gesäss",
+  obererRuecken: "Oberer Rücken",
+  untererRuecken: "Unterer Rücken",
+  brust: "Brust",
+  bauch: "Bauch",
+  faszienAllgemein: "Faszien (Allgemein)",
+} as const;
 
-export const TENSION_GROUPS: { key: string; label: string; options: string[] }[] = [
-  {
-    key: "trapezius",
-    label: "Nacken & Kapuzenmuskel",
-    options: ["Normal", "Verspannt", "Verhärtet (Muskelverhärtungen)"],
-  },
-  {
-    key: "shoulderGirdle",
-    label: "Schultergürtel / Brust",
-    options: ["Aufgerichtet", "Brustmuskel verkürzt", "Rundrücken-Tendenz"],
-  },
-  {
-    key: "lowBack",
-    label: "Unterer Rücken / Kreuzbein-Darmbein-Gelenk",
-    options: ["Unauffällig", "Erhöhte Spannung", "Gelenkblockade / Beckenschiefstand"],
-  },
-  {
-    key: "glutes",
-    label: "Gesäss / Birnenmuskel",
-    options: ["Entspannt", "Druckschmerzhaft", "Ischias-Ausstrahlung"],
-  },
-  {
-    key: "fascia",
-    label: "Faszienspannung",
-    options: ["Weich / Elastisch", "Erhöhte Grundspannung", "Extrem fest / Verklebt"],
-  },
-  {
-    key: "diaphragm",
-    label: "Zwerchfell / Atmung",
-    options: ["Tiefe Bauchatmung", "Flach / Zwerchfellspannung"],
-  },
-];
+export const MOBILITY_ZONES = {
+  halswirbelsaeule: "Halswirbelsäule & Nackendrehung",
+  schultergurtel: "Schultergürtel (Überkopf & Rotation)",
+  brustwirbelsaeule: "Brustwirbelsäule & Aufrichtung",
+  lendenwirbelsaeule: "Lendenwirbelsäule & Rumpfbeugung",
+  hueftoeffnung: "Hüftöffnung & Adduktoren",
+} as const;
 
-export const MOBILITY_LABELS: Record<string, string> = Object.fromEntries(
-  MOBILITY_GROUPS.map((g) => [g.key, g.label]),
+export type TensionZoneKey = keyof typeof TENSION_ZONES;
+export type MobilityZoneKey = keyof typeof MOBILITY_ZONES;
+
+export const TENSION_ZONES_LIST: { key: string; label: string }[] = Object.entries(TENSION_ZONES).map(
+  ([key, label]) => ({ key, label }),
 );
-export const TENSION_LABELS: Record<string, string> = Object.fromEntries(
-  TENSION_GROUPS.map((g) => [g.key, g.label]),
+export const MOBILITY_ZONES_LIST: { key: string; label: string }[] = Object.entries(MOBILITY_ZONES).map(
+  ([key, label]) => ({ key, label }),
 );
+
+export function initialZoneScores(zones: { key: string }[]): Record<string, number> {
+  const out: Record<string, number> = {};
+  for (const z of zones) out[z.key] = 1;
+  return out;
+}
 
 // Green (1) -> Red (10) gradient
-const PAIN_COLORS = [
+export const PAIN_COLORS = [
   "#16a34a", "#4ca934", "#7fbf1f", "#b5c910", "#e0c81a",
   "#f0b400", "#f39017", "#ee6a1f", "#e04426", "#c1272d",
 ];
 
-export function PainScale({
+export function ZoneScaleGrid({
+  zones,
   value,
   onChange,
+  leftHint,
+  rightHint,
 }: {
-  value: number | null;
-  onChange: (v: number | null) => void;
+  zones: { key: string; label: string }[];
+  value: Record<string, number>;
+  onChange: (v: Record<string, number>) => void;
+  leftHint: string;
+  rightHint: string;
 }) {
   return (
     <div>
-      <div className="text-[0.7rem] uppercase tracking-[0.22em] text-charcoal-soft">
-        Schmerzstufe / Intensität (1–10)
+      <div className="mb-3 flex items-center justify-between text-[0.6rem] uppercase tracking-[0.2em] text-charcoal-soft">
+        <span>{leftHint}</span>
+        <span>{rightHint}</span>
       </div>
-      <div className="mt-3 flex flex-wrap gap-1.5">
-        {Array.from({ length: 10 }, (_, i) => i + 1).map((n) => {
-          const active = value === n;
+      <div className="grid grid-cols-1 gap-x-6 gap-y-3 md:grid-cols-2">
+        {zones.map((z) => {
+          const current = value[z.key] ?? 1;
           return (
-            <button
-              key={n}
-              type="button"
-              onClick={() => onChange(active ? null : n)}
-              aria-pressed={active}
-              aria-label={`Schmerzstufe ${n}`}
-              className={cn(
-                "h-9 w-9 rounded-sm border text-sm font-medium transition",
-                active
-                  ? "text-white border-transparent shadow-sm scale-105"
-                  : "text-charcoal border-border/60 bg-card hover:border-gold-deep/50",
-              )}
-              style={active ? { backgroundColor: PAIN_COLORS[n - 1] } : { borderLeft: `3px solid ${PAIN_COLORS[n - 1]}` }}
-            >
-              {n}
-            </button>
-          );
-        })}
-        {value !== null && (
-          <button
-            type="button"
-            onClick={() => onChange(null)}
-            className="ml-2 text-[0.65rem] uppercase tracking-[0.2em] text-charcoal-soft hover:text-charcoal"
-          >
-            Zurücksetzen
-          </button>
-        )}
-      </div>
-    </div>
-  );
-}
-
-function OptionGroup({
-  label,
-  options,
-  value,
-  onChange,
-}: {
-  label: string;
-  options: string[];
-  value: string | undefined;
-  onChange: (v: string | undefined) => void;
-}) {
-  return (
-    <div>
-      <div className="text-[0.65rem] uppercase tracking-[0.2em] text-charcoal-soft">{label}</div>
-      <div className="mt-2 flex flex-wrap gap-1.5">
-        {options.map((opt) => {
-          const active = value === opt;
-          return (
-            <button
-              key={opt}
-              type="button"
-              onClick={() => onChange(active ? undefined : opt)}
-              aria-pressed={active}
-              className={cn(
-                "rounded-sm border px-3 py-1.5 text-xs transition",
-                active
-                  ? "border-gold-deep bg-gold-soft/60 text-gold-deep"
-                  : "border-border/60 bg-card text-charcoal hover:border-gold-deep/40",
-              )}
-            >
-              {opt}
-            </button>
+            <div key={z.key} className="flex items-center gap-3">
+              <div className="w-[40%] shrink-0 truncate text-xs text-charcoal" title={z.label}>
+                {z.label}
+              </div>
+              <div className="flex flex-1 items-center gap-1">
+                {Array.from({ length: 10 }, (_, i) => i + 1).map((n) => {
+                  const active = current === n;
+                  return (
+                    <button
+                      key={n}
+                      type="button"
+                      onClick={() => onChange({ ...value, [z.key]: n })}
+                      aria-pressed={active}
+                      aria-label={`${z.label}: ${n}`}
+                      className={cn(
+                        "h-6 w-6 rounded-sm border text-[0.65rem] font-medium transition",
+                        active
+                          ? "text-white border-transparent shadow-sm"
+                          : "text-charcoal border-border/60 bg-card hover:border-gold-deep/50",
+                      )}
+                      style={active ? { backgroundColor: PAIN_COLORS[n - 1] } : undefined}
+                    >
+                      {n}
+                    </button>
+                  );
+                })}
+              </div>
+            </div>
           );
         })}
       </div>
@@ -159,65 +107,13 @@ function OptionGroup({
   );
 }
 
-export function MobilityEditor({
-  value,
-  onChange,
-}: {
-  value: MobilityState;
-  onChange: (v: MobilityState) => void;
-}) {
-  return (
-    <div className="space-y-4">
-      {MOBILITY_GROUPS.map((g) => (
-        <OptionGroup
-          key={g.key}
-          label={g.label}
-          options={g.options}
-          value={value[g.key]}
-          onChange={(v) => {
-            const next = { ...value };
-            if (v === undefined) delete next[g.key];
-            else next[g.key] = v;
-            onChange(next);
-          }}
-        />
-      ))}
-    </div>
-  );
-}
-
-export function TensionEditor({
-  value,
-  onChange,
-}: {
-  value: TensionState;
-  onChange: (v: TensionState) => void;
-}) {
-  return (
-    <div className="space-y-4">
-      {TENSION_GROUPS.map((g) => (
-        <OptionGroup
-          key={g.key}
-          label={g.label}
-          options={g.options}
-          value={value[g.key]}
-          onChange={(v) => {
-            const next = { ...value };
-            if (v === undefined) delete next[g.key];
-            else next[g.key] = v;
-            onChange(next);
-          }}
-        />
-      ))}
-    </div>
-  );
-}
-
-export function parseRecord(input: unknown): Record<string, string> {
+export function parseZoneScores(input: unknown): Record<string, number> {
   if (!input || typeof input !== "object") return {};
-  const out: Record<string, string> = {};
+  const out: Record<string, number> = {};
   for (const [k, v] of Object.entries(input as Record<string, unknown>)) {
-    if (typeof v === "string" && v.trim()) out[k] = v;
+    if (typeof v === "number" && Number.isFinite(v) && v >= 1 && v <= 10) {
+      out[k] = Math.round(v);
+    }
   }
   return out;
 }
@@ -231,35 +127,42 @@ export function PainBadge({ value }: { value: number | null | undefined }) {
       style={{ borderColor: color, color }}
     >
       <span className="inline-block h-2 w-2 rounded-full" style={{ backgroundColor: color }} />
-      Schmerz {value}/10
+      Max. Spannung {value}/10
     </span>
   );
 }
 
-export function FindingsList({
-  title,
+export function ZoneScoreBadgeGrid({
   labels,
   data,
 }: {
-  title: string;
   labels: Record<string, string>;
-  data: Record<string, string>;
+  data: Record<string, number>;
 }) {
-  const entries = Object.entries(data).filter(([k, v]) => labels[k] && v);
+  const entries = Object.entries(data).filter(([k, v]) => labels[k] && typeof v === "number");
   if (entries.length === 0) return null;
   return (
-    <div>
-      <div className="text-[0.6rem] font-semibold uppercase tracking-[0.22em] text-gold-deep">
-        {title}
-      </div>
-      <ul className="mt-1.5 space-y-1 text-xs text-charcoal">
-        {entries.map(([k, v]) => (
-          <li key={k} className="flex gap-2">
-            <span className="text-charcoal-soft">{labels[k]}:</span>
-            <span className="font-medium">{v}</span>
-          </li>
-        ))}
-      </ul>
+    <div className="grid grid-cols-3 gap-2 sm:grid-cols-4">
+      {entries.map(([k, v]) => {
+        const color = PAIN_COLORS[Math.max(1, Math.min(10, v)) - 1];
+        return (
+          <div
+            key={k}
+            className="flex items-center justify-between gap-2 rounded-sm border px-2 py-1.5 text-[0.68rem]"
+            style={{ borderColor: color }}
+          >
+            <span className="truncate text-charcoal" title={labels[k]}>
+              {labels[k]}
+            </span>
+            <span
+              className="inline-flex h-5 min-w-[1.25rem] items-center justify-center rounded-sm px-1 text-[0.65rem] font-semibold text-white"
+              style={{ backgroundColor: color }}
+            >
+              {v}
+            </span>
+          </div>
+        );
+      })}
     </div>
   );
 }
