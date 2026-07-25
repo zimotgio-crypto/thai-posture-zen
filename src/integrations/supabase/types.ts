@@ -20,6 +20,7 @@ export type Database = {
           created_at: string
           day: string
           duration_minutes: number
+          google_event_id: string | null
           id: string
           notes: string | null
           silent: boolean
@@ -32,6 +33,7 @@ export type Database = {
           created_at?: string
           day: string
           duration_minutes?: number
+          google_event_id?: string | null
           id?: string
           notes?: string | null
           silent?: boolean
@@ -44,6 +46,7 @@ export type Database = {
           created_at?: string
           day?: string
           duration_minutes?: number
+          google_event_id?: string | null
           id?: string
           notes?: string | null
           silent?: boolean
