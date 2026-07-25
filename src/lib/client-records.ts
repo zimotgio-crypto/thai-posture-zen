@@ -27,6 +27,20 @@ export function normalizePhone(phone: string) {
   return trimmed.startsWith("+") ? `+${digits}` : digits;
 }
 
+// Vergleichsschlüssel für Telefonnummern.
+// Entfernt alle Nicht-Ziffern, dann eine führende 41 (CH-Ländervorwahl),
+// dann eine führende 0. Ergebnis: bei CH-Mobilnummern die letzten 9 Ziffern.
+// Beispiele:
+//   "41765360314"       -> "765360314"
+//   "0765360314"        -> "765360314"
+//   "+41 76 536 03 14"  -> "765360314"
+export function phoneMatchKey(value: string): string {
+  let digits = (value ?? "").replace(/\D/g, "");
+  if (digits.startsWith("41")) digits = digits.slice(2);
+  while (digits.startsWith("0")) digits = digits.slice(1);
+  return digits;
+}
+
 function normalizeText(value: string) {
   return value.trim();
 }
