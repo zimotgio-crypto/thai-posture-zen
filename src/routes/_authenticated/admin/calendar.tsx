@@ -71,7 +71,9 @@ function startOfWeek(d: Date) {
 
 function CalendarPage() {
   const qc = useQueryClient();
+  const t = useT();
   const [view, setView] = useState<"day" | "week">("week");
+  const [selected, setSelected] = useState<BookingRow | null>(null);
   const [anchor, setAnchor] = useState<Date>(() => {
     const d = new Date();
     d.setHours(0, 0, 0, 0);
