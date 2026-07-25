@@ -308,8 +308,13 @@ function CalendarPage() {
                   <div
                     key={m}
                     style={{ height: ROW_PX }}
-                    className="border-b border-border/30"
-                  />
+                    className="relative border-b border-border/30"
+                  >
+                    <div
+                      className="pointer-events-none absolute inset-x-0 top-1/2 border-t border-border/15"
+                      aria-hidden
+                    />
+                  </div>
                 ))}
                 {dayBookings.map((b) => {
                   const [hh, mm] = (b.time as string).split(":").map(Number);
@@ -320,11 +325,13 @@ function CalendarPage() {
                   const isBlock = b.source === "block";
                   const client = (b as unknown as { clients?: { id: string; first_name: string; last_name: string; phone: string } }).clients;
                   return (
-                    <div
+                    <button
+                      type="button"
                       key={b.id}
+                      onClick={() => setSelected(b as unknown as BookingRow)}
                       style={{ top: top + 2, height, left: 4, right: 4 }}
                       className={cn(
-                        "absolute rounded-sm border p-2 shadow-[var(--shadow-soft)] text-[0.72rem] leading-tight overflow-hidden",
+                        "absolute cursor-pointer rounded-sm border p-2 text-left shadow-[var(--shadow-soft)] text-[0.72rem] leading-tight overflow-hidden transition hover:brightness-95",
                         isBlock
                           ? "border-charcoal/40 bg-charcoal/10 text-charcoal"
                           : "border-gold bg-gold-soft/70 text-charcoal"
@@ -332,32 +339,28 @@ function CalendarPage() {
                     >
                       <div className="flex items-start justify-between gap-1">
                         <span className="font-medium">{b.time}</span>
-                        <div className="flex items-center gap-1">
-                          {!isBlock && (b.silent ? <VolumeX className="h-3 w-3" /> : <Volume2 className="h-3 w-3 opacity-40" />)}
-                          <button
-                            onClick={() => handleDelete(b.id)}
-                            className="opacity-0 group-hover:opacity-100 hover:text-destructive"
-                          >
-                            <Trash2 className="h-3 w-3" />
-                          </button>
-                        </div>
+                        {!isBlock && (
+                          <div className="flex items-center gap-1">
+                            {b.silent ? (
+                              <VolumeX className="h-3 w-3" />
+                            ) : (
+                              <Volume2 className="h-3 w-3 opacity-40" />
+                            )}
+                          </div>
+                        )}
                       </div>
                       {isBlock ? (
                         <div className="mt-0.5 uppercase text-[0.6rem] tracking-widest">Blockiert</div>
                       ) : client ? (
-                        <Link
-                          to="/admin/clients/$id"
-                          params={{ id: client.id }}
-                          className="mt-0.5 block font-medium hover:underline truncate"
-                        >
+                        <div className="mt-0.5 block font-medium truncate">
                           {`${client.first_name} ${client.last_name}`.trim()}
-                        </Link>
+                        </div>
                       ) : (
                         <div className="mt-0.5 truncate">—</div>
                       )}
                       <div className="text-charcoal-soft truncate">{b.treatment}</div>
                       {client && <div className="text-charcoal-soft truncate">{client.phone}</div>}
-                    </div>
+                    </button>
                   );
                 })}
                 {(gBusy.data ?? [])
