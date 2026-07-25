@@ -29,6 +29,7 @@ import {
 } from "@/components/ui/select";
 import { formatSwissDate } from "@/lib/pricing";
 import { cn } from "@/lib/utils";
+import { useAdminT, type AdminDict } from "@/lib/admin-i18n";
 
 export type PainTrendLog = {
   id: string;
@@ -51,30 +52,36 @@ export type PainTrendPoint = {
 type MetricSource = "aggregate" | "tension" | "mobility";
 export type MetricOption = { value: string; label: string; source: MetricSource };
 
-const METRIC_OPTIONS: { group: string; options: MetricOption[] }[] = [
-  {
-    group: "Gesamt",
-    options: [{ value: "aggregate", label: "Max. Spannung (Gesamt)", source: "aggregate" }],
-  },
-  {
-    group: "Spannung & Schmerz",
-    options: Object.entries(TENSION_ZONES).map(([value, label]) => ({
-      value,
-      label,
-      source: "tension" as const,
-    })),
-  },
-  {
-    group: "Beweglichkeit & Gelenke",
-    options: Object.entries(MOBILITY_ZONES).map(([value, label]) => ({
-      value,
-      label,
-      source: "mobility" as const,
-    })),
-  },
-];
+function buildMetricOptions(t: AdminDict): { group: string; options: MetricOption[] }[] {
+  return [
+    {
+      group: t.painTrend.groupTotal,
+      options: [{ value: "aggregate", label: t.painTrend.aggregateLabel, source: "aggregate" }],
+    },
+    {
+      group: t.painTrend.groupTension,
+      options: Object.keys(TENSION_ZONES).map((key) => ({
+        value: key,
+        label: (t.tensionZones as Record<string, string>)[key] ?? key,
+        source: "tension" as const,
+      })),
+    },
+    {
+      group: t.painTrend.groupMobility,
+      options: Object.keys(MOBILITY_ZONES).map((key) => ({
+        value: key,
+        label: (t.mobilityZones as Record<string, string>)[key] ?? key,
+        source: "mobility" as const,
+      })),
+    },
+  ];
+}
 
-export function derivePainTrendPoints(logs: PainTrendLog[], metric: MetricOption): PainTrendPoint[] {
+export function derivePainTrendPoints(
+  logs: PainTrendLog[],
+  metric: MetricOption,
+  manualLabel = "Manuelle Notiz",
+): PainTrendPoint[] {
   const pts: PainTrendPoint[] = [];
   for (const l of logs) {
     let value: number | null = null;
@@ -87,7 +94,7 @@ export function derivePainTrendPoints(logs: PainTrendLog[], metric: MetricOption
     if (value == null) continue;
     const linked = l.bookings ?? null;
     const headerDate = linked?.day ?? l.treatment_date ?? l.created_at.slice(0, 10);
-    const label = linked?.treatment ?? l.treatment_name ?? "Manuelle Notiz";
+    const label = linked?.treatment ?? l.treatment_name ?? manualLabel;
     pts.push({ id: l.id, date: headerDate, label, pain: value });
   }
   pts.sort((a, b) => a.date.localeCompare(b.date));
@@ -113,7 +120,11 @@ type ChartRow = {
   isAverage: boolean;
 };
 
-function aggregateMonthly(points: PainTrendPoint[]): ChartRow[] {
+function aggregateMonthly(
+  points: PainTrendPoint[],
+  singular = "Behandlung",
+  plural = "Behandlungen",
+): ChartRow[] {
   const groups = new Map<string, number[]>();
   for (const p of points) {
     const ym = p.date.slice(0, 7); // YYYY-MM
@@ -129,7 +140,7 @@ function aggregateMonthly(points: PainTrendPoint[]): ChartRow[] {
       key: ym,
       xLabel: `${m}.${y}`,
       pain: rounded,
-      title: `${values.length} Behandlung${values.length === 1 ? "" : "en"}`,
+      title: `${values.length} ${values.length === 1 ? singular : plural}`,
       isAverage: true,
     });
   }
@@ -188,12 +199,6 @@ function CustomTooltip({
   );
 }
 
-const RANGE_OPTIONS: { key: Range; label: string }[] = [
-  { key: "all", label: "Alle Termine" },
-  { key: "3m", label: "Letzte 3 Monate" },
-  { key: "6m", label: "Letzte 6 Monate" },
-];
-
 export function PainTrendDialog({
   open,
   onOpenChange,
@@ -203,15 +208,31 @@ export function PainTrendDialog({
   onOpenChange: (v: boolean) => void;
   logs: PainTrendLog[];
 }) {
+  const t = useAdminT();
+  const METRIC_OPTIONS = useMemo(() => buildMetricOptions(t), [t]);
+  const RANGE_OPTIONS: { key: Range; label: string }[] = [
+    { key: "all", label: t.painTrend.rangeAll },
+    { key: "3m", label: t.painTrend.range3m },
+    { key: "6m", label: t.painTrend.range6m },
+  ];
   const [range, setRange] = useState<Range>("all");
   const [monthly, setMonthly] = useState(false);
-  const [metric, setMetric] = useState<MetricOption>(METRIC_OPTIONS[0].options[0]);
+  const [metricValue, setMetricValue] = useState<string>("aggregate");
+  const metric =
+    METRIC_OPTIONS.flatMap((g) => g.options).find((o) => o.value === metricValue) ??
+    METRIC_OPTIONS[0].options[0];
 
-  const points = useMemo(() => derivePainTrendPoints(logs, metric), [logs, metric]);
+  const points = useMemo(
+    () => derivePainTrendPoints(logs, metric, t.profile.manualNote),
+    [logs, metric, t],
+  );
   const filtered = useMemo(() => filterByRange(points, range), [points, range]);
   const rows = useMemo(
-    () => (monthly ? aggregateMonthly(filtered) : toDailyRows(filtered)),
-    [filtered, monthly],
+    () =>
+      monthly
+        ? aggregateMonthly(filtered, t.painTrend.treatmentsSingular, t.painTrend.treatmentsPlural)
+        : toDailyRows(filtered),
+    [filtered, monthly, t],
   );
 
   const manyTicks = rows.length > 8;
@@ -221,7 +242,7 @@ export function PainTrendDialog({
     <Dialog open={open} onOpenChange={onOpenChange}>
       <DialogContent className="sm:max-w-3xl">
         <DialogHeader>
-          <DialogTitle>Schmerzverlauf</DialogTitle>
+          <DialogTitle>{t.painTrend.title}</DialogTitle>
           <p className="text-xs uppercase tracking-[0.2em] text-charcoal-soft">{metric.label}</p>
         </DialogHeader>
 
@@ -246,10 +267,7 @@ export function PainTrendDialog({
           })}
           <Select
             value={metric.value}
-            onValueChange={(v) => {
-              const found = METRIC_OPTIONS.flatMap((g) => g.options).find((o) => o.value === v);
-              if (found) setMetric(found);
-            }}
+            onValueChange={setMetricValue}
           >
             <SelectTrigger className="ml-auto h-8 w-[240px] text-xs">
               <SelectValue />
@@ -273,13 +291,13 @@ export function PainTrendDialog({
         <div className="flex items-center gap-3">
           <Switch id="pain-monthly" checked={monthly} onCheckedChange={setMonthly} />
           <Label htmlFor="pain-monthly" className="text-xs text-charcoal-soft">
-            Monats-Durchschnitt anzeigen
+            {t.painTrend.monthly}
           </Label>
         </div>
 
         {rows.length === 0 ? (
           <p className="rounded-sm border border-dashed border-border/70 px-4 py-8 text-center text-sm text-charcoal-soft">
-            Keine Daten im gewählten Zeitraum.
+            {t.painTrend.empty}
           </p>
         ) : (
           <div className="h-64 w-full sm:h-80">
