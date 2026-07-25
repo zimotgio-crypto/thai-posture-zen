@@ -146,7 +146,7 @@ function ClientsPage() {
       </div>
       <AddClientDialog open={addOpen} onOpenChange={setAddOpen} />
       <Sheet open={Boolean(selectedClient)} onOpenChange={(open) => !open && setSelectedClient(null)}>
-        <SheetContent side="right" className="!w-[92vw] !max-w-none overflow-y-auto sm:!w-[760px]">
+        <SheetContent side="right" className="!w-[95vw] !max-w-none overflow-y-auto sm:!w-[1100px]">
           {selectedClient && (
             <ClientProfileView
               clientId={selectedClient.id}
