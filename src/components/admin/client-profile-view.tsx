@@ -514,6 +514,12 @@ export function ClientProfileView({
           )}
         </DialogContent>
       </Dialog>
+      {typeof document !== "undefined" && openLog && client
+        ? createPortal(
+            <BehandlungsprotokollPrintLayout log={openLog} client={client} />,
+            document.body,
+          )
+        : null}
     </div>
   );
 }
