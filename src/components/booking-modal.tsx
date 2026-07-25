@@ -10,8 +10,7 @@ import { Check, Sparkles, ChevronLeft, ChevronRight } from "lucide-react";
 import { toast } from "sonner";
 import { cn } from "@/lib/utils";
 import { useT } from "@/lib/i18n";
-import { optionsForTreatment, priceForTreatment, BUFFER_MIN } from "@/lib/pricing";
-import { formatDuration } from "@/lib/pricing";
+import { optionsForTreatment, priceForTreatment, BUFFER_MIN, formatDuration } from "@/lib/pricing";
 
 function ymd(d: Date) {
   const y = d.getFullYear();
