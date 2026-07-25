@@ -280,6 +280,7 @@ export async function getGoogleBusyIntervals(
 export async function debugGoogleCalendarDay(day: string): Promise<{
   configured: boolean;
   accessTokenOk: boolean;
+  keyShape: ReturnType<typeof describeKeyShape>;
   freeBusyRaw: {
     ok: boolean;
     status: number;
@@ -292,6 +293,7 @@ export async function debugGoogleCalendarDay(day: string): Promise<{
 }> {
   const exceptions: GoogleException[] = [];
   const configured = isGoogleConfigured();
+  const keyShape = describeKeyShape();
   let accessTokenOk = false;
   let freeBusyRaw: {
     ok: boolean;
@@ -306,7 +308,7 @@ export async function debugGoogleCalendarDay(day: string): Promise<{
     const token = await getAuthToken();
     accessTokenOk = Boolean(token);
     if (!token) {
-      return { configured, accessTokenOk, freeBusyRaw, derivedIntervals, exceptions };
+      return { configured, accessTokenOk, keyShape, freeBusyRaw, derivedIntervals, exceptions };
     }
 
     const res = await fetch("https://www.googleapis.com/calendar/v3/freeBusy", {
@@ -347,5 +349,5 @@ export async function debugGoogleCalendarDay(day: string): Promise<{
     console.error("[google-calendar] debug freeBusy exception", normalized);
   }
 
-  return { configured, accessTokenOk, freeBusyRaw, derivedIntervals, exceptions };
+  return { configured, accessTokenOk, keyShape, freeBusyRaw, derivedIntervals, exceptions };
 }
