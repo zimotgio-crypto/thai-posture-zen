@@ -340,7 +340,9 @@ export function ClientProfileView({
               const tDate = (l as { treatment_date?: string | null }).treatment_date ?? null;
               const tName = (l as { treatment_name?: string | null }).treatment_name ?? null;
               const tDur = (l as { duration_minutes?: number | null }).duration_minutes ?? null;
-              const pain = (l as { pain_level?: number | null }).pain_level ?? null;
+              const tensionScores = parseZoneScores((l as { tension?: unknown }).tension);
+              const tensionValues = Object.values(tensionScores);
+              const maxTension = tensionValues.length > 0 ? Math.max(...tensionValues) : null;
               const headerDate = linked?.day ?? tDate ?? l.created_at.slice(0, 10);
               const label = linked
                 ? linked.treatment
@@ -366,7 +368,7 @@ export function ClientProfileView({
                         <div className="mt-0.5 truncate text-xs text-charcoal-soft">{preview}</div>
                       )}
                     </div>
-                    {pain != null && <PainBadge value={pain} />}
+                    {maxTension != null && <PainBadge value={maxTension} />}
                   </button>
                 </li>
               );
