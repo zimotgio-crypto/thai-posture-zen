@@ -18,6 +18,7 @@ import {
 } from "@/components/ui/dialog";
 import { formatSwissDate, formatDuration, priceForTreatment } from "@/lib/pricing";
 import { useT } from "@/lib/i18n";
+import { useAdminT, useAdminLocale } from "@/lib/admin-i18n";
 
 type BookingRow = {
   id: string;
@@ -72,6 +73,8 @@ function startOfWeek(d: Date) {
 function CalendarPage() {
   const qc = useQueryClient();
   const t = useT();
+  const at = useAdminT();
+  const locale = useAdminLocale();
   const [view, setView] = useState<"day" | "week">("week");
   const [selected, setSelected] = useState<BookingRow | null>(null);
   const [anchor, setAnchor] = useState<Date>(() => {
@@ -128,13 +131,13 @@ function CalendarPage() {
 
   const del = useServerFn(deleteBooking);
   async function handleDelete(id: string) {
-    if (!confirm("Termin wirklich löschen?")) return;
+    if (!confirm(at.calendar.confirmDelete)) return;
     try {
       await del({ data: { id } });
-      toast.success("Gelöscht");
+      toast.success(at.calendar.deleted);
       qc.invalidateQueries({ queryKey: ["admin", "bookings"] });
     } catch (err) {
-      toast.error(err instanceof Error ? err.message : "Fehler");
+      toast.error(err instanceof Error ? err.message : at.common.error);
     }
   }
 
@@ -147,7 +150,7 @@ function CalendarPage() {
       setDebugJson(JSON.stringify(res, null, 2));
     } catch (err) {
       setDebugJson(null);
-      setDebugError(err instanceof Error ? err.message : "Google-Diagnose fehlgeschlagen");
+      setDebugError(err instanceof Error ? err.message : at.calendar.diagnoseFailed);
     } finally {
       setDebugLoading(false);
     }
@@ -163,9 +166,9 @@ function CalendarPage() {
 
   const rangeLabel =
     view === "day"
-      ? anchor.toLocaleDateString("de-CH", { weekday: "long", day: "2-digit", month: "long", year: "numeric" })
-      : `${days[0].toLocaleDateString("de-CH", { day: "2-digit", month: "short" })} – ${days[6].toLocaleDateString(
-          "de-CH",
+      ? anchor.toLocaleDateString(locale, { weekday: "long", day: "2-digit", month: "long", year: "numeric" })
+      : `${days[0].toLocaleDateString(locale, { day: "2-digit", month: "short" })} – ${days[6].toLocaleDateString(
+          locale,
           { day: "2-digit", month: "short", year: "numeric" }
         )}`;
 
@@ -175,7 +178,7 @@ function CalendarPage() {
         <div className="flex items-center gap-3">
           <button
             onClick={() => step(view === "day" ? -1 : -7)}
-            aria-label="Zurück"
+            aria-label={at.common.back}
             className="flex h-9 w-9 items-center justify-center rounded-sm border border-border/60 text-charcoal-soft hover:bg-gold-soft/30"
           >
             <ChevronLeft className="h-4 w-4" />
@@ -184,11 +187,11 @@ function CalendarPage() {
             onClick={() => setAnchor(new Date(new Date().setHours(0, 0, 0, 0)))}
             className="rounded-sm border border-border/60 px-3 py-1.5 text-[0.7rem] uppercase tracking-[0.22em] text-charcoal-soft hover:text-charcoal"
           >
-            Heute
+            {at.common.today}
           </button>
           <button
             onClick={() => step(view === "day" ? 1 : 7)}
-            aria-label="Weiter"
+            aria-label={at.common.next}
             className="flex h-9 w-9 items-center justify-center rounded-sm border border-border/60 text-charcoal-soft hover:bg-gold-soft/30"
           >
             <ChevronRight className="h-4 w-4" />
@@ -203,8 +206,8 @@ function CalendarPage() {
             )}
           >
             {gStatus.data?.configured
-              ? "Google Calendar verbunden"
-              : "Google Calendar nicht konfiguriert"}
+              ? at.calendar.connected
+              : at.calendar.notConnected}
           </span>
         </div>
         <div className="inline-flex rounded-sm border border-border/60 bg-card p-1">
@@ -217,7 +220,7 @@ function CalendarPage() {
                 view === v ? "bg-gold text-primary-foreground" : "text-charcoal-soft hover:text-charcoal"
               )}
             >
-              {v === "day" ? "Tag" : "Woche"}
+              {v === "day" ? at.calendar.dayView : at.calendar.weekView}
             </button>
           ))}
         </div>
@@ -227,7 +230,7 @@ function CalendarPage() {
         <div className="flex flex-wrap items-end gap-3">
           <label className="grid gap-1">
             <span className="text-[0.65rem] uppercase tracking-[0.22em] text-charcoal-soft">
-              Diagnose-Datum
+              {at.calendar.diagnoseDate}
             </span>
             <Input
               type="date"
@@ -241,14 +244,14 @@ function CalendarPage() {
             disabled={debugLoading || !debugDay}
             className="btn-gold h-9 rounded-sm px-4 text-[0.7rem] uppercase tracking-[0.22em]"
           >
-            {debugLoading ? "Prüfe…" : "Google-Diagnose"}
+            {debugLoading ? at.calendar.diagnoseChecking : at.calendar.diagnose}
           </Button>
           {debugJson && (
             <button
               onClick={() => setDebugOpen((v) => !v)}
               className="h-9 rounded-sm border border-border/60 px-3 text-[0.68rem] uppercase tracking-[0.2em] text-charcoal-soft hover:text-charcoal"
             >
-              {debugOpen ? "JSON ausblenden" : "JSON anzeigen"}
+              {debugOpen ? at.calendar.hideJson : at.calendar.showJson}
             </button>
           )}
         </div>
@@ -278,7 +281,7 @@ function CalendarPage() {
                 )}
               >
                 <div className="text-[0.6rem] uppercase tracking-[0.25em] text-charcoal-soft">
-                  {d.toLocaleDateString("de-CH", { weekday: "short" })}
+                  {d.toLocaleDateString(locale, { weekday: "short" })}
                 </div>
                 <div className="mt-1 font-serif text-lg text-charcoal">{d.getDate()}</div>
               </div>
@@ -350,7 +353,7 @@ function CalendarPage() {
                         )}
                       </div>
                       {isBlock ? (
-                        <div className="mt-0.5 uppercase text-[0.6rem] tracking-widest">Blockiert</div>
+                        <div className="mt-0.5 uppercase text-[0.6rem] tracking-widest">{at.calendar.blocked}</div>
                       ) : client ? (
                         <div className="mt-0.5 block font-medium truncate">
                           {`${client.first_name} ${client.last_name}`.trim()}
@@ -381,7 +384,7 @@ function CalendarPage() {
                       >
                         <div className="font-medium">{g.time}</div>
                         <div className="mt-0.5 uppercase text-[0.6rem] tracking-widest">
-                          Privat – belegt
+                          {at.calendar.privateBusy}
                         </div>
                       </div>
                     );
@@ -395,27 +398,28 @@ function CalendarPage() {
       <div className="mt-4 flex flex-wrap items-center gap-4 text-[0.65rem] uppercase tracking-[0.22em] text-charcoal-soft">
         <span className="inline-flex items-center gap-2">
           <span className="inline-block h-3 w-3 rounded-sm border border-gold bg-gold-soft/70" />
-          Buchung
+          {at.calendar.legendBooking}
         </span>
         <span className="inline-flex items-center gap-2">
           <span className="inline-block h-3 w-3 rounded-sm border border-charcoal/30 bg-charcoal/5" />
-          Privater Google-Termin
+          {at.calendar.legendPrivate}
         </span>
         <span className="inline-flex items-center gap-2">
           <span className="inline-block h-3 w-3 rounded-sm border border-charcoal/40 bg-charcoal/10" />
-          Manuell blockiert
+          {at.calendar.legendBlocked}
         </span>
       </div>
 
       {bookings.isError && (
         <p className="mt-4 text-sm text-destructive">
-          {bookings.error instanceof Error ? bookings.error.message : "Fehler beim Laden"}
+          {bookings.error instanceof Error ? bookings.error.message : at.calendar.loadingError}
         </p>
       )}
 
       <BookingDetailsDialog
         booking={selected}
         treatments={t.booking.treatments}
+        at={at}
         onClose={() => setSelected(null)}
         onDelete={async (id) => {
           await handleDelete(id);
@@ -429,11 +433,13 @@ function CalendarPage() {
 function BookingDetailsDialog({
   booking,
   treatments,
+  at,
   onClose,
   onDelete,
 }: {
   booking: BookingRow | null;
   treatments: ReadonlyArray<{ id: string; label: string }>;
+  at: ReturnType<typeof useAdminT>;
   onClose: () => void;
   onDelete: (id: string) => void | Promise<void>;
 }) {
@@ -455,11 +461,11 @@ function BookingDetailsDialog({
   const client = booking.clients;
   const sourceLabel =
     booking.source === "online"
-      ? "Online-Buchung"
+      ? at.calendar.sourceOnline
       : booking.source === "manual"
-        ? "Manuell"
+        ? at.calendar.sourceManual
         : booking.source === "block"
-          ? "Blockiert"
+          ? at.calendar.sourceBlock
           : booking.source ?? "—";
 
   return (
@@ -468,7 +474,7 @@ function BookingDetailsDialog({
         <div className="border-b border-border/60 px-6 py-5">
           <DialogHeader className="space-y-1 text-left">
             <DialogTitle className="font-serif text-2xl font-normal text-charcoal">
-              {isBlock ? "Blockierte Zeit" : "Termin"}
+              {isBlock ? at.calendar.blockedTitle : at.calendar.details}
             </DialogTitle>
             <DialogDescription className="text-charcoal-soft/80">
               {formatSwissDate(booking.day)} · {booking.time.slice(0, 5)} – {endStr}
@@ -476,22 +482,22 @@ function BookingDetailsDialog({
           </DialogHeader>
         </div>
         <div className="space-y-4 px-6 py-5 text-sm text-charcoal">
-          <DetailRow label="Dauer" value={formatDuration(dur)} />
+          <DetailRow label={at.calendar.duration} value={formatDuration(dur)} />
           {!isBlock && (
             <>
-              <DetailRow label="Behandlung" value={booking.treatment} />
-              {price > 0 && <DetailRow label="Preis" value={`CHF ${price}.–`} />}
+              <DetailRow label={at.calendar.treatment} value={booking.treatment} />
+              {price > 0 && <DetailRow label={at.calendar.price} value={`CHF ${price}.–`} />}
               {client && (
                 <>
                   <DetailRow
-                    label="Kunde"
+                    label={at.calendar.client}
                     value={`${client.first_name} ${client.last_name}`.trim() || "—"}
                   />
-                  {client.phone && <DetailRow label="Telefon" value={client.phone} />}
-                  {client.email && <DetailRow label="E-Mail" value={client.email} />}
+                  {client.phone && <DetailRow label={at.calendar.phone} value={client.phone} />}
+                  {client.email && <DetailRow label={at.calendar.email} value={client.email} />}
                   {(client.street || client.zip || client.city) && (
                     <DetailRow
-                      label="Adresse"
+                      label={at.calendar.address}
                       value={[client.street, [client.zip, client.city].filter(Boolean).join(" ")]
                         .filter(Boolean)
                         .join(", ")}
@@ -500,14 +506,14 @@ function BookingDetailsDialog({
                 </>
               )}
               <DetailRow
-                label="Silent Treatment"
-                value={booking.silent ? "Ja" : "Nein"}
+                label={at.calendar.silent}
+                value={booking.silent ? at.common.yes : at.common.no}
               />
-              <DetailRow label="Quelle" value={sourceLabel} />
+              <DetailRow label={at.calendar.source} value={sourceLabel} />
               {booking.notes && (
                 <div className="grid gap-1">
                   <span className="text-[0.65rem] uppercase tracking-[0.22em] text-charcoal-soft">
-                    Notizen
+                    {at.calendar.notes}
                   </span>
                   <p className="whitespace-pre-wrap rounded-sm border border-border/60 bg-card p-3 text-sm text-charcoal">
                     {booking.notes}
@@ -521,7 +527,7 @@ function BookingDetailsDialog({
           {!isBlock && client ? (
             <Button asChild variant="outline" className="rounded-sm">
               <Link to="/admin/clients/$id" params={{ id: client.id }} onClick={onClose}>
-                Zum Kundenprofil
+                {at.calendar.goToClient}
               </Link>
             </Button>
           ) : (
@@ -532,7 +538,7 @@ function BookingDetailsDialog({
             className="rounded-sm"
             onClick={() => onDelete(booking.id)}
           >
-            Termin löschen
+            {at.calendar.deleteBooking}
           </Button>
         </div>
       </DialogContent>
