@@ -45,6 +45,7 @@ import {
 import { PainTrendDialog } from "@/components/admin/pain-trend-chart";
 import { toast } from "sonner";
 import { formatDuration, formatSwissDate } from "@/lib/pricing";
+import { useAdminT } from "@/lib/admin-i18n";
 
 type ClientLike = {
   id: string;
@@ -87,6 +88,7 @@ export function ClientProfileView({
   onDeleted?: () => void;
 }) {
   const qc = useQueryClient();
+  const t = useAdminT();
   const getClientFn = useServerFn(getClient);
   const addLog = useServerFn(addSessionLog);
   const updateClientFn = useServerFn(updateClient);
@@ -155,10 +157,19 @@ export function ClientProfileView({
     return future[0] ?? null;
   }, [bookings]);
 
+  const tZonesLocalized = useMemo(
+    () => TENSION_ZONES_LIST.map((z) => ({ key: z.key, label: (t.tensionZones as Record<string,string>)[z.key] ?? z.label })),
+    [t],
+  );
+  const mZonesLocalized = useMemo(
+    () => MOBILITY_ZONES_LIST.map((z) => ({ key: z.key, label: (t.mobilityZones as Record<string,string>)[z.key] ?? z.label })),
+    [t],
+  );
+
   async function saveNote() {
     const text = bodyHtml.replace(/<[^>]+>/g, "").trim();
     if (!text) {
-      toast.error("Notiz darf nicht leer sein.");
+      toast.error(t.profile.noteEmpty);
       return;
     }
     setBusy(true);
@@ -176,7 +187,7 @@ export function ClientProfileView({
           mobilityZones,
         },
       });
-      toast.success("Notiz gespeichert");
+      toast.success(t.profile.noteSaved);
       setBodyHtml("");
       setLinkBookingId("");
       setBodyMap(EMPTY_BODY_MAP);
@@ -184,7 +195,7 @@ export function ClientProfileView({
       setMobilityZones(initialZoneScores(MOBILITY_ZONES_LIST));
       qc.invalidateQueries({ queryKey: ["admin", "client", clientId] });
     } catch (err) {
-      toast.error(err instanceof Error ? err.message : "Fehler");
+      toast.error(err instanceof Error ? err.message : t.common.error);
     } finally {
       setBusy(false);
     }
@@ -194,12 +205,12 @@ export function ClientProfileView({
     setSavingProfile(true);
     try {
       await updateClientFn({ data: { id: clientId, ...form } });
-      toast.success("Kundendaten aktualisiert");
+      toast.success(t.profile.profileUpdated);
       qc.invalidateQueries({ queryKey: ["admin", "client", clientId] });
       qc.invalidateQueries({ queryKey: ["admin", "clients"] });
       setEditingContact(false);
     } catch (err) {
-      toast.error(err instanceof Error ? err.message : "Fehler");
+      toast.error(err instanceof Error ? err.message : t.common.error);
     } finally {
       setSavingProfile(false);
     }
@@ -209,12 +220,12 @@ export function ClientProfileView({
     setDeleting(true);
     try {
       await deleteClientFn({ data: { id: clientId } });
-      toast.success("Kunde gelöscht");
+      toast.success(t.profile.clientDeleted);
       qc.invalidateQueries({ queryKey: ["admin", "clients"] });
       setConfirmDelete(false);
       onDeleted?.();
     } catch (err) {
-      toast.error(err instanceof Error ? err.message : "Fehler");
+      toast.error(err instanceof Error ? err.message : t.common.error);
       setDeleting(false);
     }
   }
@@ -222,25 +233,25 @@ export function ClientProfileView({
   const openLog = logs.find((l) => l.id === openLogId) ?? null;
 
   if (!client) {
-    return <p className="text-sm text-charcoal-soft">Lade…</p>;
+    return <p className="text-sm text-charcoal-soft">{t.common.loading}</p>;
   }
 
   return (
     <div className="space-y-7">
       <header className="space-y-4">
-        <div className="text-[0.68rem] uppercase tracking-[0.28em] text-gold-deep">Kundenprofil</div>
+        <div className="text-[0.68rem] uppercase tracking-[0.28em] text-gold-deep">{t.profile.eyebrow}</div>
         <div className="flex flex-wrap items-start justify-between gap-4">
           <h1 className="font-serif text-3xl font-normal text-charcoal">{fullName(client)}</h1>
           <div className="flex items-center gap-2">
             {nextBooking && (
               <span className="inline-flex items-center gap-2 rounded-sm border border-gold/50 bg-gold-soft/30 px-3 py-1.5 text-[0.65rem] uppercase tracking-[0.2em] text-charcoal">
-                Nächster Termin: {formatSwissDate(nextBooking.day)} · {nextBooking.time.slice(0, 5)}
+                {t.profile.nextBooking}: {formatSwissDate(nextBooking.day)} · {nextBooking.time.slice(0, 5)}
               </span>
             )}
             <button
               type="button"
               onClick={() => setEditingContact((v) => !v)}
-              aria-label="Stammdaten bearbeiten"
+              aria-label={t.profile.editContact}
               className="inline-flex h-8 w-8 items-center justify-center rounded-sm border border-border/60 text-charcoal-soft transition hover:border-gold-deep/60 hover:text-gold-deep"
             >
               <Pencil className="h-4 w-4" />
@@ -272,35 +283,35 @@ export function ClientProfileView({
         ) : (
           <section className="rounded-sm border border-border/60 bg-ivory-deep/20 p-5">
             <div className="mb-4 text-[0.65rem] uppercase tracking-[0.22em] text-charcoal-soft">
-              Stammdaten bearbeiten
+              {t.profile.editContact}
             </div>
             <div className="grid gap-3 sm:grid-cols-2">
               <div className="space-y-1.5">
-                <Label className="text-xs text-charcoal-soft">Vorname</Label>
+                <Label className="text-xs text-charcoal-soft">{t.profile.firstName}</Label>
                 <Input value={form.firstName} onChange={(e) => setForm((f) => ({ ...f, firstName: e.target.value }))} />
               </div>
               <div className="space-y-1.5">
-                <Label className="text-xs text-charcoal-soft">Nachname</Label>
+                <Label className="text-xs text-charcoal-soft">{t.profile.lastName}</Label>
                 <Input value={form.lastName} onChange={(e) => setForm((f) => ({ ...f, lastName: e.target.value }))} />
               </div>
               <div className="space-y-1.5">
-                <Label className="text-xs text-charcoal-soft">E-Mail</Label>
+                <Label className="text-xs text-charcoal-soft">{t.profile.email}</Label>
                 <Input type="email" value={form.email} onChange={(e) => setForm((f) => ({ ...f, email: e.target.value }))} />
               </div>
               <div className="space-y-1.5">
-                <Label className="text-xs text-charcoal-soft">Telefon</Label>
+                <Label className="text-xs text-charcoal-soft">{t.profile.phone}</Label>
                 <Input value={form.phone} onChange={(e) => setForm((f) => ({ ...f, phone: e.target.value }))} />
               </div>
               <div className="space-y-1.5 sm:col-span-2">
-                <Label className="text-xs text-charcoal-soft">Strasse / Nr.</Label>
+                <Label className="text-xs text-charcoal-soft">{t.profile.street}</Label>
                 <Input value={form.street} onChange={(e) => setForm((f) => ({ ...f, street: e.target.value }))} />
               </div>
               <div className="space-y-1.5">
-                <Label className="text-xs text-charcoal-soft">PLZ</Label>
+                <Label className="text-xs text-charcoal-soft">{t.profile.zip}</Label>
                 <Input value={form.zip} onChange={(e) => setForm((f) => ({ ...f, zip: e.target.value }))} />
               </div>
               <div className="space-y-1.5">
-                <Label className="text-xs text-charcoal-soft">Ort</Label>
+                <Label className="text-xs text-charcoal-soft">{t.profile.city}</Label>
                 <Input value={form.city} onChange={(e) => setForm((f) => ({ ...f, city: e.target.value }))} />
               </div>
             </div>
@@ -311,14 +322,14 @@ export function ClientProfileView({
                 disabled={savingProfile}
                 className="rounded-sm px-4 py-2.5 text-[0.7rem] uppercase tracking-[0.22em]"
               >
-                Abbrechen
+                {t.common.cancel}
               </Button>
               <Button
                 onClick={saveProfile}
                 disabled={savingProfile}
                 className="btn-gold rounded-sm px-5 py-2.5 text-[0.7rem] uppercase tracking-[0.22em] disabled:opacity-50"
               >
-                Speichern
+                {t.common.save}
               </Button>
             </div>
           </section>
@@ -327,8 +338,8 @@ export function ClientProfileView({
 
       <Tabs defaultValue="history" className="space-y-6">
         <TabsList className="grid w-full max-w-sm grid-cols-2">
-          <TabsTrigger value="history">Verlauf</TabsTrigger>
-          <TabsTrigger value="new">Neuer Eintrag</TabsTrigger>
+          <TabsTrigger value="history">{t.profile.tabHistory}</TabsTrigger>
+          <TabsTrigger value="new">{t.profile.tabNew}</TabsTrigger>
         </TabsList>
 
         <TabsContent value="history" className="space-y-3">
@@ -340,18 +351,18 @@ export function ClientProfileView({
                 className="inline-flex items-center gap-2 rounded-sm border border-border/60 px-3 py-2 text-[0.7rem] uppercase tracking-[0.2em] text-charcoal-soft transition-colors hover:border-gold-deep/60 hover:text-gold-deep"
               >
                 <TrendingUp className="h-3.5 w-3.5" />
-                Schmerzverlauf anzeigen
+                {t.profile.showPainTrend}
               </button>
             </div>
           )}
           {q.isLoading && (
             <p className="rounded-sm border border-dashed border-border/70 px-4 py-8 text-center text-sm text-charcoal-soft">
-              Lade Verlauf…
+              {t.profile.loadingHistory}
             </p>
           )}
           {!q.isLoading && logs.length === 0 && (
             <p className="rounded-sm border border-dashed border-border/70 px-4 py-8 text-center text-sm text-charcoal-soft">
-              Noch keine Einträge im Massagetagebuch.
+              {t.profile.emptyHistory}
             </p>
           )}
           <ul className="divide-y divide-border/50 rounded-sm border border-border/60 bg-card">
@@ -368,7 +379,7 @@ export function ClientProfileView({
               const headerDate = linked?.day ?? tDate ?? l.created_at.slice(0, 10);
               const label = linked
                 ? linked.treatment
-                : tName ?? "Manuelle Notiz";
+                : tName ?? t.profile.manualNote;
               const dur = linked?.duration_minutes ?? tDur ?? null;
               const preview = stripHtml(l.body_html);
               return (
@@ -401,21 +412,21 @@ export function ClientProfileView({
         <TabsContent value="new" className="space-y-5">
           <div>
             <div className="flex items-center gap-2 text-[0.7rem] uppercase tracking-[0.3em] text-gold-deep">
-              <Sparkles className="h-3.5 w-3.5" /> Massagetagebuch
+              <Sparkles className="h-3.5 w-3.5" /> {t.profile.diary}
             </div>
-            <h2 className="mt-2 font-serif text-2xl text-charcoal">Neuer Eintrag</h2>
+            <h2 className="mt-2 font-serif text-2xl text-charcoal">{t.profile.newEntry}</h2>
           </div>
           {bookings.length > 0 && (
             <div>
               <label className="text-xs uppercase tracking-[0.2em] text-charcoal-soft">
-                Termin verknüpfen (optional)
+                {t.profile.linkBooking}
               </label>
               <select
                 value={linkBookingId}
                 onChange={(e) => setLinkBookingId(e.target.value)}
                 className="mt-2 w-full rounded-sm border border-input bg-background px-3 py-2 text-sm"
               >
-                <option value="">— keiner —</option>
+                <option value="">{t.profile.noneOption}</option>
                 {bookings.map((b) => (
                   <option key={b.id} value={b.id}>
                     {formatBookingOption(b)}
@@ -427,40 +438,40 @@ export function ClientProfileView({
           <TiptapEditor
             value={bodyHtml}
             onChange={setBodyHtml}
-            placeholder="z.B. Verhärtung im oberen Trapezmuskel gelöst, Haltung leicht verbessert…"
+            placeholder={t.profile.notePlaceholder}
           />
           <div className="rounded-sm border border-border/60 bg-card p-5">
-            <div className="text-[0.7rem] uppercase tracking-[0.3em] text-gold-deep">Spannung & Schmerz</div>
-            <p className="mt-1 text-xs text-charcoal-soft">Bewerte jede Zone von 1 (frei) bis 10 (schmerzhaft).</p>
+            <div className="text-[0.7rem] uppercase tracking-[0.3em] text-gold-deep">{t.profile.tensionTitle}</div>
+            <p className="mt-1 text-xs text-charcoal-soft">{t.profile.tensionHint}</p>
             <div className="mt-4">
               <ZoneScaleGrid
-                zones={TENSION_ZONES_LIST}
+                zones={tZonesLocalized}
                 value={tensionZones}
                 onChange={setTensionZones}
-                leftHint="1 (Frei / Unauffällig)"
-                rightHint="10 (Schmerzhaft / Verspannt)"
+                leftHint={t.profile.tensionLeft}
+                rightHint={t.profile.tensionRight}
               />
             </div>
           </div>
           <div className="rounded-sm border border-border/60 bg-card p-5">
-            <div className="text-[0.7rem] uppercase tracking-[0.3em] text-gold-deep">Beweglichkeit & Gelenke</div>
-            <p className="mt-1 text-xs text-charcoal-soft">Bewertung des Bewegungsausmasses pro Region.</p>
+            <div className="text-[0.7rem] uppercase tracking-[0.3em] text-gold-deep">{t.profile.mobilityTitle}</div>
+            <p className="mt-1 text-xs text-charcoal-soft">{t.profile.mobilityHint}</p>
             <div className="mt-4">
               <ZoneScaleGrid
-                zones={MOBILITY_ZONES_LIST}
+                zones={mZonesLocalized}
                 value={mobilityZones}
                 onChange={setMobilityZones}
-                leftHint="1 (Voll beweglich / Frei)"
-                rightHint="10 (Stark eingeschränkt / Blockiert)"
+                leftHint={t.profile.mobilityLeft}
+                rightHint={t.profile.mobilityRight}
               />
             </div>
           </div>
           <div className="rounded-sm border border-border/60 bg-card p-5">
             <div className="flex items-center gap-2 text-[0.7rem] uppercase tracking-[0.3em] text-gold-deep">
-              <Target className="h-3.5 w-3.5" /> Körperkartierung
+              <Target className="h-3.5 w-3.5" /> {t.profile.bodyMap}
             </div>
             <p className="mt-2 text-sm text-charcoal-soft">
-              Klicken Sie auf die Körperumrisse, um Schmerz- oder Problemstellen zu markieren.
+              {t.profile.bodyMapHint}
             </p>
             <div className="mt-4">
               <BodyMapEditor value={bodyMap} onChange={setBodyMap} />
@@ -472,16 +483,16 @@ export function ClientProfileView({
               disabled={busy || q.isLoading}
               className="btn-gold rounded-sm px-6 py-4 text-[0.72rem] uppercase tracking-[0.22em] disabled:opacity-50"
             >
-              Notiz speichern
+              {t.profile.saveNote}
             </Button>
           </div>
         </TabsContent>
       </Tabs>
 
       <section className="rounded-sm border border-destructive/30 bg-destructive/5 p-5">
-        <h3 className="font-serif text-lg text-charcoal">Kunde löschen</h3>
+        <h3 className="font-serif text-lg text-charcoal">{t.profile.dangerTitle}</h3>
         <p className="mt-1 text-xs text-charcoal-soft">
-          Entfernt diesen Kunden inklusive aller Termine und Massagetagebuch-Einträge unwiderruflich.
+          {t.profile.dangerDesc}
         </p>
         <div className="mt-4 flex justify-end">
           <Button
@@ -490,7 +501,7 @@ export function ClientProfileView({
             onClick={() => setConfirmDelete(true)}
             className="rounded-sm border-destructive/50 px-5 py-2.5 text-[0.7rem] uppercase tracking-[0.22em] text-destructive hover:bg-destructive hover:text-destructive-foreground"
           >
-            <Trash2 className="mr-2 h-4 w-4" /> Kunde löschen
+            <Trash2 className="mr-2 h-4 w-4" /> {t.profile.dangerTitle}
           </Button>
         </div>
       </section>
@@ -498,14 +509,13 @@ export function ClientProfileView({
       <AlertDialog open={confirmDelete} onOpenChange={setConfirmDelete}>
         <AlertDialogContent>
           <AlertDialogHeader>
-            <AlertDialogTitle>Kunde wirklich löschen?</AlertDialogTitle>
+            <AlertDialogTitle>{t.profile.confirmTitle}</AlertDialogTitle>
             <AlertDialogDescription>
-              Möchtest du diesen Kunden wirklich unwiderruflich löschen? Alle zugehörigen Termine und
-              Massagetagebuch-Einträge werden ebenfalls gelöscht.
+              {t.profile.confirmDesc}
             </AlertDialogDescription>
           </AlertDialogHeader>
           <AlertDialogFooter>
-            <AlertDialogCancel disabled={deleting}>Abbrechen</AlertDialogCancel>
+            <AlertDialogCancel disabled={deleting}>{t.common.cancel}</AlertDialogCancel>
             <AlertDialogAction
               disabled={deleting}
               onClick={(e) => {
@@ -514,7 +524,7 @@ export function ClientProfileView({
               }}
               className="bg-destructive text-destructive-foreground hover:bg-destructive/90"
             >
-              Endgültig löschen
+              {t.profile.confirmFinal}
             </AlertDialogAction>
           </AlertDialogFooter>
         </AlertDialogContent>
@@ -526,6 +536,8 @@ export function ClientProfileView({
             <SessionDocument
               log={openLog}
               client={client}
+              printLabel={t.profile.printPdf}
+              closeLabel={t.common.close}
               onClose={() => setOpenLogId(null)}
             />
           )}
@@ -549,6 +561,8 @@ export function ClientProfileView({
 function SessionDocument({
   log,
   client,
+  printLabel,
+  closeLabel,
   onClose,
 }: {
   log: {
@@ -566,6 +580,8 @@ function SessionDocument({
     bookings?: { day: string; treatment: string; duration_minutes?: number | null } | null;
   };
   client: ClientLike;
+  printLabel: string;
+  closeLabel: string;
   onClose: () => void;
 }) {
   return (
@@ -576,12 +592,12 @@ function SessionDocument({
           onClick={() => window.print()}
           className="inline-flex items-center gap-2 rounded-sm border border-border/60 bg-card px-3 py-2 text-[0.65rem] uppercase tracking-[0.22em] text-charcoal-soft shadow-sm transition hover:border-gold-deep/60 hover:text-gold-deep"
         >
-          <Printer className="h-3.5 w-3.5" /> Als PDF drucken
+          <Printer className="h-3.5 w-3.5" /> {printLabel}
         </button>
         <button
           type="button"
           onClick={onClose}
-          aria-label="Schliessen"
+          aria-label={closeLabel}
           className="ml-auto inline-flex h-8 w-8 items-center justify-center rounded-sm border border-border/60 bg-card text-charcoal-soft shadow-sm transition hover:text-charcoal"
         >
           <X className="h-4 w-4" />
