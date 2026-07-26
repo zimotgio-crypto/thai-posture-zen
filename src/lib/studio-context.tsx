@@ -1,5 +1,5 @@
 import { createContext, useContext, type ReactNode } from "react";
-import { queryOptions } from "@tanstack/react-query";
+import { queryOptions, type QueryClient } from "@tanstack/react-query";
 import { notFound } from "@tanstack/react-router";
 import { getStudioPublic, type PublicStudio } from "@/lib/studio-public.functions";
 
@@ -13,6 +13,15 @@ export const studioPublicQuery = (slug: string) =>
     },
     staleTime: 5 * 60 * 1000,
   });
+
+// Called after a studio saved its content/images so visitors and the
+// therapist see the change immediately instead of after the 5 min cache.
+export async function invalidateStudioPublic(qc: QueryClient, slug?: string) {
+  await qc.invalidateQueries({
+    queryKey: slug ? (["studio-public", slug] as const) : (["studio-public"] as const),
+    refetchType: "all",
+  });
+}
 
 const StudioCtx = createContext<PublicStudio | null>(null);
 
