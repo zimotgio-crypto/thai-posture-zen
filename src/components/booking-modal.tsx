@@ -490,6 +490,14 @@ export function BookingModal({
               <p className="rounded-sm border border-dashed border-border/70 px-4 py-6 text-center text-sm text-charcoal-soft">
                 {t.booking.closed}
               </p>
+            ) : availabilityError ? (
+              <p
+                role="alert"
+                className="rounded-sm border border-destructive/60 bg-destructive/5 px-4 py-4 text-sm text-charcoal"
+              >
+                Verfügbarkeiten konnten nicht geladen werden. Bitte lade die Seite neu oder
+                kontaktiere uns telefonisch.
+              </p>
             ) : slots.filter((s) => !s.disabled).length === 0 ? (
               <p className="rounded-sm border border-dashed border-border/70 px-4 py-6 text-center text-sm text-charcoal-soft">
                 {t.booking.noSlots}
