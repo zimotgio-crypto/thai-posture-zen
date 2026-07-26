@@ -219,6 +219,34 @@ export function studioPaymentMethods(studio: StudioRecord): string[] {
   return raw.filter((v): v is string => typeof v === "string" && v.trim().length > 0);
 }
 
+export function studioTestimonials(studio: StudioRecord): StudioTestimonial[] {
+  const raw = (studio as unknown as { testimonials?: unknown }).testimonials;
+  if (!Array.isArray(raw)) return [];
+  const out: StudioTestimonial[] = [];
+  for (const item of raw) {
+    if (!item || typeof item !== "object" || Array.isArray(item)) continue;
+    const rec = item as Record<string, unknown>;
+    const quote = typeof rec.quote === "string" ? rec.quote.trim() : "";
+    const author = typeof rec.author === "string" ? rec.author.trim() : "";
+    if (quote) out.push({ quote, author });
+  }
+  return out;
+}
+
+export function studioFaqs(studio: StudioRecord): StudioFaq[] {
+  const raw = (studio as unknown as { faqs?: unknown }).faqs;
+  if (!Array.isArray(raw)) return [];
+  const out: StudioFaq[] = [];
+  for (const item of raw) {
+    if (!item || typeof item !== "object" || Array.isArray(item)) continue;
+    const rec = item as Record<string, unknown>;
+    const question = typeof rec.question === "string" ? rec.question.trim() : "";
+    const answer = typeof rec.answer === "string" ? rec.answer.trim() : "";
+    if (question) out.push({ question, answer });
+  }
+  return out;
+}
+
 // studio-media is a private bucket; public pages get short-lived signed URLs.
 export async function studioMediaUrl(path: string | null | undefined): Promise<string | null> {
   if (!path) return null;
