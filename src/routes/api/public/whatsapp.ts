@@ -2,26 +2,43 @@
 // GET  -> Meta verification handshake.
 // POST -> incoming messages/status updates. Always responds 200 to Meta.
 import { createFileRoute } from "@tanstack/react-router";
-import { createHmac, timingSafeEqual } from "node:crypto";
 
-function verifySignature(
+function toHex(buffer: ArrayBuffer): string {
+  return Array.from(new Uint8Array(buffer))
+    .map((b) => b.toString(16).padStart(2, "0"))
+    .join("");
+}
+
+function timingSafeEqualHex(a: string, b: string): boolean {
+  if (a.length !== b.length || a.length === 0) return false;
+  let diff = 0;
+  for (let i = 0; i < a.length; i += 1) diff |= a.charCodeAt(i) ^ b.charCodeAt(i);
+  return diff === 0;
+}
+
+async function verifySignature(
   rawBody: string,
   header: string | null,
   appSecret: string,
-): { ok: boolean; providedPrefix: string; expectedPrefix: string } {
+): Promise<{ ok: boolean; providedPrefix: string; expectedPrefix: string }> {
   const provided = (header ?? "").startsWith("sha256=")
-    ? header!.slice("sha256=".length).trim()
+    ? header!.slice("sha256=".length).trim().toLowerCase()
     : "";
-  const expected = createHmac("sha256", appSecret).update(rawBody, "utf8").digest("hex");
-  const info = { providedPrefix: provided.slice(0, 10), expectedPrefix: expected.slice(0, 10) };
-  const a = Buffer.from(provided, "hex");
-  const b = Buffer.from(expected, "hex");
-  if (a.length !== b.length || a.length === 0) return { ok: false, ...info };
-  try {
-    return { ok: timingSafeEqual(a, b), ...info };
-  } catch {
-    return { ok: false, ...info };
-  }
+  const key = await crypto.subtle.importKey(
+    "raw",
+    new TextEncoder().encode(appSecret),
+    { name: "HMAC", hash: "SHA-256" },
+    false,
+    ["sign"],
+  );
+  const expected = toHex(
+    await crypto.subtle.sign("HMAC", key, new TextEncoder().encode(rawBody)),
+  );
+  return {
+    ok: timingSafeEqualHex(provided, expected),
+    providedPrefix: provided.slice(0, 10),
+    expectedPrefix: expected.slice(0, 10),
+  };
 }
 
 export const Route = createFileRoute("/api/public/whatsapp")({
@@ -53,7 +70,7 @@ export const Route = createFileRoute("/api/public/whatsapp")({
           return new Response("Forbidden", { status: 403 });
         }
         const signature = request.headers.get("x-hub-signature-256");
-        const check = verifySignature(rawBody, signature, appSecret);
+        const check = await verifySignature(rawBody, signature, appSecret);
         if (!check.ok) {
           console.error(
             `[whatsapp webhook] invalid signature secretLength=${appSecret.length} providedPrefix=${check.providedPrefix} expectedPrefix=${check.expectedPrefix}`,
