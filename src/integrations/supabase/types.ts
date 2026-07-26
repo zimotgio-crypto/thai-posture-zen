@@ -246,58 +246,97 @@ export type Database = {
       }
       studios: {
         Row: {
+          about_heading: string | null
+          about_text: string | null
           active: boolean
           buffer_minutes: number
           city: string | null
           country: string | null
           created_at: string
           email: string | null
+          features: Json
           google_calendar_id: string | null
+          hero_heading: string | null
+          hero_image_path: string | null
+          hero_text: string | null
           id: string
+          logo_path: string | null
+          maps_url: string | null
           name: string
           opening_hours: Json
+          parking_note: string | null
+          payment_methods: Json
           phone: string | null
+          portrait_image_path: string | null
+          room_image_path: string | null
           slot_step_minutes: number
           slug: string
           street: string | null
+          tagline: string | null
           timezone: string
           whatsapp_phone_number_id: string | null
           zip: string | null
         }
         Insert: {
+          about_heading?: string | null
+          about_text?: string | null
           active?: boolean
           buffer_minutes?: number
           city?: string | null
           country?: string | null
           created_at?: string
           email?: string | null
+          features?: Json
           google_calendar_id?: string | null
+          hero_heading?: string | null
+          hero_image_path?: string | null
+          hero_text?: string | null
           id?: string
+          logo_path?: string | null
+          maps_url?: string | null
           name: string
           opening_hours?: Json
+          parking_note?: string | null
+          payment_methods?: Json
           phone?: string | null
+          portrait_image_path?: string | null
+          room_image_path?: string | null
           slot_step_minutes?: number
           slug: string
           street?: string | null
+          tagline?: string | null
           timezone?: string
           whatsapp_phone_number_id?: string | null
           zip?: string | null
         }
         Update: {
+          about_heading?: string | null
+          about_text?: string | null
           active?: boolean
           buffer_minutes?: number
           city?: string | null
           country?: string | null
           created_at?: string
           email?: string | null
+          features?: Json
           google_calendar_id?: string | null
+          hero_heading?: string | null
+          hero_image_path?: string | null
+          hero_text?: string | null
           id?: string
+          logo_path?: string | null
+          maps_url?: string | null
           name?: string
           opening_hours?: Json
+          parking_note?: string | null
+          payment_methods?: Json
           phone?: string | null
+          portrait_image_path?: string | null
+          room_image_path?: string | null
           slot_step_minutes?: number
           slug?: string
           street?: string | null
+          tagline?: string | null
           timezone?: string
           whatsapp_phone_number_id?: string | null
           zip?: string | null
