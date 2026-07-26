@@ -219,7 +219,8 @@ async function route(st: StudioCtx, ctx: MessageContext): Promise<void> {
 
   const client = await findClientByPhone(studioId, ctx.from);
   if (!client) {
-    const url = process.env.PUBLIC_SITE_URL || "https://thaiposturelab.ch";
+    const base = (process.env.PUBLIC_SITE_URL || "https://thaiposturelab.ch").replace(/\/+$/, "");
+    const url = `${base}/${st.studio.slug}`;
     await sendText(
       ctx.from,
       `Hallo! Für die Terminbuchung nutze bitte unser Buchungsformular: ${url}. Nach dem ersten Termin kannst du künftig direkt hier per WhatsApp buchen.`,
