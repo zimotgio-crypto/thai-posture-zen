@@ -218,6 +218,12 @@ export function BookingModal({
 
   async function submit(e: React.FormEvent) {
     e.preventDefault();
+    if (availabilityError) {
+      toast.error(
+        "Verfügbarkeiten konnten nicht geladen werden. Bitte lade die Seite neu oder kontaktiere uns telefonisch.",
+      );
+      return;
+    }
     const nextErrors: Record<string, boolean> = {
       firstName: !firstName.trim(),
       lastName: !lastName.trim(),
