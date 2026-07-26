@@ -267,8 +267,8 @@ export function BookingModal({
     try {
       const res = await submitBookingFn({
         data: {
-          studioSlug: DEFAULT_STUDIO_SLUG,
-          treatment: current.id,
+          studioSlug: studio.slug,
+          treatment: current.key,
           day,
           time,
           durationMinutes: durationMin,
@@ -285,7 +285,7 @@ export function BookingModal({
       if (!res.ok) {
         toast.error(t.booking.noSlots);
         // Refresh availability so the disabled state shows up immediately.
-        listBooked({ data: { day, studioSlug: DEFAULT_STUDIO_SLUG } })
+        listBooked({ data: { day, studioSlug: studio.slug } })
           .then(setBookedTimes)
           .catch(() => {});
         return;
