@@ -11,6 +11,7 @@ import { toast } from "sonner";
 import { cn } from "@/lib/utils";
 import { useT } from "@/lib/i18n";
 import { optionsForTreatment, priceForTreatment, BUFFER_MIN, formatDuration } from "@/lib/pricing";
+import { DEFAULT_STUDIO_SLUG } from "@/lib/studio";
 
 function ymd(d: Date) {
   const y = d.getFullYear();
@@ -162,7 +163,7 @@ export function BookingModal({
       return;
     }
     let cancelled = false;
-    listBooked({ data: { day } })
+    listBooked({ data: { day, studioSlug: DEFAULT_STUDIO_SLUG } })
       .then((rows) => {
         if (cancelled) return;
         setBookedTimes(rows);
@@ -254,7 +255,8 @@ export function BookingModal({
     try {
       const res = await submitBookingFn({
         data: {
-          treatment: current.label,
+          studioSlug: DEFAULT_STUDIO_SLUG,
+          treatment: current.id,
           day,
           time,
           durationMinutes: durationMin,
@@ -271,7 +273,9 @@ export function BookingModal({
       if (!res.ok) {
         toast.error(t.booking.noSlots);
         // Refresh availability so the disabled state shows up immediately.
-        listBooked({ data: { day } }).then(setBookedTimes).catch(() => {});
+        listBooked({ data: { day, studioSlug: DEFAULT_STUDIO_SLUG } })
+          .then(setBookedTimes)
+          .catch(() => {});
         return;
       }
       toast.success(t.booking.success, {
