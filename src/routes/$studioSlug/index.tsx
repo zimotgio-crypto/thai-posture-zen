@@ -6,8 +6,31 @@ import studioImg from "@/assets/studio-room.jpg";
 import { Eyebrow, Section } from "@/components/section";
 import { useBooking } from "@/components/booking-provider";
 import { useT } from "@/lib/i18n";
+import { studioPublicQuery } from "@/lib/studio-context";
+
+const SITE_URL = "https://thai-posture-zen.lovable.app";
 
 export const Route = createFileRoute("/$studioSlug/")({
+  loader: ({ params, context }) =>
+    context.queryClient.ensureQueryData(studioPublicQuery(params.studioSlug)),
+  head: ({ params, loaderData }) => {
+    const name = loaderData?.name ?? "Thai Massage Studio";
+    const city = loaderData?.city ?? "";
+    const title = `${name} — Modernes Thai-Studio${city ? ` in ${city}` : ""}`;
+    const description = `Boutique Thai-Massage${city ? ` in ${city}` : ""}: Tiefenentspannung, Haltungs-Reset und traditionelle Thai-Heilkunst bei ${name}.`;
+    const url = `${SITE_URL}/${params.studioSlug}`;
+    return {
+      meta: [
+        { title },
+        { name: "description", content: description },
+        { property: "og:title", content: title },
+        { property: "og:description", content: description },
+        { property: "og:type", content: "website" },
+        { property: "og:url", content: url },
+      ],
+      links: [{ rel: "canonical", href: url }],
+    };
+  },
   component: Index,
 });
 
@@ -16,6 +39,7 @@ const featureIcons = [VolumeX, Receipt, Wallet, MapPin] as const;
 function Index() {
   const { open } = useBooking();
   const t = useT();
+  const { studioSlug } = Route.useParams();
   return (
     <>
       {/* Hero */}
@@ -32,7 +56,11 @@ function Index() {
               <button onClick={() => open()} className="btn-gold inline-flex w-full items-center justify-center gap-2 rounded-sm px-7 py-4 text-[0.78rem] uppercase tracking-[0.24em] sm:w-auto">
                 {t.home.cta} <ArrowRight className="h-4 w-4" />
               </button>
-              <Link to="/home-office" className="text-sm uppercase tracking-[0.22em] text-charcoal-soft hover:text-charcoal">
+              <Link
+                to="/$studioSlug/home-office"
+                params={{ studioSlug }}
+                className="text-sm uppercase tracking-[0.22em] text-charcoal-soft hover:text-charcoal"
+              >
                 {t.home.treatmentsLink}
               </Link>
             </div>
@@ -134,7 +162,11 @@ function Index() {
               <button onClick={() => open("deep-release")} className="btn-gold rounded-sm px-7 py-4 text-[0.78rem] uppercase tracking-[0.24em]">
                 {t.home.bridgeCta}
               </button>
-              <Link to="/home-office" className="text-sm uppercase tracking-[0.22em] text-charcoal-soft hover:text-charcoal">
+              <Link
+                to="/$studioSlug/home-office"
+                params={{ studioSlug }}
+                className="text-sm uppercase tracking-[0.22em] text-charcoal-soft hover:text-charcoal"
+              >
                 {t.home.more}
               </Link>
             </div>

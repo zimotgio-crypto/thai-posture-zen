@@ -5,16 +5,31 @@ import towelsImg from "@/assets/therapist-portrait.jpg";
 import { Eyebrow, Section } from "@/components/section";
 import { useBooking } from "@/components/booking-provider";
 import { useT } from "@/lib/i18n";
+import { studioPublicQuery } from "@/lib/studio-context";
+
+const SITE_URL = "https://thai-posture-zen.lovable.app";
 
 export const Route = createFileRoute("/$studioSlug/kontakt")({
-  head: () => ({
-    meta: [
-      { title: "Kontakt & Info — Thai Posture Lab Zuzwil" },
-      { name: "description", content: "Öffnungszeiten, Adresse und FAQ des Thai Posture Lab an der Eschenstrasse 24, 9524 Zuzwil SG. TWINT, Karte oder Bar." },
-      { property: "og:title", content: "Kontakt & Info — Thai Posture Lab Zuzwil" },
-      { property: "og:description", content: "Eschenstrasse 24, 9524 Zuzwil SG. Öffnungszeiten, Hygiene-Standards und FAQ." },
-    ],
-  }),
+  loader: ({ params, context }) =>
+    context.queryClient.ensureQueryData(studioPublicQuery(params.studioSlug)),
+  head: ({ params, loaderData }) => {
+    const name = loaderData?.name ?? "Thai Massage Studio";
+    const city = loaderData?.city ?? "";
+    const title = `Kontakt & Info — ${name}${city ? ` ${city}` : ""}`;
+    const description = `Öffnungszeiten, Adresse und FAQ von ${name}${city ? ` in ${city}` : ""}. TWINT, Karte oder Bar.`;
+    const url = `${SITE_URL}/${params.studioSlug}/kontakt`;
+    return {
+      meta: [
+        { title },
+        { name: "description", content: description },
+        { property: "og:title", content: title },
+        { property: "og:description", content: description },
+        { property: "og:type", content: "website" },
+        { property: "og:url", content: url },
+      ],
+      links: [{ rel: "canonical", href: url }],
+    };
+  },
   component: Kontakt,
 });
 

@@ -6,16 +6,31 @@ import { useBooking } from "@/components/booking-provider";
 import { cn } from "@/lib/utils";
 import { useState } from "react";
 import { useT } from "@/lib/i18n";
+import { studioPublicQuery } from "@/lib/studio-context";
+
+const SITE_URL = "https://thai-posture-zen.lovable.app";
 
 export const Route = createFileRoute("/$studioSlug/home-office")({
-  head: () => ({
-    meta: [
-      { title: "Home-Office Deep Release — 60 Min. · CHF 100.– | Thai Posture Lab Zuzwil" },
-      { name: "description", content: "Gezielte Tiefenentspannung für Nacken, Schultern und PC-Arme. Das Home-Office Deep Release Treatment in Zuzwil — in 2 Minuten online gebucht." },
-      { property: "og:title", content: "Home-Office Deep Release — Thai Posture Lab Zuzwil" },
-      { property: "og:description", content: "60 Min. präzise Tiefenentspannung gegen Nacken- und Schulterschmerzen vom Bürostuhl. CHF 100.–" },
-    ],
-  }),
+  loader: ({ params, context }) =>
+    context.queryClient.ensureQueryData(studioPublicQuery(params.studioSlug)),
+  head: ({ params, loaderData }) => {
+    const name = loaderData?.name ?? "Thai Massage Studio";
+    const city = loaderData?.city ?? "";
+    const title = `Treatments & Home-Office Deep Release — ${name}${city ? ` ${city}` : ""}`;
+    const description = `Gezielte Tiefenentspannung für Nacken, Schultern und PC-Arme${city ? ` in ${city}` : ""} — in 2 Minuten online gebucht bei ${name}.`;
+    const url = `${SITE_URL}/${params.studioSlug}/home-office`;
+    return {
+      meta: [
+        { title },
+        { name: "description", content: description },
+        { property: "og:title", content: title },
+        { property: "og:description", content: description },
+        { property: "og:type", content: "website" },
+        { property: "og:url", content: url },
+      ],
+      links: [{ rel: "canonical", href: url }],
+    };
+  },
   component: HomeOffice,
 });
 
