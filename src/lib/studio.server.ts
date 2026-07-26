@@ -8,6 +8,17 @@ export type DbAdmin = SupabaseClient<Database>;
 
 export type OpeningWindow = { open: number; close: number } | null;
 export type TreatmentOption = { minutes: number; price: number };
+export type StudioFeature = { title: string; text: string };
+
+export const STUDIO_MEDIA_BUCKET = "studio-media";
+export const STUDIO_MEDIA_MAX_BYTES = 5 * 1024 * 1024;
+export const STUDIO_MEDIA_MIME = [
+  "image/jpeg",
+  "image/png",
+  "image/webp",
+  "image/avif",
+  "image/svg+xml",
+] as const;
 
 export const DEFAULT_STUDIO_SLUG = "tpl-zuzwil";
 
@@ -182,4 +193,37 @@ export function openingWindowFor(studio: StudioRecord, weekday: number): Opening
 
 export function studioCalendarId(studio: StudioRecord | null): string | undefined {
   return studio?.google_calendar_id ?? undefined;
+}
+
+// ---------- content helpers ----------
+
+export function studioFeatures(studio: StudioRecord): StudioFeature[] {
+  const raw = (studio as unknown as { features?: unknown }).features;
+  if (!Array.isArray(raw)) return [];
+  const out: StudioFeature[] = [];
+  for (const item of raw) {
+    if (!item || typeof item !== "object" || Array.isArray(item)) continue;
+    const rec = item as Record<string, unknown>;
+    const title = typeof rec.title === "string" ? rec.title : "";
+    const text = typeof rec.text === "string" ? rec.text : "";
+    if (title) out.push({ title, text });
+  }
+  return out;
+}
+
+export function studioPaymentMethods(studio: StudioRecord): string[] {
+  const raw = (studio as unknown as { payment_methods?: unknown }).payment_methods;
+  if (!Array.isArray(raw)) return [];
+  return raw.filter((v): v is string => typeof v === "string" && v.trim().length > 0);
+}
+
+// studio-media is a private bucket; public pages get short-lived signed URLs.
+export async function studioMediaUrl(path: string | null | undefined): Promise<string | null> {
+  if (!path) return null;
+  const supabaseAdmin = await admin();
+  const { data, error } = await supabaseAdmin.storage
+    .from(STUDIO_MEDIA_BUCKET)
+    .createSignedUrl(path, 60 * 60 * 24);
+  if (error || !data?.signedUrl) return null;
+  return data.signedUrl;
 }

@@ -22,6 +22,21 @@ export type PublicStudio = {
   slotStepMinutes: number;
   openingHours: Record<string, { open: number; close: number }>;
   treatments: PublicTreatment[];
+  tagline: string | null;
+  heroHeading: string | null;
+  heroText: string | null;
+  aboutHeading: string | null;
+  aboutText: string | null;
+  features: { title: string; text: string }[];
+  paymentMethods: string[];
+  parkingNote: string | null;
+  mapsUrl: string | null;
+  media: {
+    logo: string | null;
+    hero: string | null;
+    room: string | null;
+    portrait: string | null;
+  };
 };
 
 const slugInput = z.object({ slug: z.string().trim().min(1).max(80) });
@@ -31,9 +46,15 @@ const slugInput = z.object({ slug: z.string().trim().min(1).max(80) });
 export const getStudioPublic = createServerFn({ method: "GET" })
   .inputValidator((data: unknown) => slugInput.parse(data))
   .handler(async ({ data }): Promise<PublicStudio | null> => {
-    const { getStudioBySlug, listTreatments, treatmentOptions, openingWindowFor } = await import(
-      "@/lib/studio.server"
-    );
+    const {
+      getStudioBySlug,
+      listTreatments,
+      treatmentOptions,
+      openingWindowFor,
+      studioFeatures,
+      studioPaymentMethods,
+      studioMediaUrl,
+    } = await import("@/lib/studio.server");
     const studio = await getStudioBySlug(data.slug);
     if (!studio) return null;
     const treatments = await listTreatments(studio.id);
@@ -42,6 +63,12 @@ export const getStudioPublic = createServerFn({ method: "GET" })
       const win = openingWindowFor(studio, weekday);
       if (win) openingHours[String(weekday)] = win;
     }
+    const [logo, hero, room, portrait] = await Promise.all([
+      studioMediaUrl(studio.logo_path),
+      studioMediaUrl(studio.hero_image_path),
+      studioMediaUrl(studio.room_image_path),
+      studioMediaUrl(studio.portrait_image_path),
+    ]);
     return {
       slug: studio.slug,
       name: studio.name,
@@ -61,6 +88,16 @@ export const getStudioPublic = createServerFn({ method: "GET" })
         description: t.description,
         options: treatmentOptions(t),
       })),
+      tagline: studio.tagline,
+      heroHeading: studio.hero_heading,
+      heroText: studio.hero_text,
+      aboutHeading: studio.about_heading,
+      aboutText: studio.about_text,
+      features: studioFeatures(studio),
+      paymentMethods: studioPaymentMethods(studio),
+      parkingNote: studio.parking_note,
+      mapsUrl: studio.maps_url,
+      media: { logo, hero, room, portrait },
     };
   });
 

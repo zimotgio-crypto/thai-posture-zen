@@ -13,7 +13,9 @@ export function SiteFooter() {
       <div className="mx-auto grid max-w-7xl gap-10 px-6 py-14 lg:grid-cols-4 lg:px-10">
         <div className="lg:col-span-2 space-y-3">
           <div className="font-serif text-2xl text-charcoal">{studio?.name ?? "Thai Posture Lab"}</div>
-          <p className="max-w-sm text-sm leading-relaxed text-charcoal-soft">{t.footer.tagline}</p>
+          <p className="max-w-sm text-sm leading-relaxed text-charcoal-soft">
+            {studio?.tagline ?? t.footer.tagline}
+          </p>
         </div>
         <div className="space-y-2 text-sm">
           <div className="text-[0.7rem] uppercase tracking-[0.25em] text-gold-deep">{t.footer.studio}</div>
@@ -40,7 +42,11 @@ export function SiteFooter() {
               Datenschutz
             </Link>
           </span>
-          <span className="tracking-widest uppercase">{t.footer.payments}</span>
+          <span className="tracking-widest uppercase">
+            {studio && studio.paymentMethods.length > 0
+              ? studio.paymentMethods.join(" · ")
+              : t.footer.payments}
+          </span>
         </div>
       </div>
     </footer>

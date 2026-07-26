@@ -5,7 +5,7 @@ import towelsImg from "@/assets/therapist-portrait.jpg";
 import { Eyebrow, Section } from "@/components/section";
 import { useBooking } from "@/components/booking-provider";
 import { useT } from "@/lib/i18n";
-import { studioPublicQuery } from "@/lib/studio-context";
+import { studioPublicQuery, useStudio } from "@/lib/studio-context";
 
 const SITE_URL = "https://thai-posture-zen.lovable.app";
 
@@ -36,6 +36,15 @@ export const Route = createFileRoute("/$studioSlug/kontakt")({
 function Kontakt() {
   const { open } = useBooking();
   const t = useT();
+  const studio = useStudio();
+  const mapsUrl =
+    studio.mapsUrl ??
+    `https://www.google.com/maps/search/?api=1&query=${encodeURIComponent(
+      [studio.street, studio.zip, studio.city].filter(Boolean).join(" "),
+    )}`;
+  const faqs = t.contact.faqs.map((f, i) =>
+    i === t.contact.faqs.length - 1 && studio.parkingNote ? { ...f, a: studio.parkingNote } : f,
+  );
   return (
     <>
       <Section className="pt-14 lg:pt-20">
@@ -59,7 +68,11 @@ function Kontakt() {
                   </div>
                 ))}
               </InfoCard>
-              <InfoCard icon={Wallet} title={t.contact.payment}>{t.contact.paymentDesc}</InfoCard>
+              <InfoCard icon={Wallet} title={t.contact.payment}>
+                {studio.paymentMethods.length > 0
+                  ? studio.paymentMethods.join(" · ")
+                  : t.contact.paymentDesc}
+              </InfoCard>
               <InfoCard icon={ShieldCheck} title={t.contact.hygiene}>{t.contact.hygieneDesc}</InfoCard>
               <InfoCard icon={ClipboardList} title={t.contact.diary} className="sm:col-span-2">
                 {t.contact.diaryDesc}
@@ -77,7 +90,7 @@ function Kontakt() {
             <div className="relative">
               <div className="absolute -inset-4 -z-10 wood-panel opacity-70" />
               <img
-                src={towelsImg}
+                src={studio.media.portrait ?? towelsImg}
                 alt={t.contact.towelsAlt}
                 width={1200}
                 height={1500}
@@ -101,7 +114,7 @@ function Kontakt() {
               <h2 className="mt-4 text-4xl leading-tight text-charcoal">{t.contact.mapH}</h2>
             </div>
             <a
-              href="https://www.google.com/maps/search/?api=1&query=Eschenstrasse+24+9524+Zuzwil"
+              href={mapsUrl}
               target="_blank"
               rel="noreferrer"
               className="text-sm uppercase tracking-[0.22em] text-charcoal-soft hover:text-charcoal"
@@ -112,7 +125,10 @@ function Kontakt() {
           <div className="overflow-hidden rounded-sm border border-border/60 shadow-[var(--shadow-soft)]">
             <iframe
               title={t.contact.mapTitle}
-              src="https://www.google.com/maps?q=Eschenstrasse%2024%209524%20Zuzwil&output=embed"
+              src={`https://www.google.com/maps?q=${encodeURIComponent(
+                [studio.street, studio.zip, studio.city].filter(Boolean).join(" ") ||
+                  "Eschenstrasse 24 9524 Zuzwil",
+              )}&output=embed`}
               className="h-[440px] w-full grayscale-[35%]"
               loading="lazy"
               referrerPolicy="no-referrer-when-downgrade"
@@ -130,7 +146,7 @@ function Kontakt() {
           </div>
           <div className="lg:col-span-8">
             <Accordion type="single" collapsible className="w-full">
-              {t.contact.faqs.map((f, i) => (
+              {faqs.map((f, i) => (
                 <AccordionItem key={i} value={`item-${i}`} className="border-border/70">
                   <AccordionTrigger className="text-left font-serif text-lg text-charcoal hover:text-gold-deep">
                     {f.q}
