@@ -45,7 +45,14 @@ export const submitBooking = createServerFn({ method: "POST" })
     }
 
     // Also block against private Google Calendar events.
-    const gBusy = await getGoogleBusyIntervals(data.day);
+    // The DB conflict check above always runs; a Google failure must never be
+    // silent, but it also must not block the booking.
+    let gBusy: { time: string; duration: number }[] = [];
+    try {
+      gBusy = await getGoogleBusyIntervals(data.day);
+    } catch (err) {
+      console.error("[submitBooking] google availability check failed", err);
+    }
     const gConflict = gBusy.some((b) => {
       const s = toMinutes(b.time);
       const block = b.duration + BUFFER;
