@@ -19,7 +19,8 @@ import { BookingProvider } from "@/components/booking-provider";
 import { Toaster } from "@/components/ui/sonner";
 import { LanguageProvider } from "@/lib/i18n";
 import { supabase } from "@/integrations/supabase/client";
-import { StudioProvider, studioPublicQuery, type PublicStudioData } from "@/lib/studio-context";
+import { StudioProvider, studioPublicQuery } from "@/lib/studio-context";
+import type { PublicStudio } from "@/lib/studio-public.functions";
 import { DEFAULT_STUDIO_SLUG } from "@/lib/studio";
 
 function NotFoundComponent() {
@@ -175,6 +176,23 @@ function RootComponent() {
 function StudioShell({ children }: { children: ReactNode }) {
   const params = useParams({ strict: false }) as { studioSlug?: string };
   const slug = params.studioSlug ?? DEFAULT_STUDIO_SLUG;
-  const { data } = useQuery({ ...studioPublicQuery(slug), retry: false, throwOnError: false });
-  return <StudioProvider studio={data ?? null}>{children}</StudioProvider>;
+  const queryClient = useQueryClient();
+  const options = studioPublicQuery(slug);
+  const { data } = useQuery({ ...options, retry: 2, throwOnError: false });
+  const cached = queryClient.getQueryData<PublicStudio>(options.queryKey);
+  const lastKnown = useRef<PublicStudio | null>(null);
+  const studio = data ?? cached ?? lastKnown.current;
+  if (studio) lastKnown.current = studio;
+
+  // Never unmount the page just because a client-side refetch failed: keep the
+  // last known studio. Only a genuinely unknown slug reaches the route's
+  // notFound handling.
+  if (!studio) {
+    return (
+      <StudioProvider studio={null}>
+        <div className="min-h-screen" aria-busy="true" />
+      </StudioProvider>
+    );
+  }
+  return <StudioProvider studio={studio}>{children}</StudioProvider>;
 }
