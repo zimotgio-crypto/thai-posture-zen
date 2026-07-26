@@ -10,6 +10,8 @@
 
 import { Route as rootRouteImport } from './routes/__root'
 import { Route as SitemapDotxmlRouteImport } from './routes/sitemap[.]xml'
+import { Route as KontaktRouteImport } from './routes/kontakt'
+import { Route as HomeOfficeRouteImport } from './routes/home-office'
 import { Route as DatenschutzRouteImport } from './routes/datenschutz'
 import { Route as AuthRouteImport } from './routes/auth'
 import { Route as AuthenticatedRouteRouteImport } from './routes/_authenticated/route'
@@ -29,6 +31,16 @@ import { Route as AuthenticatedAdminClientsIdRouteImport } from './routes/_authe
 const SitemapDotxmlRoute = SitemapDotxmlRouteImport.update({
   id: '/sitemap.xml',
   path: '/sitemap.xml',
+  getParentRoute: () => rootRouteImport,
+} as any)
+const KontaktRoute = KontaktRouteImport.update({
+  id: '/kontakt',
+  path: '/kontakt',
+  getParentRoute: () => rootRouteImport,
+} as any)
+const HomeOfficeRoute = HomeOfficeRouteImport.update({
+  id: '/home-office',
+  path: '/home-office',
   getParentRoute: () => rootRouteImport,
 } as any)
 const DatenschutzRoute = DatenschutzRouteImport.update({
@@ -114,6 +126,8 @@ export interface FileRoutesByFullPath {
   '/$studioSlug': typeof StudioSlugRouteRouteWithChildren
   '/auth': typeof AuthRoute
   '/datenschutz': typeof DatenschutzRoute
+  '/home-office': typeof HomeOfficeRoute
+  '/kontakt': typeof KontaktRoute
   '/sitemap.xml': typeof SitemapDotxmlRoute
   '/admin': typeof AuthenticatedAdminRouteRouteWithChildren
   '/$studioSlug/home-office': typeof StudioSlugHomeOfficeRoute
@@ -130,6 +144,8 @@ export interface FileRoutesByTo {
   '/': typeof IndexRoute
   '/auth': typeof AuthRoute
   '/datenschutz': typeof DatenschutzRoute
+  '/home-office': typeof HomeOfficeRoute
+  '/kontakt': typeof KontaktRoute
   '/sitemap.xml': typeof SitemapDotxmlRoute
   '/$studioSlug/home-office': typeof StudioSlugHomeOfficeRoute
   '/$studioSlug/kontakt': typeof StudioSlugKontaktRoute
@@ -148,6 +164,8 @@ export interface FileRoutesById {
   '/_authenticated': typeof AuthenticatedRouteRouteWithChildren
   '/auth': typeof AuthRoute
   '/datenschutz': typeof DatenschutzRoute
+  '/home-office': typeof HomeOfficeRoute
+  '/kontakt': typeof KontaktRoute
   '/sitemap.xml': typeof SitemapDotxmlRoute
   '/_authenticated/admin': typeof AuthenticatedAdminRouteRouteWithChildren
   '/$studioSlug/home-office': typeof StudioSlugHomeOfficeRoute
@@ -167,6 +185,8 @@ export interface FileRouteTypes {
     | '/$studioSlug'
     | '/auth'
     | '/datenschutz'
+    | '/home-office'
+    | '/kontakt'
     | '/sitemap.xml'
     | '/admin'
     | '/$studioSlug/home-office'
@@ -183,6 +203,8 @@ export interface FileRouteTypes {
     | '/'
     | '/auth'
     | '/datenschutz'
+    | '/home-office'
+    | '/kontakt'
     | '/sitemap.xml'
     | '/$studioSlug/home-office'
     | '/$studioSlug/kontakt'
@@ -200,6 +222,8 @@ export interface FileRouteTypes {
     | '/_authenticated'
     | '/auth'
     | '/datenschutz'
+    | '/home-office'
+    | '/kontakt'
     | '/sitemap.xml'
     | '/_authenticated/admin'
     | '/$studioSlug/home-office'
@@ -219,6 +243,8 @@ export interface RootRouteChildren {
   AuthenticatedRouteRoute: typeof AuthenticatedRouteRouteWithChildren
   AuthRoute: typeof AuthRoute
   DatenschutzRoute: typeof DatenschutzRoute
+  HomeOfficeRoute: typeof HomeOfficeRoute
+  KontaktRoute: typeof KontaktRoute
   SitemapDotxmlRoute: typeof SitemapDotxmlRoute
   ApiPublicPingRoute: typeof ApiPublicPingRoute
   ApiPublicWhatsappRoute: typeof ApiPublicWhatsappRoute
@@ -231,6 +257,20 @@ declare module '@tanstack/react-router' {
       path: '/sitemap.xml'
       fullPath: '/sitemap.xml'
       preLoaderRoute: typeof SitemapDotxmlRouteImport
+      parentRoute: typeof rootRouteImport
+    }
+    '/kontakt': {
+      id: '/kontakt'
+      path: '/kontakt'
+      fullPath: '/kontakt'
+      preLoaderRoute: typeof KontaktRouteImport
+      parentRoute: typeof rootRouteImport
+    }
+    '/home-office': {
+      id: '/home-office'
+      path: '/home-office'
+      fullPath: '/home-office'
+      preLoaderRoute: typeof HomeOfficeRouteImport
       parentRoute: typeof rootRouteImport
     }
     '/datenschutz': {
@@ -406,6 +446,8 @@ const rootRouteChildren: RootRouteChildren = {
   AuthenticatedRouteRoute: AuthenticatedRouteRouteWithChildren,
   AuthRoute: AuthRoute,
   DatenschutzRoute: DatenschutzRoute,
+  HomeOfficeRoute: HomeOfficeRoute,
+  KontaktRoute: KontaktRoute,
   SitemapDotxmlRoute: SitemapDotxmlRoute,
   ApiPublicPingRoute: ApiPublicPingRoute,
   ApiPublicWhatsappRoute: ApiPublicWhatsappRoute,
