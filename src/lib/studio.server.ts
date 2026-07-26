@@ -9,6 +9,8 @@ export type DbAdmin = SupabaseClient<Database>;
 export type OpeningWindow = { open: number; close: number } | null;
 export type TreatmentOption = { minutes: number; price: number };
 export type StudioFeature = { title: string; text: string };
+export type StudioTestimonial = { quote: string; author: string };
+export type StudioFaq = { question: string; answer: string };
 
 export const STUDIO_MEDIA_BUCKET = "studio-media";
 export const STUDIO_MEDIA_MAX_BYTES = 5 * 1024 * 1024;
