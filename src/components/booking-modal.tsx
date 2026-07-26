@@ -149,6 +149,7 @@ export function BookingModal({
   const dateSectionRef = useRef<HTMLElement | null>(null);
   const timeSectionRef = useRef<HTMLElement | null>(null);
   const [bookedTimes, setBookedTimes] = useState<BookedSlot[]>([]);
+  const [availabilityError, setAvailabilityError] = useState(false);
   const [submitting, setSubmitting] = useState(false);
   const listBooked = useServerFn(listBookedTimes);
   const submitBookingFn = useServerFn(submitBooking);
@@ -157,15 +158,23 @@ export function BookingModal({
   useEffect(() => {
     if (!open || !day) {
       setBookedTimes([]);
+      setAvailabilityError(false);
       return;
     }
     let cancelled = false;
     listBooked({ data: { day } })
       .then((rows) => {
-        if (!cancelled) setBookedTimes(rows);
+        if (cancelled) return;
+        setBookedTimes(rows);
+        setAvailabilityError(false);
       })
-      .catch(() => {
-        if (!cancelled) setBookedTimes([]);
+      .catch((err) => {
+        console.error("[booking-modal] availability fetch failed", err);
+        if (cancelled) return;
+        // Fail closed: with unknown availability we offer no slots at all.
+        setBookedTimes([]);
+        setAvailabilityError(true);
+        setTime(null);
       });
     return () => {
       cancelled = true;
@@ -203,11 +212,18 @@ export function BookingModal({
   }, [day]);
   const slots = useMemo(() => {
     if (!day) return [];
+    if (availabilityError) return [];
     return generateStartTimes(day, bookedTimes, nowMinutesToday, durationMin);
-  }, [day, bookedTimes, nowMinutesToday, durationMin]);
+  }, [day, bookedTimes, nowMinutesToday, durationMin, availabilityError]);
 
   async function submit(e: React.FormEvent) {
     e.preventDefault();
+    if (availabilityError) {
+      toast.error(
+        "Verfügbarkeiten konnten nicht geladen werden. Bitte lade die Seite neu oder kontaktiere uns telefonisch.",
+      );
+      return;
+    }
     const nextErrors: Record<string, boolean> = {
       firstName: !firstName.trim(),
       lastName: !lastName.trim(),
@@ -479,6 +495,14 @@ export function BookingModal({
             ) : !dayHours ? (
               <p className="rounded-sm border border-dashed border-border/70 px-4 py-6 text-center text-sm text-charcoal-soft">
                 {t.booking.closed}
+              </p>
+            ) : availabilityError ? (
+              <p
+                role="alert"
+                className="rounded-sm border border-destructive/60 bg-destructive/5 px-4 py-4 text-sm text-charcoal"
+              >
+                Verfügbarkeiten konnten nicht geladen werden. Bitte lade die Seite neu oder
+                kontaktiere uns telefonisch.
               </p>
             ) : slots.filter((s) => !s.disabled).length === 0 ? (
               <p className="rounded-sm border border-dashed border-border/70 px-4 py-6 text-center text-sm text-charcoal-soft">
