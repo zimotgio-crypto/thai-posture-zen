@@ -3,7 +3,7 @@ import { useServerFn } from "@tanstack/react-start";
 import { useQuery, useQueryClient } from "@tanstack/react-query";
 import { useMemo, useState } from "react";
 import { ChevronLeft, ChevronRight, Volume2, VolumeX } from "lucide-react";
-import { listBookingsInRange, deleteBooking, getGoogleCalendarStatus, debugGoogleCalendar, listGoogleBusyInRange } from "@/lib/admin.functions";
+import { listBookingsInRange, deleteBooking, getGoogleCalendarStatus, listGoogleBusyInRange } from "@/lib/admin.functions";
 import { Link } from "@tanstack/react-router";
 import { cn } from "@/lib/utils";
 import { toast } from "sonner";
@@ -83,12 +83,6 @@ function CalendarPage() {
     d.setHours(0, 0, 0, 0);
     return d;
   });
-  const [debugDay, setDebugDay] = useState(() => ymd(new Date()));
-  const [debugOpen, setDebugOpen] = useState(false);
-  const [debugLoading, setDebugLoading] = useState(false);
-  const [debugJson, setDebugJson] = useState<string | null>(null);
-  const [debugError, setDebugError] = useState<string | null>(null);
-
   const days = useMemo(() => {
     if (view === "day") return [anchor];
     const start = startOfWeek(anchor);
@@ -104,7 +98,6 @@ function CalendarPage() {
 
   const listFn = useServerFn(listBookingsInRange);
   const statusFn = useServerFn(getGoogleCalendarStatus);
-  const debugFn = useServerFn(debugGoogleCalendar);
   const gBusyFn = useServerFn(listGoogleBusyInRange);
   const { studioId } = useAdminStudio();
   const gStatus = useQuery({
@@ -140,21 +133,6 @@ function CalendarPage() {
       qc.invalidateQueries({ queryKey: ["admin", "bookings"] });
     } catch (err) {
       toast.error(err instanceof Error ? err.message : at.common.error);
-    }
-  }
-
-  async function handleDebug() {
-    setDebugOpen(true);
-    setDebugLoading(true);
-    setDebugError(null);
-    try {
-      const res = await debugFn({ data: { day: debugDay } });
-      setDebugJson(JSON.stringify(res, null, 2));
-    } catch (err) {
-      setDebugJson(null);
-      setDebugError(err instanceof Error ? err.message : at.calendar.diagnoseFailed);
-    } finally {
-      setDebugLoading(false);
     }
   }
 
@@ -226,43 +204,6 @@ function CalendarPage() {
             </button>
           ))}
         </div>
-      </div>
-
-      <div className="mb-5 rounded-sm border border-border/60 bg-card p-4">
-        <div className="flex flex-wrap items-end gap-3">
-          <label className="grid gap-1">
-            <span className="text-[0.65rem] uppercase tracking-[0.22em] text-charcoal-soft">
-              {at.calendar.diagnoseDate}
-            </span>
-            <Input
-              type="date"
-              value={debugDay}
-              onChange={(e) => setDebugDay(e.target.value)}
-              className="h-9 w-44 rounded-sm border-border/60 bg-ivory text-sm text-charcoal"
-            />
-          </label>
-          <Button
-            onClick={handleDebug}
-            disabled={debugLoading || !debugDay}
-            className="btn-gold h-9 rounded-sm px-4 text-[0.7rem] uppercase tracking-[0.22em]"
-          >
-            {debugLoading ? at.calendar.diagnoseChecking : at.calendar.diagnose}
-          </Button>
-          {debugJson && (
-            <button
-              onClick={() => setDebugOpen((v) => !v)}
-              className="h-9 rounded-sm border border-border/60 px-3 text-[0.68rem] uppercase tracking-[0.2em] text-charcoal-soft hover:text-charcoal"
-            >
-              {debugOpen ? at.calendar.hideJson : at.calendar.showJson}
-            </button>
-          )}
-        </div>
-        {debugError && <p className="mt-3 text-sm text-destructive">{debugError}</p>}
-        {debugOpen && debugJson && (
-          <pre className="mt-4 max-h-96 overflow-auto rounded-sm border border-border/60 bg-ivory p-4 text-xs leading-relaxed text-charcoal-soft">
-            {debugJson}
-          </pre>
-        )}
       </div>
 
       <div className="overflow-x-auto rounded-sm border border-border/60 bg-card">
