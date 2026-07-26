@@ -55,6 +55,18 @@ function HomeOffice() {
   const featured = activeIdx === 0;
   const displayPrice = selected ? formatPrice(selected.price) : "";
   const firstTreatmentKey = menu[0]?.key;
+  const lead = menu[0]?.options[0];
+  const heroEyebrow = studio.city
+    ? fill(t.treatments.eyebrowTpl, { city: studio.city })
+    : t.treatments.eyebrow;
+  const heroIntro2 =
+    lead && studio.city
+      ? fill(t.treatments.intro2Tpl, {
+          minutes: String(lead.minutes),
+          price: String(lead.price),
+          city: studio.city,
+        })
+      : t.treatments.intro2;
 
   if (!active) return null;
 
@@ -63,12 +75,14 @@ function HomeOffice() {
       <section className="relative overflow-hidden">
         <div className="mx-auto grid max-w-7xl gap-14 px-6 pb-20 pt-10 lg:grid-cols-12 lg:px-10 lg:pb-28 lg:pt-16">
           <div className="relative z-10 flex flex-col justify-center lg:col-span-7">
-            <Eyebrow>{t.treatments.eyebrow}</Eyebrow>
+            <Eyebrow>{heroEyebrow}</Eyebrow>
             <h1 className="mt-6 text-[2.4rem] leading-[1.05] text-charcoal sm:text-6xl lg:text-[4rem]">
               {t.treatments.h1a}<span className="text-gold-deep">{t.treatments.h1b}</span>
             </h1>
             <p className="mt-6 max-w-xl text-lg leading-relaxed text-charcoal-soft">
-              {t.treatments.intro1}<strong className="font-medium text-charcoal">{t.treatments.introEm}</strong>{t.treatments.intro2}
+              {t.treatments.intro1}
+              <strong className="font-medium text-charcoal">{menu[0]?.label ?? t.treatments.introEm}</strong>
+              {heroIntro2}
             </p>
 
             <ul className="mt-8 space-y-3">
