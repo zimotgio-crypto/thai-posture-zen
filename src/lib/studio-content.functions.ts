@@ -47,6 +47,7 @@ export const getStudioContent = createServerFn({ method: "GET" })
     ]);
     return {
       studioId,
+      slug: studio.slug,
       tagline: studio.tagline,
       heroHeading: studio.hero_heading,
       heroText: studio.hero_text,
@@ -94,7 +95,9 @@ export const updateStudioContent = createServerFn({ method: "POST" })
     if (Object.keys(patch).length === 0) return { ok: true as const };
     const { error } = await supabaseAdmin.from("studios")
       .update(patch as never)
-      .eq("id", studioId);
+      .eq("id", studioId)
+      .select("slug")
+      .maybeSingle();
     if (error) throw new Error(error.message);
     return { ok: true as const };
   });
