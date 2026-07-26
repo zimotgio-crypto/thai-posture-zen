@@ -101,6 +101,17 @@ export async function getStudioBySlug(slug: string): Promise<StudioRecord | null
   return (data as StudioRecord | null) ?? null;
 }
 
+export async function listActiveStudios(): Promise<StudioRecord[]> {
+  const supabaseAdmin = await admin();
+  const { data, error } = await supabaseAdmin
+    .from("studios")
+    .select("*")
+    .eq("active", true)
+    .order("created_at", { ascending: true });
+  if (error) throw new Error(error.message);
+  return (data ?? []) as StudioRecord[];
+}
+
 export async function requireStudioBySlug(slug: string): Promise<StudioRecord> {
   const studio = await getStudioBySlug(slug);
   if (!studio) throw new Error("Unknown studio");
