@@ -92,7 +92,9 @@ export const updateStudioContent = createServerFn({ method: "POST" })
       if (value !== undefined) patch[column] = value === "" ? null : value;
     }
     if (Object.keys(patch).length === 0) return { ok: true as const };
-    const { error } = await supabaseAdmin.from("studios").update(patch).eq("id", studioId);
+    const { error } = await supabaseAdmin.from("studios")
+      .update(patch as never)
+      .eq("id", studioId);
     if (error) throw new Error(error.message);
     return { ok: true as const };
   });
@@ -149,7 +151,7 @@ export const uploadStudioMedia = createServerFn({ method: "POST" })
 
     const { error: updateError } = await supabaseAdmin
       .from("studios")
-      .update({ [column]: path })
+      .update({ [column]: path } as never)
       .eq("id", studioId);
     if (updateError) throw new Error(updateError.message);
 
@@ -181,7 +183,7 @@ export const removeStudioMedia = createServerFn({ method: "POST" })
     const previousPath = (prev as Record<string, string | null> | null)?.[column] ?? null;
     const { error } = await supabaseAdmin
       .from("studios")
-      .update({ [column]: null })
+      .update({ [column]: null } as never)
       .eq("id", studioId);
     if (error) throw new Error(error.message);
     if (previousPath) {
