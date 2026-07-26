@@ -1,4 +1,4 @@
-import { QueryClient, QueryClientProvider, useQuery } from "@tanstack/react-query";
+import { QueryClient, QueryClientProvider, useQuery, useQueryClient } from "@tanstack/react-query";
 import {
   Outlet,
   Link,
@@ -9,7 +9,7 @@ import {
   HeadContent,
   Scripts,
 } from "@tanstack/react-router";
-import { useEffect, type ReactNode } from "react";
+import { useEffect, useRef, type ReactNode } from "react";
 
 import appCss from "../styles.css?url";
 import { reportLovableError } from "../lib/lovable-error-reporting";
@@ -19,7 +19,7 @@ import { BookingProvider } from "@/components/booking-provider";
 import { Toaster } from "@/components/ui/sonner";
 import { LanguageProvider } from "@/lib/i18n";
 import { supabase } from "@/integrations/supabase/client";
-import { StudioProvider, studioPublicQuery } from "@/lib/studio-context";
+import { StudioProvider, studioPublicQuery, type PublicStudioData } from "@/lib/studio-context";
 import { DEFAULT_STUDIO_SLUG } from "@/lib/studio";
 
 function NotFoundComponent() {
