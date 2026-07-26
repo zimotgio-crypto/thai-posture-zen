@@ -10,6 +10,7 @@ import { AddClientDialog } from "@/components/admin/add-client-dialog";
 import { Sheet, SheetContent } from "@/components/ui/sheet";
 import { ClientProfileView } from "@/components/admin/client-profile-view";
 import { useAdminT } from "@/lib/admin-i18n";
+import { useAdminStudio } from "@/lib/admin-studio-context";
 
 export const Route = createFileRoute("/_authenticated/admin/clients")({
   component: ClientsPage,

@@ -19,6 +19,7 @@ import {
 import { formatSwissDate, formatDuration, priceForTreatment } from "@/lib/pricing";
 import { useT } from "@/lib/i18n";
 import { useAdminT, useAdminLocale } from "@/lib/admin-i18n";
+import { useAdminStudio } from "@/lib/admin-studio-context";
 
 type BookingRow = {
   id: string;

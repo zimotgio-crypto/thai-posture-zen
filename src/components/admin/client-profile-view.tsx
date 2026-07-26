@@ -46,6 +46,7 @@ import { PainTrendDialog } from "@/components/admin/pain-trend-chart";
 import { toast } from "sonner";
 import { formatDuration, formatSwissDate } from "@/lib/pricing";
 import { useAdminT } from "@/lib/admin-i18n";
+import { useAdminStudio } from "@/lib/admin-studio-context";
 
 type ClientLike = {
   id: string;
@@ -89,6 +90,7 @@ export function ClientProfileView({
 }) {
   const qc = useQueryClient();
   const t = useAdminT();
+  const { studioId } = useAdminStudio();
   const getClientFn = useServerFn(getClient);
   const addLog = useServerFn(addSessionLog);
   const updateClientFn = useServerFn(updateClient);
