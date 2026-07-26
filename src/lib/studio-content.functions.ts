@@ -16,6 +16,16 @@ const featureSchema = z.object({
   text: z.string().trim().max(400),
 });
 
+const testimonialSchema = z.object({
+  quote: z.string().trim().min(1).max(600),
+  author: z.string().trim().max(80),
+});
+
+const faqSchema = z.object({
+  question: z.string().trim().min(1).max(200),
+  answer: z.string().trim().max(2000),
+});
+
 const contentSchema = z.object({
   studioId: z.string().uuid().optional(),
   tagline: z.string().trim().max(200).nullable().optional(),
@@ -24,6 +34,8 @@ const contentSchema = z.object({
   aboutHeading: z.string().trim().max(300).nullable().optional(),
   aboutText: z.string().trim().max(4000).nullable().optional(),
   features: z.array(featureSchema).max(12).optional(),
+  testimonials: z.array(testimonialSchema).max(20).optional(),
+  faqs: z.array(faqSchema).max(20).optional(),
   paymentMethods: z.array(z.string().trim().min(1).max(40)).max(12).optional(),
   parkingNote: z.string().trim().max(1000).nullable().optional(),
   mapsUrl: z.string().trim().url().max(500).nullable().optional(),
@@ -34,8 +46,15 @@ export const getStudioContent = createServerFn({ method: "GET" })
   .middleware([requireSupabaseAuth])
   .inputValidator((data: unknown) => z.object({ studioId: z.string().uuid().optional() }).parse(data ?? {}))
   .handler(async ({ data, context }) => {
-    const { resolveStudioContext, getStudioById, studioFeatures, studioPaymentMethods, studioMediaUrl } =
-      await import("@/lib/studio.server");
+    const {
+      resolveStudioContext,
+      getStudioById,
+      studioFeatures,
+      studioPaymentMethods,
+      studioTestimonials,
+      studioFaqs,
+      studioMediaUrl,
+    } = await import("@/lib/studio.server");
     const { studioId } = await resolveStudioContext(context.userId, data.studioId ?? null);
     const studio = await getStudioById(studioId);
     if (!studio) throw new Error("Unknown studio");
@@ -54,6 +73,8 @@ export const getStudioContent = createServerFn({ method: "GET" })
       aboutHeading: studio.about_heading,
       aboutText: studio.about_text,
       features: studioFeatures(studio),
+      testimonials: studioTestimonials(studio),
+      faqs: studioFaqs(studio),
       paymentMethods: studioPaymentMethods(studio),
       parkingNote: studio.parking_note,
       mapsUrl: studio.maps_url,
@@ -84,6 +105,8 @@ export const updateStudioContent = createServerFn({ method: "POST" })
       aboutHeading: "about_heading",
       aboutText: "about_text",
       features: "features",
+      testimonials: "testimonials",
+      faqs: "faqs",
       paymentMethods: "payment_methods",
       parkingNote: "parking_note",
       mapsUrl: "maps_url",

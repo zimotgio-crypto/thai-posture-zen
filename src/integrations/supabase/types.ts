@@ -282,6 +282,7 @@ export type Database = {
           country: string | null
           created_at: string
           email: string | null
+          faqs: Json
           features: Json
           google_calendar_id: string | null
           hero_heading: string | null
@@ -301,6 +302,7 @@ export type Database = {
           slug: string
           street: string | null
           tagline: string | null
+          testimonials: Json
           timezone: string
           whatsapp_phone_number_id: string | null
           zip: string | null
@@ -314,6 +316,7 @@ export type Database = {
           country?: string | null
           created_at?: string
           email?: string | null
+          faqs?: Json
           features?: Json
           google_calendar_id?: string | null
           hero_heading?: string | null
@@ -333,6 +336,7 @@ export type Database = {
           slug: string
           street?: string | null
           tagline?: string | null
+          testimonials?: Json
           timezone?: string
           whatsapp_phone_number_id?: string | null
           zip?: string | null
@@ -346,6 +350,7 @@ export type Database = {
           country?: string | null
           created_at?: string
           email?: string | null
+          faqs?: Json
           features?: Json
           google_calendar_id?: string | null
           hero_heading?: string | null
@@ -365,6 +370,7 @@ export type Database = {
           slug?: string
           street?: string | null
           tagline?: string | null
+          testimonials?: Json
           timezone?: string
           whatsapp_phone_number_id?: string | null
           zip?: string | null

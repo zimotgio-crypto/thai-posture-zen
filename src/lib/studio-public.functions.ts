@@ -28,6 +28,8 @@ export type PublicStudio = {
   aboutHeading: string | null;
   aboutText: string | null;
   features: { title: string; text: string }[];
+  testimonials: { quote: string; author: string }[];
+  faqs: { question: string; answer: string }[];
   paymentMethods: string[];
   parkingNote: string | null;
   mapsUrl: string | null;
@@ -53,6 +55,8 @@ export const getStudioPublic = createServerFn({ method: "GET" })
       openingWindowFor,
       studioFeatures,
       studioPaymentMethods,
+      studioTestimonials,
+      studioFaqs,
       studioMediaUrl,
     } = await import("@/lib/studio.server");
     const studio = await getStudioBySlug(data.slug);
@@ -94,6 +98,8 @@ export const getStudioPublic = createServerFn({ method: "GET" })
       aboutHeading: studio.about_heading,
       aboutText: studio.about_text,
       features: studioFeatures(studio),
+      testimonials: studioTestimonials(studio),
+      faqs: studioFaqs(studio),
       paymentMethods: studioPaymentMethods(studio),
       parkingNote: studio.parking_note,
       mapsUrl: studio.maps_url,

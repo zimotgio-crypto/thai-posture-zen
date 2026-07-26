@@ -236,29 +236,33 @@ function HomeOffice() {
         </div>
       </section>
 
-      <Section className="py-20 lg:py-28">
-        <div className="mx-auto max-w-2xl text-center">
-          <Eyebrow className="justify-center">{t.testimonials.eyebrow}</Eyebrow>
-          <h2 className="mt-5 text-4xl leading-tight text-charcoal">{t.testimonials.h}</h2>
-        </div>
-        <div className="mt-14 grid gap-6 md:grid-cols-3">
-          {t.testimonials.items.map((it) => (
-            <figure
-              key={it.who + it.q}
-              className="flex h-full flex-col rounded-sm border border-border/60 bg-card p-8 transition hover:border-gold/60 hover:shadow-[var(--shadow-soft)]"
-            >
-              <span aria-hidden className="font-serif text-4xl leading-none text-gold-deep">“</span>
-              <blockquote className="mt-4 flex-1 text-base leading-relaxed text-charcoal-soft">
-                {it.q}
-              </blockquote>
-              <div className="gold-rule mt-6 w-8" />
-              <figcaption className="mt-4 text-[0.7rem] uppercase tracking-[0.25em] text-charcoal">
-                {it.who} · <span className="text-charcoal-soft">{it.where}</span>
-              </figcaption>
-            </figure>
-          ))}
-        </div>
-      </Section>
+      {studio.testimonials.length > 0 && (
+        <Section className="py-20 lg:py-28">
+          <div className="mx-auto max-w-2xl text-center">
+            <Eyebrow className="justify-center">{t.testimonials.eyebrow}</Eyebrow>
+            <h2 className="mt-5 text-4xl leading-tight text-charcoal">{t.testimonials.h}</h2>
+          </div>
+          <div className="mt-14 grid gap-6 md:grid-cols-3">
+            {studio.testimonials.map((it, i) => (
+              <figure
+                key={`${it.author}-${i}`}
+                className="flex h-full flex-col rounded-sm border border-border/60 bg-card p-8 transition hover:border-gold/60 hover:shadow-[var(--shadow-soft)]"
+              >
+                <span aria-hidden className="font-serif text-4xl leading-none text-gold-deep">“</span>
+                <blockquote className="mt-4 flex-1 text-base leading-relaxed text-charcoal-soft">
+                  {it.quote}
+                </blockquote>
+                <div className="gold-rule mt-6 w-8" />
+                {it.author && (
+                  <figcaption className="mt-4 text-[0.7rem] uppercase tracking-[0.25em] text-charcoal">
+                    {it.author}
+                  </figcaption>
+                )}
+              </figure>
+            ))}
+          </div>
+        </Section>
+      )}
 
       <Section className="py-24">
         <div className="relative overflow-hidden rounded-sm bg-charcoal px-8 py-16 text-center lg:px-16 lg:py-24">

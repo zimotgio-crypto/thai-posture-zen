@@ -9,6 +9,8 @@ export type DbAdmin = SupabaseClient<Database>;
 export type OpeningWindow = { open: number; close: number } | null;
 export type TreatmentOption = { minutes: number; price: number };
 export type StudioFeature = { title: string; text: string };
+export type StudioTestimonial = { quote: string; author: string };
+export type StudioFaq = { question: string; answer: string };
 
 export const STUDIO_MEDIA_BUCKET = "studio-media";
 export const STUDIO_MEDIA_MAX_BYTES = 5 * 1024 * 1024;
@@ -215,6 +217,34 @@ export function studioPaymentMethods(studio: StudioRecord): string[] {
   const raw = (studio as unknown as { payment_methods?: unknown }).payment_methods;
   if (!Array.isArray(raw)) return [];
   return raw.filter((v): v is string => typeof v === "string" && v.trim().length > 0);
+}
+
+export function studioTestimonials(studio: StudioRecord): StudioTestimonial[] {
+  const raw = (studio as unknown as { testimonials?: unknown }).testimonials;
+  if (!Array.isArray(raw)) return [];
+  const out: StudioTestimonial[] = [];
+  for (const item of raw) {
+    if (!item || typeof item !== "object" || Array.isArray(item)) continue;
+    const rec = item as Record<string, unknown>;
+    const quote = typeof rec.quote === "string" ? rec.quote.trim() : "";
+    const author = typeof rec.author === "string" ? rec.author.trim() : "";
+    if (quote) out.push({ quote, author });
+  }
+  return out;
+}
+
+export function studioFaqs(studio: StudioRecord): StudioFaq[] {
+  const raw = (studio as unknown as { faqs?: unknown }).faqs;
+  if (!Array.isArray(raw)) return [];
+  const out: StudioFaq[] = [];
+  for (const item of raw) {
+    if (!item || typeof item !== "object" || Array.isArray(item)) continue;
+    const rec = item as Record<string, unknown>;
+    const question = typeof rec.question === "string" ? rec.question.trim() : "";
+    const answer = typeof rec.answer === "string" ? rec.answer.trim() : "";
+    if (question) out.push({ question, answer });
+  }
+  return out;
 }
 
 // studio-media is a private bucket; public pages get short-lived signed URLs.

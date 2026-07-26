@@ -4,7 +4,8 @@ import { useQuery, useQueryClient } from "@tanstack/react-query";
 import { toast } from "sonner";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
-import { Plus, X } from "lucide-react";
+import { Plus, X, ArrowUp, ArrowDown } from "lucide-react";
+import { Textarea } from "@/components/ui/textarea";
 import { useAdminT } from "@/lib/admin-i18n";
 import {
   getStudioContent,
@@ -38,6 +39,49 @@ async function fileToBase64(file: File): Promise<string> {
   return btoa(binary);
 }
 
+function move<T>(list: T[], index: number, delta: number): T[] {
+  const next = [...list];
+  const target = index + delta;
+  if (target < 0 || target >= next.length) return next;
+  [next[index], next[target]] = [next[target], next[index]];
+  return next;
+}
+
+function MoveButtons({
+  upLabel,
+  downLabel,
+  onUp,
+  onDown,
+}: {
+  upLabel: string;
+  downLabel: string;
+  onUp?: () => void;
+  onDown?: () => void;
+}) {
+  return (
+    <>
+      <button
+        type="button"
+        aria-label={upLabel}
+        disabled={!onUp}
+        onClick={onUp}
+        className="rounded-sm p-2 text-charcoal-soft transition hover:text-charcoal disabled:opacity-30"
+      >
+        <ArrowUp className="h-4 w-4" />
+      </button>
+      <button
+        type="button"
+        aria-label={downLabel}
+        disabled={!onDown}
+        onClick={onDown}
+        className="rounded-sm p-2 text-charcoal-soft transition hover:text-charcoal disabled:opacity-30"
+      >
+        <ArrowDown className="h-4 w-4" />
+      </button>
+    </>
+  );
+}
+
 export function ContentTab({ studioId }: { studioId: string }) {
   const t = useAdminT();
   const qc = useQueryClient();
@@ -57,6 +101,8 @@ export function ContentTab({ studioId }: { studioId: string }) {
     aboutHeading: "",
     aboutText: "",
     features: [] as { title: string; text: string }[],
+    testimonials: [] as { quote: string; author: string }[],
+    faqs: [] as { question: string; answer: string }[],
   });
   const [busy, setBusy] = useState(false);
 
@@ -69,6 +115,8 @@ export function ContentTab({ studioId }: { studioId: string }) {
       aboutHeading: d.aboutHeading ?? "",
       aboutText: d.aboutText ?? "",
       features: d.features ?? [],
+      testimonials: d.testimonials ?? [],
+      faqs: d.faqs ?? [],
     });
   }, [content.data]);
 
@@ -83,6 +131,12 @@ export function ContentTab({ studioId }: { studioId: string }) {
           aboutHeading: form.aboutHeading,
           aboutText: form.aboutText,
           features: form.features.filter((f) => f.title.trim() || f.text.trim()),
+          testimonials: form.testimonials
+            .filter((v) => v.quote.trim())
+            .map((v) => ({ quote: v.quote.trim(), author: v.author.trim() })),
+          faqs: form.faqs
+            .filter((f) => f.question.trim())
+            .map((f) => ({ question: f.question.trim(), answer: f.answer.trim() })),
         },
       });
       if (res.slug) invalidateStudioPublic(qc, res.slug);
@@ -225,6 +279,157 @@ export function ContentTab({ studioId }: { studioId: string }) {
               }
             >
               <Plus className="mr-1 h-4 w-4" /> {t.settings.addFeature}
+            </Button>
+          </div>
+        </Field>
+
+        <Button
+          onClick={submit}
+          disabled={busy}
+          className="btn-gold rounded-sm px-6 py-4 text-xs uppercase tracking-[0.22em]"
+        >
+          {t.common.save}
+        </Button>
+      </SectionCard>
+
+      <SectionCard>
+        <Field label={t.settings.testimonials}>
+          <div className="space-y-3">
+            {form.testimonials.length === 0 && (
+              <p className="text-xs text-charcoal-soft">{t.settings.testimonialsEmpty}</p>
+            )}
+            {form.testimonials.map((v, i) => (
+              <div key={i} className="space-y-2 rounded-sm border border-border/60 p-3">
+                <Textarea
+                  rows={3}
+                  value={v.quote}
+                  aria-label={t.settings.testimonialQuote}
+                  placeholder={t.settings.testimonialQuote}
+                  onChange={(e) => {
+                    const testimonials = [...form.testimonials];
+                    testimonials[i] = { ...v, quote: e.target.value };
+                    setForm({ ...form, testimonials });
+                  }}
+                  className="rounded-sm"
+                />
+                <div className="flex flex-col gap-2 sm:flex-row sm:items-center">
+                  <Input
+                    value={v.author}
+                    aria-label={t.settings.testimonialAuthor}
+                    placeholder={t.settings.testimonialAuthor}
+                    onChange={(e) => {
+                      const testimonials = [...form.testimonials];
+                      testimonials[i] = { ...v, author: e.target.value };
+                      setForm({ ...form, testimonials });
+                    }}
+                    className="rounded-sm sm:w-64"
+                  />
+                  <div className="flex gap-1">
+                    <MoveButtons
+                      upLabel={t.settings.moveUp}
+                      downLabel={t.settings.moveDown}
+                      onUp={
+                        i === 0
+                          ? undefined
+                          : () => setForm({ ...form, testimonials: move(form.testimonials, i, -1) })
+                      }
+                      onDown={
+                        i === form.testimonials.length - 1
+                          ? undefined
+                          : () => setForm({ ...form, testimonials: move(form.testimonials, i, 1) })
+                      }
+                    />
+                    <button
+                      aria-label={t.common.delete}
+                      onClick={() =>
+                        setForm({
+                          ...form,
+                          testimonials: form.testimonials.filter((_, x) => x !== i),
+                        })
+                      }
+                      className="rounded-sm p-2 text-charcoal-soft hover:text-destructive"
+                    >
+                      <X className="h-4 w-4" />
+                    </button>
+                  </div>
+                </div>
+              </div>
+            ))}
+            <Button
+              type="button"
+              variant="outline"
+              className="rounded-sm"
+              onClick={() =>
+                setForm({
+                  ...form,
+                  testimonials: [...form.testimonials, { quote: "", author: "" }].slice(0, 20),
+                })
+              }
+            >
+              <Plus className="mr-1 h-4 w-4" /> {t.settings.addTestimonial}
+            </Button>
+          </div>
+        </Field>
+
+        <Field label={t.settings.faqs}>
+          <div className="space-y-3">
+            {form.faqs.map((f, i) => (
+              <div key={i} className="space-y-2 rounded-sm border border-border/60 p-3">
+                <div className="flex flex-col gap-2 sm:flex-row sm:items-center">
+                  <Input
+                    value={f.question}
+                    aria-label={t.settings.faqQuestion}
+                    placeholder={t.settings.faqQuestion}
+                    onChange={(e) => {
+                      const faqs = [...form.faqs];
+                      faqs[i] = { ...f, question: e.target.value };
+                      setForm({ ...form, faqs });
+                    }}
+                    className="rounded-sm flex-1"
+                  />
+                  <div className="flex gap-1">
+                    <MoveButtons
+                      upLabel={t.settings.moveUp}
+                      downLabel={t.settings.moveDown}
+                      onUp={i === 0 ? undefined : () => setForm({ ...form, faqs: move(form.faqs, i, -1) })}
+                      onDown={
+                        i === form.faqs.length - 1
+                          ? undefined
+                          : () => setForm({ ...form, faqs: move(form.faqs, i, 1) })
+                      }
+                    />
+                    <button
+                      aria-label={t.common.delete}
+                      onClick={() => setForm({ ...form, faqs: form.faqs.filter((_, x) => x !== i) })}
+                      className="rounded-sm p-2 text-charcoal-soft hover:text-destructive"
+                    >
+                      <X className="h-4 w-4" />
+                    </button>
+                  </div>
+                </div>
+                <Textarea
+                  rows={4}
+                  value={f.answer}
+                  aria-label={t.settings.faqAnswer}
+                  placeholder={t.settings.faqAnswer}
+                  onChange={(e) => {
+                    const faqs = [...form.faqs];
+                    faqs[i] = { ...f, answer: e.target.value };
+                    setForm({ ...form, faqs });
+                  }}
+                  className="rounded-sm"
+                />
+              </div>
+            ))}
+            <Button
+              type="button"
+              variant="outline"
+              className="rounded-sm"
+              onClick={() =>
+                setForm({ ...form, faqs: [...form.faqs, { question: "", answer: "" }].slice(0, 20) })
+              }
+            >
+              <Plus className="mr-1 h-4 w-4" /> {t.settings.addFaq}
             </Button>
           </div>
         </Field>
