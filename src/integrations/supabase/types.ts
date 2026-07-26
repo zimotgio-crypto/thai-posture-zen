@@ -72,6 +72,13 @@ export type Database = {
             referencedRelation: "studios"
             referencedColumns: ["id"]
           },
+          {
+            foreignKeyName: "bookings_studio_id_fkey"
+            columns: ["studio_id"]
+            isOneToOne: false
+            referencedRelation: "studios_public"
+            referencedColumns: ["id"]
+          },
         ]
       }
       clients: {
@@ -120,6 +127,13 @@ export type Database = {
             columns: ["studio_id"]
             isOneToOne: false
             referencedRelation: "studios"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "clients_studio_id_fkey"
+            columns: ["studio_id"]
+            isOneToOne: false
+            referencedRelation: "studios_public"
             referencedColumns: ["id"]
           },
         ]
@@ -210,6 +224,13 @@ export type Database = {
             referencedRelation: "studios"
             referencedColumns: ["id"]
           },
+          {
+            foreignKeyName: "session_logs_studio_id_fkey"
+            columns: ["studio_id"]
+            isOneToOne: false
+            referencedRelation: "studios_public"
+            referencedColumns: ["id"]
+          },
         ]
       }
       studio_members: {
@@ -240,6 +261,13 @@ export type Database = {
             columns: ["studio_id"]
             isOneToOne: false
             referencedRelation: "studios"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "studio_members_studio_id_fkey"
+            columns: ["studio_id"]
+            isOneToOne: false
+            referencedRelation: "studios_public"
             referencedColumns: ["id"]
           },
         ]
@@ -385,6 +413,13 @@ export type Database = {
             referencedRelation: "studios"
             referencedColumns: ["id"]
           },
+          {
+            foreignKeyName: "treatments_studio_id_fkey"
+            columns: ["studio_id"]
+            isOneToOne: false
+            referencedRelation: "studios_public"
+            referencedColumns: ["id"]
+          },
         ]
       }
       user_roles: {
@@ -444,11 +479,131 @@ export type Database = {
             referencedRelation: "studios"
             referencedColumns: ["id"]
           },
+          {
+            foreignKeyName: "whatsapp_sessions_studio_id_fkey"
+            columns: ["studio_id"]
+            isOneToOne: false
+            referencedRelation: "studios_public"
+            referencedColumns: ["id"]
+          },
         ]
       }
     }
     Views: {
-      [_ in never]: never
+      studios_public: {
+        Row: {
+          about_heading: string | null
+          about_text: string | null
+          buffer_minutes: number | null
+          city: string | null
+          country: string | null
+          email: string | null
+          features: Json | null
+          hero_heading: string | null
+          hero_image_path: string | null
+          hero_text: string | null
+          id: string | null
+          logo_path: string | null
+          maps_url: string | null
+          name: string | null
+          opening_hours: Json | null
+          parking_note: string | null
+          payment_methods: Json | null
+          phone: string | null
+          portrait_image_path: string | null
+          room_image_path: string | null
+          slot_step_minutes: number | null
+          slug: string | null
+          street: string | null
+          tagline: string | null
+          timezone: string | null
+          zip: string | null
+        }
+        Insert: {
+          about_heading?: string | null
+          about_text?: string | null
+          buffer_minutes?: number | null
+          city?: string | null
+          country?: string | null
+          email?: string | null
+          features?: Json | null
+          hero_heading?: string | null
+          hero_image_path?: string | null
+          hero_text?: string | null
+          id?: string | null
+          logo_path?: string | null
+          maps_url?: string | null
+          name?: string | null
+          opening_hours?: Json | null
+          parking_note?: string | null
+          payment_methods?: Json | null
+          phone?: string | null
+          portrait_image_path?: string | null
+          room_image_path?: string | null
+          slot_step_minutes?: number | null
+          slug?: string | null
+          street?: string | null
+          tagline?: string | null
+          timezone?: string | null
+          zip?: string | null
+        }
+        Update: {
+          about_heading?: string | null
+          about_text?: string | null
+          buffer_minutes?: number | null
+          city?: string | null
+          country?: string | null
+          email?: string | null
+          features?: Json | null
+          hero_heading?: string | null
+          hero_image_path?: string | null
+          hero_text?: string | null
+          id?: string | null
+          logo_path?: string | null
+          maps_url?: string | null
+          name?: string | null
+          opening_hours?: Json | null
+          parking_note?: string | null
+          payment_methods?: Json | null
+          phone?: string | null
+          portrait_image_path?: string | null
+          room_image_path?: string | null
+          slot_step_minutes?: number | null
+          slug?: string | null
+          street?: string | null
+          tagline?: string | null
+          timezone?: string | null
+          zip?: string | null
+        }
+        Relationships: []
+      }
+      treatments_public: {
+        Row: {
+          description: string | null
+          id: string | null
+          key: string | null
+          label: string | null
+          options: Json | null
+          sort_order: number | null
+          studio_id: string | null
+        }
+        Relationships: [
+          {
+            foreignKeyName: "treatments_studio_id_fkey"
+            columns: ["studio_id"]
+            isOneToOne: false
+            referencedRelation: "studios"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "treatments_studio_id_fkey"
+            columns: ["studio_id"]
+            isOneToOne: false
+            referencedRelation: "studios_public"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
     }
     Functions: {
       has_role: {
