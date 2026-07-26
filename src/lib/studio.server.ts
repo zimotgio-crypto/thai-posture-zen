@@ -8,6 +8,17 @@ export type DbAdmin = SupabaseClient<Database>;
 
 export type OpeningWindow = { open: number; close: number } | null;
 export type TreatmentOption = { minutes: number; price: number };
+export type StudioFeature = { title: string; text: string };
+
+export const STUDIO_MEDIA_BUCKET = "studio-media";
+export const STUDIO_MEDIA_MAX_BYTES = 5 * 1024 * 1024;
+export const STUDIO_MEDIA_MIME = [
+  "image/jpeg",
+  "image/png",
+  "image/webp",
+  "image/avif",
+  "image/svg+xml",
+] as const;
 
 export const DEFAULT_STUDIO_SLUG = "tpl-zuzwil";
 
