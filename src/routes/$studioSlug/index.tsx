@@ -46,6 +46,14 @@ function Index() {
       ? studio.features.map((f) => ({ t: f.title, d: f.text }))
       : t.home.features;
   const firstTreatmentKey = studio.treatments[0]?.key;
+  const lead = studio.treatments[0];
+  const leadOption = lead?.options[0];
+  const bridgeP = leadOption
+    ? fill(t.home.bridgePTpl, { treatment: lead.label, minutes: String(leadOption.minutes) })
+    : t.home.bridgeP;
+  const bridgeCta = leadOption
+    ? fill(t.home.bridgeCtaTpl, { price: String(leadOption.price) })
+    : t.home.bridgeCta;
   return (
     <>
       {/* Hero */}
@@ -175,10 +183,10 @@ function Index() {
               {t.home.bridgeH1} <br className="hidden sm:block" />
               <span className="text-gold-deep">{t.home.bridgeH2}</span>
             </h2>
-            <p className="mx-auto mt-4 max-w-xl text-charcoal-soft">{t.home.bridgeP}</p>
+            <p className="mx-auto mt-4 max-w-xl text-charcoal-soft">{bridgeP}</p>
             <div className="mt-8 flex flex-wrap items-center justify-center gap-4">
               <button onClick={() => open(firstTreatmentKey)} className="btn-gold rounded-sm px-7 py-4 text-[0.78rem] uppercase tracking-[0.24em]">
-                {t.home.bridgeCta}
+                {bridgeCta}
               </button>
               <Link
                 to="/$studioSlug/home-office"
