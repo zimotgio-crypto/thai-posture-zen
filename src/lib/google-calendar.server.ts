@@ -71,44 +71,6 @@ export function serviceAccountEmail(): string {
   return getCredentials().email;
 }
 
-function describeKeyShape(): {
-  rawLength: number;
-  normalizedLength: number;
-  startsWithBeginMarker: boolean;
-  endsWithEndMarker: boolean;
-  newlineCount: number;
-  containsLiteralBackslashN: boolean;
-  hasSurroundingQuotes: boolean;
-  source: "json" | "pem" | "none";
-} {
-  const fromJson = parseServiceAccountJson();
-  const source: "json" | "pem" | "none" = fromJson
-    ? "json"
-    : process.env.GOOGLE_PRIVATE_KEY
-      ? "pem"
-      : "none";
-  const raw = fromJson
-    ? fromJson.key
-    : (process.env.GOOGLE_PRIVATE_KEY ?? "");
-  const trimmed = raw.trim();
-  const hasSurroundingQuotes =
-    trimmed.length >= 2 &&
-    ((trimmed.startsWith('"') && trimmed.endsWith('"')) ||
-      (trimmed.startsWith("'") && trimmed.endsWith("'")));
-  const normalized = fromJson ? fromJson.key : normalizePrivateKey(raw);
-  return {
-    rawLength: raw.length,
-    normalizedLength: normalized.length,
-    startsWithBeginMarker: normalized.startsWith(PEM_BEGIN),
-    endsWithEndMarker:
-      normalized.endsWith(PEM_END) || normalized.endsWith(`${PEM_END}\n`),
-    newlineCount: (normalized.match(/\n/g) ?? []).length,
-    containsLiteralBackslashN: /\\n/.test(process.env.GOOGLE_PRIVATE_KEY ?? ""),
-    hasSurroundingQuotes,
-    source,
-  };
-}
-
 export function isGoogleConfigured(calendarId?: string | null): boolean {
   return Boolean(calId(calendarId) && SA_EMAIL() && SA_KEY());
 }
