@@ -15,66 +15,6 @@ async function studioCalendar(studioId: string): Promise<string | null> {
   return studio?.google_calendar_id ?? null;
 }
 
-// Returns { isAdmin, canClaim } for the current signed-in user.
-export const getAdminStatus = createServerFn({ method: "GET" })
-  .middleware([requireSupabaseAuth])
-  .handler(async ({ context }) => {
-    const { supabaseAdmin } = await import("@/integrations/supabase/client.server");
-    const [{ data: mine }, { count }, { data: membership }] = await Promise.all([
-      supabaseAdmin
-        .from("user_roles")
-        .select("role")
-        .eq("user_id", context.userId)
-        .eq("role", "admin")
-        .maybeSingle(),
-      supabaseAdmin
-        .from("user_roles")
-        .select("role", { count: "exact", head: true })
-        .eq("role", "admin"),
-      supabaseAdmin
-        .from("studio_members")
-        .select("studio_id")
-        .eq("user_id", context.userId)
-        .limit(1)
-        .maybeSingle(),
-    ]);
-    return {
-      isAdmin: Boolean(mine) || Boolean(membership),
-      canClaim: (count ?? 0) === 0,
-    };
-  });
-
-// One-time bootstrap: first signed-in user becomes admin.
-export const claimAdmin = createServerFn({ method: "POST" })
-  .middleware([requireSupabaseAuth])
-  .handler(async ({ context }) => {
-    const { supabaseAdmin } = await import("@/integrations/supabase/client.server");
-    const { count } = await supabaseAdmin
-      .from("user_roles")
-      .select("role", { count: "exact", head: true })
-      .eq("role", "admin");
-    if ((count ?? 0) > 0) return { ok: false as const, reason: "admin_exists" as const };
-    const { error } = await supabaseAdmin
-      .from("user_roles")
-      .insert({ user_id: context.userId, role: "admin" });
-    if (error) throw new Error(error.message);
-    // Bootstrap tenant access: owner of the first active studio + platform admin.
-    const { data: studio } = await supabaseAdmin
-      .from("studios")
-      .select("id")
-      .eq("active", true)
-      .order("created_at", { ascending: true })
-      .limit(1)
-      .maybeSingle();
-    if (studio) {
-      await supabaseAdmin
-        .from("studio_members")
-        .insert({ studio_id: studio.id, user_id: context.userId, role: "owner" });
-    }
-    await supabaseAdmin.from("platform_admins").insert({ user_id: context.userId });
-    return { ok: true as const };
-  });
-
 // Master data, opening hours and treatments of the caller's studio.
 export const getCurrentStudio = createServerFn({ method: "GET" })
   .middleware([requireSupabaseAuth])
