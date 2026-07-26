@@ -35,6 +35,11 @@ export const Route = createFileRoute("/api/public/whatsapp")({
 
       POST: async ({ request }) => {
         const rawBody = await request.text();
+        console.log(
+          `[whatsapp webhook] POST received at ${new Date().toISOString()} rawBodyLength=${rawBody.length} hasSignature=${Boolean(
+            request.headers.get("x-hub-signature-256"),
+          )}`,
+        );
 
         const appSecret = process.env.WHATSAPP_APP_SECRET;
         if (!appSecret) {
