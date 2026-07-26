@@ -102,27 +102,97 @@ export function isGoogleConfigured(): boolean {
   return Boolean(CALENDAR_ID() && SA_EMAIL() && SA_KEY());
 }
 
-let cachedClient: JWT | null = null;
 let cachedToken: { token: string; exp: number } | null = null;
+let cachedCryptoKey: { pem: string; key: CryptoKey } | null = null;
+
+function base64UrlEncode(input: string | Uint8Array): string {
+  let binary = "";
+  if (typeof input === "string") {
+    const bytes = new TextEncoder().encode(input);
+    for (const b of bytes) binary += String.fromCharCode(b);
+  } else {
+    for (const b of input) binary += String.fromCharCode(b);
+  }
+  return btoa(binary).replace(/\+/g, "-").replace(/\//g, "_").replace(/=+$/, "");
+}
+
+function pemToArrayBuffer(pem: string): ArrayBuffer {
+  const body = pem
+    .replace(PEM_BEGIN, "")
+    .replace(PEM_END, "")
+    .replace(/\s+/g, "");
+  const binary = atob(body);
+  const bytes = new Uint8Array(binary.length);
+  for (let i = 0; i < binary.length; i += 1) bytes[i] = binary.charCodeAt(i);
+  return bytes.buffer;
+}
+
+async function importSigningKey(pem: string): Promise<CryptoKey> {
+  if (cachedCryptoKey && cachedCryptoKey.pem === pem) return cachedCryptoKey.key;
+  const key = await crypto.subtle.importKey(
+    "pkcs8",
+    pemToArrayBuffer(pem),
+    { name: "RSASSA-PKCS1-v1_5", hash: "SHA-256" },
+    false,
+    ["sign"],
+  );
+  cachedCryptoKey = { pem, key };
+  return key;
+}
+
+async function createSignedJwt(): Promise<string> {
+  const iat = Math.floor(Date.now() / 1000);
+  const header = { alg: "RS256", typ: "JWT" };
+  const claims = {
+    iss: SA_EMAIL(),
+    scope: "https://www.googleapis.com/auth/calendar",
+    aud: "https://oauth2.googleapis.com/token",
+    exp: iat + 3600,
+    iat,
+  };
+  const unsigned = `${base64UrlEncode(JSON.stringify(header))}.${base64UrlEncode(JSON.stringify(claims))}`;
+  const key = await importSigningKey(SA_KEY());
+  const signature = await crypto.subtle.sign(
+    "RSASSA-PKCS1-v1_5",
+    key,
+    new TextEncoder().encode(unsigned),
+  );
+  return `${unsigned}.${base64UrlEncode(new Uint8Array(signature))}`;
+}
 
 async function getAuthToken(): Promise<string | null> {
   if (!isGoogleConfigured()) return null;
   const now = Date.now();
   if (cachedToken && cachedToken.exp - 60_000 > now) return cachedToken.token;
-  if (!cachedClient) {
-    cachedClient = new JWT({
-      email: SA_EMAIL(),
-      key: SA_KEY(),
-      scopes: ["https://www.googleapis.com/auth/calendar"],
+  try {
+    const assertion = await createSignedJwt();
+    const res = await fetch("https://oauth2.googleapis.com/token", {
+      method: "POST",
+      headers: { "Content-Type": "application/x-www-form-urlencoded" },
+      body: new URLSearchParams({
+        grant_type: "urn:ietf:params:oauth:grant-type:jwt-bearer",
+        assertion,
+      }).toString(),
+      signal: AbortSignal.timeout(5000),
     });
+    const text = await res.text().catch(() => "");
+    if (!res.ok) {
+      console.error(`[google-calendar] token exchange failed ${res.status}: ${text}`);
+      return null;
+    }
+    const json = parseJsonBody(text) as { access_token?: string; expires_in?: number } | null;
+    const token = json?.access_token ?? null;
+    if (!token) {
+      console.error("[google-calendar] token exchange returned no access_token");
+      return null;
+    }
+    const expiresIn = typeof json?.expires_in === "number" ? json.expires_in : 3300;
+    cachedToken = { token, exp: now + expiresIn * 1000 };
+    return token;
+  } catch (err) {
+    console.error("[google-calendar] token exchange error", normalizeException(err));
+    return null;
   }
-  const res = await cachedClient.getAccessToken();
-  const token = res?.token ?? null;
-  if (!token) return null;
-  // google-auth-library exposes expiry via credentials.expiry_date
-  const exp = cachedClient.credentials.expiry_date ?? now + 55 * 60 * 1000;
-  cachedToken = { token, exp };
-  return token;
 }
 
 function addMinutesIso(day: string, time: string, minutes: number): string {
