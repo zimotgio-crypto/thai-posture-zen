@@ -27,7 +27,12 @@ export function SiteFooter() {
       </div>
       <div className="border-t border-border/60">
         <div className="mx-auto flex max-w-7xl flex-col items-start justify-between gap-2 px-6 py-5 text-xs text-charcoal-soft sm:flex-row sm:items-center lg:px-10">
-          <span>© {new Date().getFullYear()} {t.footer.copyright}</span>
+          <span className="flex flex-wrap items-center gap-3">
+            <span>© {new Date().getFullYear()} {t.footer.copyright}</span>
+            <Link to="/datenschutz" className="text-charcoal-soft/80 hover:text-charcoal">
+              Datenschutz
+            </Link>
+          </span>
           <span className="tracking-widest uppercase">{t.footer.payments}</span>
         </div>
       </div>
