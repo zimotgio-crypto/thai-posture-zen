@@ -4,7 +4,7 @@ import { useQuery, useQueryClient } from "@tanstack/react-query";
 import { useState } from "react";
 import { CalendarDays, Users, LogOut, Plus, Sparkles, Settings, Building2 } from "lucide-react";
 import { supabase } from "@/integrations/supabase/client";
-import { claimAdmin, getAdminStatus, getCurrentStudio, listMyStudios } from "@/lib/admin.functions";
+import { getCurrentStudio, listMyStudios } from "@/lib/admin.functions";
 import { Button } from "@/components/ui/button";
 import { AddBookingDialog } from "@/components/admin/add-booking-dialog";
 import { cn } from "@/lib/utils";
@@ -70,21 +70,13 @@ function AdminShell() {
   const { lang } = useAdminLanguage();
   const [addOpen, setAddOpen] = useState(false);
   const pathname = useRouterState({ select: (s) => s.location.pathname });
-  const getStatus = useServerFn(getAdminStatus);
-  const claim = useServerFn(claimAdmin);
   const listStudiosFn = useServerFn(listMyStudios);
   const getStudioFn = useServerFn(getCurrentStudio);
   const [selectedStudioId, setSelectedStudioId] = useState<string | null>(null);
 
-  const status = useQuery({
-    queryKey: ["admin", "status"],
-    queryFn: () => getStatus(),
-  });
-
   const myStudios = useQuery({
     queryKey: ["admin", "my-studios"],
     queryFn: () => listStudiosFn(),
-    enabled: status.data?.isAdmin === true,
   });
 
   const studioId = selectedStudioId ?? myStudios.data?.studios[0]?.id ?? null;
@@ -109,21 +101,7 @@ function AdminShell() {
     navigate({ to: "/auth", replace: true });
   }
 
-  async function handleClaim() {
-    try {
-      const res = await claim();
-      if (!res.ok) {
-        toast.error(t.shell.claimExists);
-      } else {
-        toast.success(t.shell.welcome);
-        qc.invalidateQueries({ queryKey: ["admin", "status"] });
-      }
-    } catch (err) {
-      toast.error(err instanceof Error ? err.message : t.common.error);
-    }
-  }
-
-  if (status.isLoading) {
+  if (myStudios.isLoading) {
     return (
       <div className="min-h-screen grid place-items-center bg-ivory" data-lang={lang}>
         <p className="text-sm text-charcoal-soft">{t.common.loading}</p>
@@ -131,25 +109,13 @@ function AdminShell() {
     );
   }
 
-  if (!status.data?.isAdmin) {
+  if (myStudios.isError) {
     return (
       <div className="min-h-screen grid place-items-center bg-ivory px-6" data-lang={lang}>
         <div className="max-w-md text-center rounded-sm border border-border/60 bg-card p-10">
           <Sparkles className="mx-auto h-5 w-5 text-gold-deep" />
           <h1 className="mt-3 font-serif text-2xl text-charcoal">{t.shell.subtitle}</h1>
-          {status.data?.canClaim ? (
-            <>
-              <p className="mt-3 text-sm text-charcoal-soft">{t.shell.noAdminYet}</p>
-              <Button
-                onClick={handleClaim}
-                className="btn-gold mt-6 rounded-sm px-6 py-4 text-xs uppercase tracking-[0.22em]"
-              >
-                {t.shell.claim}
-              </Button>
-            </>
-          ) : (
-            <p className="mt-3 text-sm text-charcoal-soft">{t.shell.noAccess}</p>
-          )}
+          <p className="mt-3 text-sm text-charcoal-soft">{t.shell.noAccess}</p>
           <button
             onClick={signOut}
             className="mt-6 block w-full text-xs uppercase tracking-[0.22em] text-charcoal-soft hover:text-charcoal"
