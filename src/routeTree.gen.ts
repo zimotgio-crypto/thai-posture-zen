@@ -16,6 +16,9 @@ import { Route as DatenschutzRouteImport } from './routes/datenschutz'
 import { Route as AuthRouteImport } from './routes/auth'
 import { Route as AuthenticatedRouteRouteImport } from './routes/_authenticated/route'
 import { Route as IndexRouteImport } from './routes/index'
+import { Route as StudioSlugIndexRouteImport } from './routes/$studioSlug/index'
+import { Route as StudioSlugKontaktRouteImport } from './routes/$studioSlug/kontakt'
+import { Route as StudioSlugHomeOfficeRouteImport } from './routes/$studioSlug/home-office'
 import { Route as AuthenticatedAdminRouteRouteImport } from './routes/_authenticated/admin/route'
 import { Route as AuthenticatedAdminIndexRouteImport } from './routes/_authenticated/admin/index'
 import { Route as ApiPublicWhatsappRouteImport } from './routes/api/public/whatsapp'
@@ -56,6 +59,21 @@ const AuthenticatedRouteRoute = AuthenticatedRouteRouteImport.update({
 const IndexRoute = IndexRouteImport.update({
   id: '/',
   path: '/',
+  getParentRoute: () => rootRouteImport,
+} as any)
+const StudioSlugIndexRoute = StudioSlugIndexRouteImport.update({
+  id: '/$studioSlug/',
+  path: '/$studioSlug/',
+  getParentRoute: () => rootRouteImport,
+} as any)
+const StudioSlugKontaktRoute = StudioSlugKontaktRouteImport.update({
+  id: '/$studioSlug/kontakt',
+  path: '/$studioSlug/kontakt',
+  getParentRoute: () => rootRouteImport,
+} as any)
+const StudioSlugHomeOfficeRoute = StudioSlugHomeOfficeRouteImport.update({
+  id: '/$studioSlug/home-office',
+  path: '/$studioSlug/home-office',
   getParentRoute: () => rootRouteImport,
 } as any)
 const AuthenticatedAdminRouteRoute = AuthenticatedAdminRouteRouteImport.update({
@@ -105,6 +123,9 @@ export interface FileRoutesByFullPath {
   '/kontakt': typeof KontaktRoute
   '/sitemap.xml': typeof SitemapDotxmlRoute
   '/admin': typeof AuthenticatedAdminRouteRouteWithChildren
+  '/$studioSlug/home-office': typeof StudioSlugHomeOfficeRoute
+  '/$studioSlug/kontakt': typeof StudioSlugKontaktRoute
+  '/$studioSlug/': typeof StudioSlugIndexRoute
   '/admin/calendar': typeof AuthenticatedAdminCalendarRoute
   '/admin/clients': typeof AuthenticatedAdminClientsRouteWithChildren
   '/api/public/ping': typeof ApiPublicPingRoute
@@ -119,6 +140,9 @@ export interface FileRoutesByTo {
   '/home-office': typeof HomeOfficeRoute
   '/kontakt': typeof KontaktRoute
   '/sitemap.xml': typeof SitemapDotxmlRoute
+  '/$studioSlug/home-office': typeof StudioSlugHomeOfficeRoute
+  '/$studioSlug/kontakt': typeof StudioSlugKontaktRoute
+  '/$studioSlug': typeof StudioSlugIndexRoute
   '/admin/calendar': typeof AuthenticatedAdminCalendarRoute
   '/admin/clients': typeof AuthenticatedAdminClientsRouteWithChildren
   '/api/public/ping': typeof ApiPublicPingRoute
@@ -136,6 +160,9 @@ export interface FileRoutesById {
   '/kontakt': typeof KontaktRoute
   '/sitemap.xml': typeof SitemapDotxmlRoute
   '/_authenticated/admin': typeof AuthenticatedAdminRouteRouteWithChildren
+  '/$studioSlug/home-office': typeof StudioSlugHomeOfficeRoute
+  '/$studioSlug/kontakt': typeof StudioSlugKontaktRoute
+  '/$studioSlug/': typeof StudioSlugIndexRoute
   '/_authenticated/admin/calendar': typeof AuthenticatedAdminCalendarRoute
   '/_authenticated/admin/clients': typeof AuthenticatedAdminClientsRouteWithChildren
   '/api/public/ping': typeof ApiPublicPingRoute
@@ -153,6 +180,9 @@ export interface FileRouteTypes {
     | '/kontakt'
     | '/sitemap.xml'
     | '/admin'
+    | '/$studioSlug/home-office'
+    | '/$studioSlug/kontakt'
+    | '/$studioSlug/'
     | '/admin/calendar'
     | '/admin/clients'
     | '/api/public/ping'
@@ -167,6 +197,9 @@ export interface FileRouteTypes {
     | '/home-office'
     | '/kontakt'
     | '/sitemap.xml'
+    | '/$studioSlug/home-office'
+    | '/$studioSlug/kontakt'
+    | '/$studioSlug'
     | '/admin/calendar'
     | '/admin/clients'
     | '/api/public/ping'
@@ -183,6 +216,9 @@ export interface FileRouteTypes {
     | '/kontakt'
     | '/sitemap.xml'
     | '/_authenticated/admin'
+    | '/$studioSlug/home-office'
+    | '/$studioSlug/kontakt'
+    | '/$studioSlug/'
     | '/_authenticated/admin/calendar'
     | '/_authenticated/admin/clients'
     | '/api/public/ping'
@@ -199,6 +235,9 @@ export interface RootRouteChildren {
   HomeOfficeRoute: typeof HomeOfficeRoute
   KontaktRoute: typeof KontaktRoute
   SitemapDotxmlRoute: typeof SitemapDotxmlRoute
+  StudioSlugHomeOfficeRoute: typeof StudioSlugHomeOfficeRoute
+  StudioSlugKontaktRoute: typeof StudioSlugKontaktRoute
+  StudioSlugIndexRoute: typeof StudioSlugIndexRoute
   ApiPublicPingRoute: typeof ApiPublicPingRoute
   ApiPublicWhatsappRoute: typeof ApiPublicWhatsappRoute
 }
@@ -252,6 +291,27 @@ declare module '@tanstack/react-router' {
       path: '/'
       fullPath: '/'
       preLoaderRoute: typeof IndexRouteImport
+      parentRoute: typeof rootRouteImport
+    }
+    '/$studioSlug/': {
+      id: '/$studioSlug/'
+      path: '/$studioSlug'
+      fullPath: '/$studioSlug/'
+      preLoaderRoute: typeof StudioSlugIndexRouteImport
+      parentRoute: typeof rootRouteImport
+    }
+    '/$studioSlug/kontakt': {
+      id: '/$studioSlug/kontakt'
+      path: '/$studioSlug/kontakt'
+      fullPath: '/$studioSlug/kontakt'
+      preLoaderRoute: typeof StudioSlugKontaktRouteImport
+      parentRoute: typeof rootRouteImport
+    }
+    '/$studioSlug/home-office': {
+      id: '/$studioSlug/home-office'
+      path: '/$studioSlug/home-office'
+      fullPath: '/$studioSlug/home-office'
+      preLoaderRoute: typeof StudioSlugHomeOfficeRouteImport
       parentRoute: typeof rootRouteImport
     }
     '/_authenticated/admin': {
@@ -357,6 +417,9 @@ const rootRouteChildren: RootRouteChildren = {
   HomeOfficeRoute: HomeOfficeRoute,
   KontaktRoute: KontaktRoute,
   SitemapDotxmlRoute: SitemapDotxmlRoute,
+  StudioSlugHomeOfficeRoute: StudioSlugHomeOfficeRoute,
+  StudioSlugKontaktRoute: StudioSlugKontaktRoute,
+  StudioSlugIndexRoute: StudioSlugIndexRoute,
   ApiPublicPingRoute: ApiPublicPingRoute,
   ApiPublicWhatsappRoute: ApiPublicWhatsappRoute,
 }
