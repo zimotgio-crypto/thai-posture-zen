@@ -39,6 +39,49 @@ async function fileToBase64(file: File): Promise<string> {
   return btoa(binary);
 }
 
+function move<T>(list: T[], index: number, delta: number): T[] {
+  const next = [...list];
+  const target = index + delta;
+  if (target < 0 || target >= next.length) return next;
+  [next[index], next[target]] = [next[target], next[index]];
+  return next;
+}
+
+function MoveButtons({
+  upLabel,
+  downLabel,
+  onUp,
+  onDown,
+}: {
+  upLabel: string;
+  downLabel: string;
+  onUp?: () => void;
+  onDown?: () => void;
+}) {
+  return (
+    <>
+      <button
+        type="button"
+        aria-label={upLabel}
+        disabled={!onUp}
+        onClick={onUp}
+        className="rounded-sm p-2 text-charcoal-soft transition hover:text-charcoal disabled:opacity-30"
+      >
+        <ArrowUp className="h-4 w-4" />
+      </button>
+      <button
+        type="button"
+        aria-label={downLabel}
+        disabled={!onDown}
+        onClick={onDown}
+        className="rounded-sm p-2 text-charcoal-soft transition hover:text-charcoal disabled:opacity-30"
+      >
+        <ArrowDown className="h-4 w-4" />
+      </button>
+    </>
+  );
+}
+
 export function ContentTab({ studioId }: { studioId: string }) {
   const t = useAdminT();
   const qc = useQueryClient();
