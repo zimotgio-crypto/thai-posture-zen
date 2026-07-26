@@ -95,8 +95,8 @@ export function ClientProfileView({
   const deleteClientFn = useServerFn(deleteClient);
 
   const q = useQuery({
-    queryKey: ["admin", "client", clientId],
-    queryFn: () => getClientFn({ data: { id: clientId } }),
+    queryKey: ["admin", "client", studioId, clientId],
+    queryFn: () => getClientFn({ data: { id: clientId, studioId } }),
   });
 
   const client = (q.data?.client ?? fallback) as ClientLike | undefined;
@@ -177,6 +177,7 @@ export function ClientProfileView({
       await addLog({
         data: {
           clientId,
+          studioId,
           bookingId: linkBookingId || null,
           bodyHtml,
           treatmentDate: linkBookingId ? null : new Date().toISOString().slice(0, 10),
@@ -204,7 +205,7 @@ export function ClientProfileView({
   async function saveProfile() {
     setSavingProfile(true);
     try {
-      await updateClientFn({ data: { id: clientId, ...form } });
+      await updateClientFn({ data: { id: clientId, studioId, ...form } });
       toast.success(t.profile.profileUpdated);
       qc.invalidateQueries({ queryKey: ["admin", "client", clientId] });
       qc.invalidateQueries({ queryKey: ["admin", "clients"] });
@@ -219,7 +220,7 @@ export function ClientProfileView({
   async function removeClient() {
     setDeleting(true);
     try {
-      await deleteClientFn({ data: { id: clientId } });
+      await deleteClientFn({ data: { id: clientId, studioId } });
       toast.success(t.profile.clientDeleted);
       qc.invalidateQueries({ queryKey: ["admin", "clients"] });
       setConfirmDelete(false);

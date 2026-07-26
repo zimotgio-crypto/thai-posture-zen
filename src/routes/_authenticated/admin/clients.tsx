@@ -34,11 +34,12 @@ function ClientsPage() {
   const t = useAdminT();
   const [q, setQ] = useState("");
   const listFn = useServerFn(listClients);
+  const { studioId } = useAdminStudio();
   const [selectedClient, setSelectedClient] = useState<ClientRow | null>(null);
   const [addOpen, setAddOpen] = useState(false);
   const clients = useQuery({
-    queryKey: ["admin", "clients", q],
-    queryFn: () => listFn({ data: { q: q || undefined } }),
+    queryKey: ["admin", "clients", studioId, q],
+    queryFn: () => listFn({ data: { q: q || undefined, studioId } }),
   });
 
   function handleRowClick(client: ClientRow) {
