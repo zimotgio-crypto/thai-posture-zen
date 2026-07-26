@@ -343,11 +343,11 @@ export function BookingModal({
               {treatments.map((tr) => (
                 <button
                   type="button"
-                  key={tr.id}
-                  onClick={() => setTreatment(tr.id)}
+                  key={tr.key}
+                  onClick={() => setTreatment(tr.key)}
                   className={cn(
                     "flex items-center rounded-sm border px-4 py-3 text-left transition",
-                    treatment === tr.id ? "border-gold bg-gold-soft/30" : "border-border hover:border-gold/60"
+                    treatment === tr.key ? "border-gold bg-gold-soft/30" : "border-border hover:border-gold/60"
                   )}
                 >
                   <span className="font-medium text-charcoal">{tr.label}</span>
@@ -379,7 +379,10 @@ export function BookingModal({
                         day,
                         bookedTimes,
                         nowMinutesToday,
-                        opt.minutes
+                        opt.minutes,
+                        dayHours,
+                        studio.slotStepMinutes,
+                        studio.bufferMinutes
                       );
                       const stillAvailable = nextSlots.some(
                         (s) => s.time === time && !s.disabled
@@ -400,10 +403,10 @@ export function BookingModal({
                     )}
                   >
                     <span className="text-[0.68rem] uppercase tracking-[0.22em] text-charcoal-soft">
-                      {opt.label}
+                      {formatDuration(opt.minutes)}
                     </span>
                     <span className="mt-1 font-serif text-lg text-charcoal">
-                      CHF {priceForTreatment(treatment, opt.minutes)}.–
+                      CHF {opt.price}.–
                     </span>
                   </button>
                 );
