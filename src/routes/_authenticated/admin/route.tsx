@@ -4,12 +4,13 @@ import { useQuery, useQueryClient } from "@tanstack/react-query";
 import { useState } from "react";
 import { CalendarDays, Users, LogOut, Plus, Sparkles } from "lucide-react";
 import { supabase } from "@/integrations/supabase/client";
-import { claimAdmin, getAdminStatus } from "@/lib/admin.functions";
+import { claimAdmin, getAdminStatus, getCurrentStudio, listMyStudios } from "@/lib/admin.functions";
 import { Button } from "@/components/ui/button";
 import { AddBookingDialog } from "@/components/admin/add-booking-dialog";
 import { cn } from "@/lib/utils";
 import { toast } from "sonner";
 import { AdminLanguageProvider, useAdminLanguage, useAdminT } from "@/lib/admin-i18n";
+import { AdminStudioProvider } from "@/lib/admin-studio-context";
 
 export const Route = createFileRoute("/_authenticated/admin")({
   head: () => ({
@@ -71,11 +72,35 @@ function AdminShell() {
   const pathname = useRouterState({ select: (s) => s.location.pathname });
   const getStatus = useServerFn(getAdminStatus);
   const claim = useServerFn(claimAdmin);
+  const listStudiosFn = useServerFn(listMyStudios);
+  const getStudioFn = useServerFn(getCurrentStudio);
+  const [selectedStudioId, setSelectedStudioId] = useState<string | null>(null);
 
   const status = useQuery({
     queryKey: ["admin", "status"],
     queryFn: () => getStatus(),
   });
+
+  const myStudios = useQuery({
+    queryKey: ["admin", "my-studios"],
+    queryFn: () => listStudiosFn(),
+    enabled: status.data?.isAdmin === true,
+  });
+
+  const studioId = selectedStudioId ?? myStudios.data?.studios[0]?.id ?? null;
+
+  const currentStudio = useQuery({
+    queryKey: ["admin", "current-studio", studioId],
+    queryFn: () => getStudioFn({ data: studioId ? { studioId } : {} }),
+    enabled: Boolean(studioId),
+  });
+
+  function switchStudio(id: string) {
+    setSelectedStudioId(id);
+    qc.removeQueries({ queryKey: ["admin", "bookings"] });
+    qc.removeQueries({ queryKey: ["admin", "clients"] });
+    qc.removeQueries({ queryKey: ["admin", "client"] });
+  }
 
   async function signOut() {
     await qc.cancelQueries();
@@ -141,13 +166,69 @@ function AdminShell() {
     { to: "/admin/clients", label: t.shell.clients, icon: Users },
   ] as const;
 
+  // Signed in, but not linked to any studio yet.
+  if (myStudios.isSuccess && myStudios.data.studios.length === 0) {
+    return (
+      <div className="min-h-screen grid place-items-center bg-ivory px-6" data-lang={lang}>
+        <div className="max-w-md text-center rounded-sm border border-border/60 bg-card p-10">
+          <Sparkles className="mx-auto h-5 w-5 text-gold-deep" />
+          <h1 className="mt-3 font-serif text-2xl text-charcoal">Kein Studio zugeordnet</h1>
+          <p className="mt-3 text-sm text-charcoal-soft">
+            Dein Konto ist noch keinem Studio zugeordnet. Bitte wende dich an den Betreiber.
+          </p>
+          <button
+            onClick={signOut}
+            className="mt-6 block w-full text-xs uppercase tracking-[0.22em] text-charcoal-soft hover:text-charcoal"
+          >
+            {t.shell.signOut}
+          </button>
+        </div>
+      </div>
+    );
+  }
+
+  if (!studioId || !currentStudio.data) {
+    return (
+      <div className="min-h-screen grid place-items-center bg-ivory" data-lang={lang}>
+        <p className="text-sm text-charcoal-soft">{t.common.loading}</p>
+      </div>
+    );
+  }
+
+  const studio = currentStudio.data.studio;
+
   return (
+   <AdminStudioProvider
+     value={{
+       studioId,
+       studio: {
+         id: studio.id,
+         slug: studio.slug,
+         name: studio.name,
+         street: studio.street,
+         zip: studio.zip,
+         city: studio.city,
+         phone: studio.phone,
+         email: studio.email,
+       },
+       treatments: currentStudio.data.treatments.map((tr) => ({
+         key: tr.key,
+         label: tr.label,
+         options: tr.options,
+       })),
+       studios: myStudios.data?.studios ?? [],
+       isPlatformAdmin: myStudios.data?.isPlatformAdmin ?? false,
+       setStudioId: switchStudio,
+     }}
+   >
     <div className="min-h-screen bg-ivory" data-lang={lang}>
       <header className="border-b border-border/60 bg-ivory/95 backdrop-blur sticky top-0 z-30">
         <div className="mx-auto flex max-w-7xl items-center justify-between gap-4 px-6 py-4">
           <Link to="/admin/calendar" className="flex flex-col leading-none">
-            <span className="font-serif text-lg text-charcoal">{t.shell.brand}</span>
-            <span className="text-[0.6rem] uppercase tracking-[0.3em] text-gold-deep">{t.shell.subtitle}</span>
+            <span className="font-serif text-lg text-charcoal">{studio.name}</span>
+            <span className="text-[0.6rem] uppercase tracking-[0.3em] text-gold-deep">
+              {studio.city ?? t.shell.subtitle}
+            </span>
           </Link>
           <nav className="hidden md:flex items-center gap-1">
             {navItems.map((n) => {
@@ -169,6 +250,22 @@ function AdminShell() {
             })}
           </nav>
           <div className="flex items-center gap-3">
+            {(myStudios.data?.isPlatformAdmin ?? false) &&
+              (myStudios.data?.studios.length ?? 0) > 1 && (
+                <select
+                  aria-label="Studio"
+                  value={studioId}
+                  onChange={(e) => switchStudio(e.target.value)}
+                  className="rounded-sm border border-border/60 bg-card px-2 py-1.5 text-[0.7rem] uppercase tracking-[0.16em] text-charcoal"
+                >
+                  {myStudios.data?.studios.map((s) => (
+                    <option key={s.id} value={s.id}>
+                      {s.name}
+                      {s.city ? ` · ${s.city}` : ""}
+                    </option>
+                  ))}
+                </select>
+              )}
             <LangToggle />
             <Button
               onClick={() => setAddOpen(true)}
@@ -210,5 +307,6 @@ function AdminShell() {
 
       <AddBookingDialog open={addOpen} onOpenChange={setAddOpen} />
     </div>
+   </AdminStudioProvider>
   );
 }

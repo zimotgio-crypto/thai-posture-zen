@@ -15,7 +15,11 @@ import { Route as HomeOfficeRouteImport } from './routes/home-office'
 import { Route as DatenschutzRouteImport } from './routes/datenschutz'
 import { Route as AuthRouteImport } from './routes/auth'
 import { Route as AuthenticatedRouteRouteImport } from './routes/_authenticated/route'
+import { Route as StudioSlugRouteRouteImport } from './routes/$studioSlug/route'
 import { Route as IndexRouteImport } from './routes/index'
+import { Route as StudioSlugIndexRouteImport } from './routes/$studioSlug/index'
+import { Route as StudioSlugKontaktRouteImport } from './routes/$studioSlug/kontakt'
+import { Route as StudioSlugHomeOfficeRouteImport } from './routes/$studioSlug/home-office'
 import { Route as AuthenticatedAdminRouteRouteImport } from './routes/_authenticated/admin/route'
 import { Route as AuthenticatedAdminIndexRouteImport } from './routes/_authenticated/admin/index'
 import { Route as ApiPublicWhatsappRouteImport } from './routes/api/public/whatsapp'
@@ -53,10 +57,30 @@ const AuthenticatedRouteRoute = AuthenticatedRouteRouteImport.update({
   id: '/_authenticated',
   getParentRoute: () => rootRouteImport,
 } as any)
+const StudioSlugRouteRoute = StudioSlugRouteRouteImport.update({
+  id: '/$studioSlug',
+  path: '/$studioSlug',
+  getParentRoute: () => rootRouteImport,
+} as any)
 const IndexRoute = IndexRouteImport.update({
   id: '/',
   path: '/',
   getParentRoute: () => rootRouteImport,
+} as any)
+const StudioSlugIndexRoute = StudioSlugIndexRouteImport.update({
+  id: '/',
+  path: '/',
+  getParentRoute: () => StudioSlugRouteRoute,
+} as any)
+const StudioSlugKontaktRoute = StudioSlugKontaktRouteImport.update({
+  id: '/kontakt',
+  path: '/kontakt',
+  getParentRoute: () => StudioSlugRouteRoute,
+} as any)
+const StudioSlugHomeOfficeRoute = StudioSlugHomeOfficeRouteImport.update({
+  id: '/home-office',
+  path: '/home-office',
+  getParentRoute: () => StudioSlugRouteRoute,
 } as any)
 const AuthenticatedAdminRouteRoute = AuthenticatedAdminRouteRouteImport.update({
   id: '/admin',
@@ -99,12 +123,16 @@ const AuthenticatedAdminClientsIdRoute =
 
 export interface FileRoutesByFullPath {
   '/': typeof IndexRoute
+  '/$studioSlug': typeof StudioSlugRouteRouteWithChildren
   '/auth': typeof AuthRoute
   '/datenschutz': typeof DatenschutzRoute
   '/home-office': typeof HomeOfficeRoute
   '/kontakt': typeof KontaktRoute
   '/sitemap.xml': typeof SitemapDotxmlRoute
   '/admin': typeof AuthenticatedAdminRouteRouteWithChildren
+  '/$studioSlug/home-office': typeof StudioSlugHomeOfficeRoute
+  '/$studioSlug/kontakt': typeof StudioSlugKontaktRoute
+  '/$studioSlug/': typeof StudioSlugIndexRoute
   '/admin/calendar': typeof AuthenticatedAdminCalendarRoute
   '/admin/clients': typeof AuthenticatedAdminClientsRouteWithChildren
   '/api/public/ping': typeof ApiPublicPingRoute
@@ -119,6 +147,9 @@ export interface FileRoutesByTo {
   '/home-office': typeof HomeOfficeRoute
   '/kontakt': typeof KontaktRoute
   '/sitemap.xml': typeof SitemapDotxmlRoute
+  '/$studioSlug/home-office': typeof StudioSlugHomeOfficeRoute
+  '/$studioSlug/kontakt': typeof StudioSlugKontaktRoute
+  '/$studioSlug': typeof StudioSlugIndexRoute
   '/admin/calendar': typeof AuthenticatedAdminCalendarRoute
   '/admin/clients': typeof AuthenticatedAdminClientsRouteWithChildren
   '/api/public/ping': typeof ApiPublicPingRoute
@@ -129,6 +160,7 @@ export interface FileRoutesByTo {
 export interface FileRoutesById {
   __root__: typeof rootRouteImport
   '/': typeof IndexRoute
+  '/$studioSlug': typeof StudioSlugRouteRouteWithChildren
   '/_authenticated': typeof AuthenticatedRouteRouteWithChildren
   '/auth': typeof AuthRoute
   '/datenschutz': typeof DatenschutzRoute
@@ -136,6 +168,9 @@ export interface FileRoutesById {
   '/kontakt': typeof KontaktRoute
   '/sitemap.xml': typeof SitemapDotxmlRoute
   '/_authenticated/admin': typeof AuthenticatedAdminRouteRouteWithChildren
+  '/$studioSlug/home-office': typeof StudioSlugHomeOfficeRoute
+  '/$studioSlug/kontakt': typeof StudioSlugKontaktRoute
+  '/$studioSlug/': typeof StudioSlugIndexRoute
   '/_authenticated/admin/calendar': typeof AuthenticatedAdminCalendarRoute
   '/_authenticated/admin/clients': typeof AuthenticatedAdminClientsRouteWithChildren
   '/api/public/ping': typeof ApiPublicPingRoute
@@ -147,12 +182,16 @@ export interface FileRouteTypes {
   fileRoutesByFullPath: FileRoutesByFullPath
   fullPaths:
     | '/'
+    | '/$studioSlug'
     | '/auth'
     | '/datenschutz'
     | '/home-office'
     | '/kontakt'
     | '/sitemap.xml'
     | '/admin'
+    | '/$studioSlug/home-office'
+    | '/$studioSlug/kontakt'
+    | '/$studioSlug/'
     | '/admin/calendar'
     | '/admin/clients'
     | '/api/public/ping'
@@ -167,6 +206,9 @@ export interface FileRouteTypes {
     | '/home-office'
     | '/kontakt'
     | '/sitemap.xml'
+    | '/$studioSlug/home-office'
+    | '/$studioSlug/kontakt'
+    | '/$studioSlug'
     | '/admin/calendar'
     | '/admin/clients'
     | '/api/public/ping'
@@ -176,6 +218,7 @@ export interface FileRouteTypes {
   id:
     | '__root__'
     | '/'
+    | '/$studioSlug'
     | '/_authenticated'
     | '/auth'
     | '/datenschutz'
@@ -183,6 +226,9 @@ export interface FileRouteTypes {
     | '/kontakt'
     | '/sitemap.xml'
     | '/_authenticated/admin'
+    | '/$studioSlug/home-office'
+    | '/$studioSlug/kontakt'
+    | '/$studioSlug/'
     | '/_authenticated/admin/calendar'
     | '/_authenticated/admin/clients'
     | '/api/public/ping'
@@ -193,6 +239,7 @@ export interface FileRouteTypes {
 }
 export interface RootRouteChildren {
   IndexRoute: typeof IndexRoute
+  StudioSlugRouteRoute: typeof StudioSlugRouteRouteWithChildren
   AuthenticatedRouteRoute: typeof AuthenticatedRouteRouteWithChildren
   AuthRoute: typeof AuthRoute
   DatenschutzRoute: typeof DatenschutzRoute
@@ -247,12 +294,40 @@ declare module '@tanstack/react-router' {
       preLoaderRoute: typeof AuthenticatedRouteRouteImport
       parentRoute: typeof rootRouteImport
     }
+    '/$studioSlug': {
+      id: '/$studioSlug'
+      path: '/$studioSlug'
+      fullPath: '/$studioSlug'
+      preLoaderRoute: typeof StudioSlugRouteRouteImport
+      parentRoute: typeof rootRouteImport
+    }
     '/': {
       id: '/'
       path: '/'
       fullPath: '/'
       preLoaderRoute: typeof IndexRouteImport
       parentRoute: typeof rootRouteImport
+    }
+    '/$studioSlug/': {
+      id: '/$studioSlug/'
+      path: '/'
+      fullPath: '/$studioSlug/'
+      preLoaderRoute: typeof StudioSlugIndexRouteImport
+      parentRoute: typeof StudioSlugRouteRoute
+    }
+    '/$studioSlug/kontakt': {
+      id: '/$studioSlug/kontakt'
+      path: '/kontakt'
+      fullPath: '/$studioSlug/kontakt'
+      preLoaderRoute: typeof StudioSlugKontaktRouteImport
+      parentRoute: typeof StudioSlugRouteRoute
+    }
+    '/$studioSlug/home-office': {
+      id: '/$studioSlug/home-office'
+      path: '/home-office'
+      fullPath: '/$studioSlug/home-office'
+      preLoaderRoute: typeof StudioSlugHomeOfficeRouteImport
+      parentRoute: typeof StudioSlugRouteRoute
     }
     '/_authenticated/admin': {
       id: '/_authenticated/admin'
@@ -306,6 +381,22 @@ declare module '@tanstack/react-router' {
   }
 }
 
+interface StudioSlugRouteRouteChildren {
+  StudioSlugHomeOfficeRoute: typeof StudioSlugHomeOfficeRoute
+  StudioSlugKontaktRoute: typeof StudioSlugKontaktRoute
+  StudioSlugIndexRoute: typeof StudioSlugIndexRoute
+}
+
+const StudioSlugRouteRouteChildren: StudioSlugRouteRouteChildren = {
+  StudioSlugHomeOfficeRoute: StudioSlugHomeOfficeRoute,
+  StudioSlugKontaktRoute: StudioSlugKontaktRoute,
+  StudioSlugIndexRoute: StudioSlugIndexRoute,
+}
+
+const StudioSlugRouteRouteWithChildren = StudioSlugRouteRoute._addFileChildren(
+  StudioSlugRouteRouteChildren,
+)
+
 interface AuthenticatedAdminClientsRouteChildren {
   AuthenticatedAdminClientsIdRoute: typeof AuthenticatedAdminClientsIdRoute
 }
@@ -351,6 +442,7 @@ const AuthenticatedRouteRouteWithChildren =
 
 const rootRouteChildren: RootRouteChildren = {
   IndexRoute: IndexRoute,
+  StudioSlugRouteRoute: StudioSlugRouteRouteWithChildren,
   AuthenticatedRouteRoute: AuthenticatedRouteRouteWithChildren,
   AuthRoute: AuthRoute,
   DatenschutzRoute: DatenschutzRoute,

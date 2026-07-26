@@ -117,6 +117,34 @@ export const getCurrentStudio = createServerFn({ method: "GET" })
 
 const studioScopeInput = z.object({ studioId: z.string().uuid().optional() });
 
+// Studios the caller may work in. Platform admins see every active studio.
+export const listMyStudios = createServerFn({ method: "GET" })
+  .middleware([requireSupabaseAuth])
+  .handler(async ({ context }) => {
+    const { supabaseAdmin } = await import("@/integrations/supabase/client.server");
+    const { listActiveStudios } = await import("@/lib/studio.server");
+    const [{ data: platform }, { data: memberships }] = await Promise.all([
+      supabaseAdmin
+        .from("platform_admins")
+        .select("user_id")
+        .eq("user_id", context.userId)
+        .maybeSingle(),
+      supabaseAdmin
+        .from("studio_members")
+        .select("studio_id, created_at")
+        .eq("user_id", context.userId)
+        .order("created_at", { ascending: true }),
+    ]);
+    const isPlatformAdmin = Boolean(platform);
+    const active = await listActiveStudios();
+    const memberIds = new Set((memberships ?? []).map((m) => m.studio_id as string));
+    const visible = isPlatformAdmin ? active : active.filter((s) => memberIds.has(s.id));
+    return {
+      isPlatformAdmin,
+      studios: visible.map((s) => ({ id: s.id, name: s.name, city: s.city, slug: s.slug })),
+    };
+  });
+
 const rangeInput = z.object({
   from: z.string().regex(/^\d{4}-\d{2}-\d{2}$/),
   to: z.string().regex(/^\d{4}-\d{2}-\d{2}$/),

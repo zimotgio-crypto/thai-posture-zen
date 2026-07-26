@@ -7,6 +7,7 @@ import {
   MOBILITY_ZONES,
 } from "@/components/admin/assessment";
 import { formatDuration, formatSwissDate } from "@/lib/pricing";
+import { useAdminStudioOptional } from "@/lib/admin-studio-context";
 
 export type SessionLog = {
   id: string;
@@ -45,6 +46,8 @@ export function BehandlungsprotokollContent({
   log: SessionLog;
   client: ClientLike;
 }) {
+  const admin = useAdminStudioOptional();
+  const studio = admin?.studio;
   const linked = log.bookings ?? null;
   const headerDate = linked?.day ?? log.treatment_date ?? log.created_at.slice(0, 10);
   const label = linked?.treatment ?? log.treatment_name ?? "Manuelle Notiz";
@@ -56,8 +59,12 @@ export function BehandlungsprotokollContent({
   return (
     <>
       <header className="text-center">
-        <div className="font-serif text-xl text-charcoal">Thai Posture Lab</div>
-        <div className="mt-1 text-[0.62rem] uppercase tracking-[0.32em] text-gold-deep">Zuzwil</div>
+        <div className="font-serif text-xl text-charcoal">{studio?.name ?? "Thai Posture Lab"}</div>
+        <div className="mt-1 text-[0.62rem] uppercase tracking-[0.32em] text-gold-deep">
+          {[studio?.street, [studio?.zip, studio?.city].filter(Boolean).join(" ")]
+            .filter(Boolean)
+            .join(" · ") || "Zuzwil"}
+        </div>
         <div className="gold-rule mt-4" />
       </header>
 

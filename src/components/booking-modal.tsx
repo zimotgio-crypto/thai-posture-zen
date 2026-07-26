@@ -10,8 +10,8 @@ import { Check, Sparkles, ChevronLeft, ChevronRight } from "lucide-react";
 import { toast } from "sonner";
 import { cn } from "@/lib/utils";
 import { useT } from "@/lib/i18n";
-import { optionsForTreatment, priceForTreatment, BUFFER_MIN, formatDuration } from "@/lib/pricing";
-import { DEFAULT_STUDIO_SLUG } from "@/lib/studio";
+import { formatDuration } from "@/lib/pricing";
+import { useStudio } from "@/lib/studio-context";
 
 function ymd(d: Date) {
   const y = d.getFullYear();
@@ -42,20 +42,6 @@ function buildMonthGrid(cursor: Date) {
   return cells;
 }
 
-// Studio opening hours (24h). null = closed.
-// Index 0 = Sunday ... 6 = Saturday to match JS Date.getDay().
-const HOURS: ({ open: number; close: number } | null)[] = [
-  null,                       // Sun — closed
-  { open: 9 * 60, close: 20 * 60 },  // Mon
-  { open: 9 * 60, close: 20 * 60 },  // Tue
-  { open: 9 * 60, close: 20 * 60 },  // Wed
-  { open: 9 * 60, close: 20 * 60 },  // Thu
-  { open: 9 * 60, close: 20 * 60 },  // Fri
-  { open: 10 * 60, close: 18 * 60 }, // Sat
-];
-
-const SLOT_STEP = 15;          // minutes between start times
-
 function fmt(min: number) {
   const h = Math.floor(min / 60);
   const m = min % 60;
@@ -69,23 +55,25 @@ function parseTime(s: string) {
 
 type BookedSlot = { time: string; duration: number };
 
+type Window = { open: number; close: number } | null;
+
 function generateStartTimes(
   dateKey: string,
   booked: BookedSlot[],
   nowMinutes: number | null,
-  treatmentMin: number
+  treatmentMin: number,
+  hours: Window,
+  slotStep: number,
+  bufferMin: number
 ) {
-  const [y, mo, d] = dateKey.split("-").map(Number);
-  const dow = new Date(y, mo - 1, d).getDay();
-  const hours = HOURS[dow];
   if (!hours) return [];
   const bookedRanges = booked.map((b) => {
     const start = parseTime(b.time);
-    return [start, start + b.duration + BUFFER_MIN] as const;
+    return [start, start + b.duration + bufferMin] as const;
   });
-  const newBlock = treatmentMin + BUFFER_MIN;
+  const newBlock = treatmentMin + bufferMin;
   const out: { time: string; disabled: boolean; reason?: "booked" | "past" }[] = [];
-  for (let t = hours.open; t + treatmentMin <= hours.close; t += SLOT_STEP) {
+  for (let t = hours.open; t + treatmentMin <= hours.close; t += slotStep) {
     // A new slot occupies [t, t + newBlock). Reject overlap with any booking.
     const overlaps = bookedRanges.some(([bs, be]) => t < be && t + newBlock > bs);
     const isPast = nowMinutes !== null && t <= nowMinutes;
@@ -108,17 +96,23 @@ export function BookingModal({
   initialTreatment?: string;
 }) {
   const t = useT();
-  const treatments = t.booking.treatments;
+  const studio = useStudio();
+  const treatments = studio.treatments;
+  const optionsFor = (key: string) => treatments.find((tr) => tr.key === key)?.options ?? [];
   const resolveInitial = (id: string | undefined) => {
-    // Legacy id fallback (Ohne Öl was removed) → route to the standard variant.
-    if (id === "thai-stretch-nooil") return "thai-stretch-oil";
-    if (id && treatments.some((tr) => tr.id === id)) return id;
-    return treatments[0].id;
+    if (id && treatments.some((tr) => tr.key === id)) return id;
+    // Legacy id fallback (e.g. removed "Ohne Öl" variant) → closest match.
+    const stem = id?.split("-").slice(0, 2).join("-");
+    const near = stem ? treatments.find((tr) => tr.key.startsWith(stem)) : undefined;
+    return near?.key ?? treatments[0]?.key ?? "";
   };
   const [treatment, setTreatment] = useState(() => resolveInitial(initialTreatment));
-  const durationOptions = useMemo(() => optionsForTreatment(treatment), [treatment]);
+  const durationOptions = useMemo(
+    () => treatments.find((tr) => tr.key === treatment)?.options ?? [],
+    [treatments, treatment]
+  );
   const [durationMin, setDurationMin] = useState<number>(() => {
-    const opts = optionsForTreatment(resolveInitial(initialTreatment));
+    const opts = optionsFor(resolveInitial(initialTreatment));
     return (opts.find((o) => o.minutes === 60) ?? opts[0])?.minutes ?? 60;
   });
 
@@ -163,7 +157,7 @@ export function BookingModal({
       return;
     }
     let cancelled = false;
-    listBooked({ data: { day, studioSlug: DEFAULT_STUDIO_SLUG } })
+    listBooked({ data: { day, studioSlug: studio.slug } })
       .then((rows) => {
         if (cancelled) return;
         setBookedTimes(rows);
@@ -180,7 +174,7 @@ export function BookingModal({
     return () => {
       cancelled = true;
     };
-  }, [open, day, listBooked]);
+  }, [open, day, listBooked, studio.slug]);
 
   const today = useMemo(() => startOfDay(new Date()), []);
   const cells = useMemo(() => buildMonthGrid(cursor), [cursor]);
@@ -198,7 +192,7 @@ export function BookingModal({
     return endOfPrev >= today;
     void prev;
   }, [cursor, today]);
-  const current = treatments.find((x) => x.id === treatment) ?? treatments[0];
+  const current = treatments.find((x) => x.key === treatment) ?? treatments[0];
 
   const now = useMemo(() => new Date(), [day, open]);
   const nowMinutesToday = useMemo(() => {
@@ -209,13 +203,31 @@ export function BookingModal({
   const dayHours = useMemo(() => {
     if (!day) return null;
     const [y, mo, d] = day.split("-").map(Number);
-    return HOURS[new Date(y, mo - 1, d).getDay()];
-  }, [day]);
+    const dow = new Date(y, mo - 1, d).getDay();
+    return studio.openingHours[String(dow)] ?? null;
+  }, [day, studio.openingHours]);
   const slots = useMemo(() => {
     if (!day) return [];
     if (availabilityError) return [];
-    return generateStartTimes(day, bookedTimes, nowMinutesToday, durationMin);
-  }, [day, bookedTimes, nowMinutesToday, durationMin, availabilityError]);
+    return generateStartTimes(
+      day,
+      bookedTimes,
+      nowMinutesToday,
+      durationMin,
+      dayHours,
+      studio.slotStepMinutes,
+      studio.bufferMinutes
+    );
+  }, [
+    day,
+    bookedTimes,
+    nowMinutesToday,
+    durationMin,
+    availabilityError,
+    dayHours,
+    studio.slotStepMinutes,
+    studio.bufferMinutes,
+  ]);
 
   async function submit(e: React.FormEvent) {
     e.preventDefault();
@@ -255,8 +267,8 @@ export function BookingModal({
     try {
       const res = await submitBookingFn({
         data: {
-          studioSlug: DEFAULT_STUDIO_SLUG,
-          treatment: current.id,
+          studioSlug: studio.slug,
+          treatment: current.key,
           day,
           time,
           durationMinutes: durationMin,
@@ -273,7 +285,7 @@ export function BookingModal({
       if (!res.ok) {
         toast.error(t.booking.noSlots);
         // Refresh availability so the disabled state shows up immediately.
-        listBooked({ data: { day, studioSlug: DEFAULT_STUDIO_SLUG } })
+        listBooked({ data: { day, studioSlug: studio.slug } })
           .then(setBookedTimes)
           .catch(() => {});
         return;
@@ -331,11 +343,11 @@ export function BookingModal({
               {treatments.map((tr) => (
                 <button
                   type="button"
-                  key={tr.id}
-                  onClick={() => setTreatment(tr.id)}
+                  key={tr.key}
+                  onClick={() => setTreatment(tr.key)}
                   className={cn(
                     "flex items-center rounded-sm border px-4 py-3 text-left transition",
-                    treatment === tr.id ? "border-gold bg-gold-soft/30" : "border-border hover:border-gold/60"
+                    treatment === tr.key ? "border-gold bg-gold-soft/30" : "border-border hover:border-gold/60"
                   )}
                 >
                   <span className="font-medium text-charcoal">{tr.label}</span>
@@ -367,7 +379,10 @@ export function BookingModal({
                         day,
                         bookedTimes,
                         nowMinutesToday,
-                        opt.minutes
+                        opt.minutes,
+                        dayHours,
+                        studio.slotStepMinutes,
+                        studio.bufferMinutes
                       );
                       const stillAvailable = nextSlots.some(
                         (s) => s.time === time && !s.disabled
@@ -388,10 +403,10 @@ export function BookingModal({
                     )}
                   >
                     <span className="text-[0.68rem] uppercase tracking-[0.22em] text-charcoal-soft">
-                      {opt.label}
+                      {formatDuration(opt.minutes)}
                     </span>
                     <span className="mt-1 font-serif text-lg text-charcoal">
-                      CHF {priceForTreatment(treatment, opt.minutes)}.–
+                      CHF {opt.price}.–
                     </span>
                   </button>
                 );

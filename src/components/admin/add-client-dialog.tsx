@@ -8,6 +8,7 @@ import { Button } from "@/components/ui/button";
 import { addClient } from "@/lib/admin.functions";
 import { toast } from "sonner";
 import { useAdminT } from "@/lib/admin-i18n";
+import { useAdminStudio } from "@/lib/admin-studio-context";
 
 export function AddClientDialog({
   open,
@@ -18,6 +19,7 @@ export function AddClientDialog({
 }) {
   const qc = useQueryClient();
   const t = useAdminT();
+  const { studioId } = useAdminStudio();
   const addClientFn = useServerFn(addClient);
   const [busy, setBusy] = useState(false);
   const [firstName, setFirstName] = useState("");
@@ -43,7 +45,7 @@ export function AddClientDialog({
     setBusy(true);
     try {
       await addClientFn({
-        data: { firstName, lastName, email: email.toLowerCase(), phone, street, zip, city },
+        data: { studioId, firstName, lastName, email: email.toLowerCase(), phone, street, zip, city },
       });
       toast.success(t.addClient.created);
       qc.invalidateQueries({ queryKey: ["admin", "clients"] });

@@ -19,6 +19,7 @@ import {
 import { formatSwissDate, formatDuration, priceForTreatment } from "@/lib/pricing";
 import { useT } from "@/lib/i18n";
 import { useAdminT, useAdminLocale } from "@/lib/admin-i18n";
+import { useAdminStudio } from "@/lib/admin-studio-context";
 
 type BookingRow = {
   id: string;
@@ -105,20 +106,21 @@ function CalendarPage() {
   const statusFn = useServerFn(getGoogleCalendarStatus);
   const debugFn = useServerFn(debugGoogleCalendar);
   const gBusyFn = useServerFn(listGoogleBusyInRange);
+  const { studioId } = useAdminStudio();
   const gStatus = useQuery({
-    queryKey: ["google-calendar-status"],
-    queryFn: () => statusFn(),
+    queryKey: ["google-calendar-status", studioId],
+    queryFn: () => statusFn({ data: { studioId } }),
     staleTime: 5 * 60 * 1000,
   });
   const bookings = useQuery({
-    queryKey: ["admin", "bookings", from, to],
-    queryFn: () => listFn({ data: { from, to } }),
+    queryKey: ["admin", "bookings", studioId, from, to],
+    queryFn: () => listFn({ data: { from, to, studioId } }),
   });
   const gBusy = useQuery({
-    queryKey: ["admin", "google-busy", from, to],
+    queryKey: ["admin", "google-busy", studioId, from, to],
     queryFn: async () => {
       try {
-        return await gBusyFn({ data: { from, to } });
+        return await gBusyFn({ data: { from, to, studioId } });
       } catch (err) {
         console.error("[calendar] google busy fetch failed", err);
         return [];
@@ -133,7 +135,7 @@ function CalendarPage() {
   async function handleDelete(id: string) {
     if (!confirm(at.calendar.confirmDelete)) return;
     try {
-      await del({ data: { id } });
+      await del({ data: { id, studioId } });
       toast.success(at.calendar.deleted);
       qc.invalidateQueries({ queryKey: ["admin", "bookings"] });
     } catch (err) {

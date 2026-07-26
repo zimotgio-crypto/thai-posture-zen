@@ -8,15 +8,10 @@ import { Button } from "@/components/ui/button";
 import { Switch } from "@/components/ui/switch";
 import { addBooking } from "@/lib/admin.functions";
 import { toast } from "sonner";
-import { optionsForTreatment, priceForTreatment } from "@/lib/pricing";
+import { formatDuration } from "@/lib/pricing";
 import { cn } from "@/lib/utils";
 import { useAdminT } from "@/lib/admin-i18n";
-
-const TREATMENTS: { id: string; label: string }[] = [
-  { id: "deep-release", label: "Home-Office Deep Release" },
-  { id: "thai-stretch-oil", label: "Traditional Thai Stretch · Mit Öl" },
-  { id: "zuzwiler", label: "Sport Massage" },
-];
+import { useAdminStudio } from "@/lib/admin-studio-context";
 
 export function AddBookingDialog({
   open,
@@ -29,19 +24,20 @@ export function AddBookingDialog({
 }) {
   const qc = useQueryClient();
   const t = useAdminT();
+  const { studioId, treatments } = useAdminStudio();
   const addBookingFn = useServerFn(addBooking);
   const [busy, setBusy] = useState(false);
   const [block, setBlock] = useState(false);
-  const [treatmentId, setTreatmentId] = useState(TREATMENTS[0].id);
+  const [treatmentId, setTreatmentId] = useState(treatments[0]?.key ?? "");
   const [durationMin, setDurationMin] = useState<number>(60);
-  const durationOptions = optionsForTreatment(treatmentId);
+  const durationOptions = treatments.find((tr) => tr.key === treatmentId)?.options ?? [];
   useEffect(() => {
-    const opts = optionsForTreatment(treatmentId);
+    const opts = treatments.find((tr) => tr.key === treatmentId)?.options ?? [];
     if (!opts.find((o) => o.minutes === durationMin)) {
       const fallback = opts.find((o) => o.minutes === 60) ?? opts[0];
       if (fallback) setDurationMin(fallback.minutes);
     }
-  }, [treatmentId, durationMin]);
+  }, [treatments, treatmentId, durationMin]);
   const [day, setDay] = useState(defaultDay ?? new Date().toISOString().slice(0, 10));
   const [time, setTime] = useState("10:00");
   const [silent, setSilent] = useState(false);
@@ -58,9 +54,10 @@ export function AddBookingDialog({
     setBusy(true);
     try {
       const treatmentLabel =
-        TREATMENTS.find((t) => t.id === treatmentId)?.label ?? TREATMENTS[0].label;
+        treatments.find((tr) => tr.key === treatmentId)?.label ?? treatments[0]?.label ?? "";
       await addBookingFn({
         data: {
+          studioId,
           treatment: treatmentLabel,
           day,
           time,
@@ -130,10 +127,10 @@ export function AddBookingDialog({
                       )}
                     >
                       <span className="text-[0.65rem] uppercase tracking-[0.2em] text-charcoal-soft">
-                        {opt.label}
+                        {formatDuration(opt.minutes)}
                       </span>
                       <span className="mt-1 font-serif text-base text-charcoal">
-                        CHF {priceForTreatment(treatmentId, opt.minutes)}.–
+                        CHF {opt.price}.–
                       </span>
                     </button>
                   );
@@ -150,9 +147,9 @@ export function AddBookingDialog({
                   onChange={(e) => setTreatmentId(e.target.value)}
                   className="w-full rounded-sm border border-input bg-background px-3 py-2 text-sm"
                 >
-                  {TREATMENTS.map((t) => (
-                    <option key={t.id} value={t.id}>
-                      {t.label}
+                  {treatments.map((tr) => (
+                    <option key={tr.key} value={tr.key}>
+                      {tr.label}
                     </option>
                   ))}
                 </select>

@@ -1,27 +1,34 @@
-import { Link } from "@tanstack/react-router";
+import { Link, useParams } from "@tanstack/react-router";
 import { useT } from "@/lib/i18n";
+import { useStudioOptional } from "@/lib/studio-context";
+import { DEFAULT_STUDIO_SLUG } from "@/lib/studio";
 
 export function SiteFooter() {
   const t = useT();
+  const studio = useStudioOptional();
+  const params = useParams({ strict: false }) as { studioSlug?: string };
+  const studioSlug = params.studioSlug ?? studio?.slug ?? DEFAULT_STUDIO_SLUG;
   return (
     <footer className="mt-24 border-t border-border/60 bg-ivory-deep/60">
       <div className="mx-auto grid max-w-7xl gap-10 px-6 py-14 lg:grid-cols-4 lg:px-10">
         <div className="lg:col-span-2 space-y-3">
-          <div className="font-serif text-2xl text-charcoal">Thai Posture Lab</div>
+          <div className="font-serif text-2xl text-charcoal">{studio?.name ?? "Thai Posture Lab"}</div>
           <p className="max-w-sm text-sm leading-relaxed text-charcoal-soft">{t.footer.tagline}</p>
         </div>
         <div className="space-y-2 text-sm">
           <div className="text-[0.7rem] uppercase tracking-[0.25em] text-gold-deep">{t.footer.studio}</div>
-          <p className="text-charcoal-soft">Eschenstrasse 24</p>
-          <p className="text-charcoal-soft">9524 Zuzwil SG</p>
-          <p className="text-charcoal-soft">{t.contact.addressLines[2]}</p>
+          <p className="text-charcoal-soft">{studio?.street ?? "Eschenstrasse 24"}</p>
+          <p className="text-charcoal-soft">
+            {studio ? `${studio.zip ?? ""} ${studio.city ?? ""}`.trim() : "9524 Zuzwil SG"}
+          </p>
+          <p className="text-charcoal-soft">{studio?.phone ?? t.contact.addressLines[2]}</p>
         </div>
         <div className="space-y-2 text-sm">
           <div className="text-[0.7rem] uppercase tracking-[0.25em] text-gold-deep">{t.footer.navigation}</div>
           <div className="flex flex-col gap-1">
-            <Link to="/" className="text-charcoal-soft hover:text-charcoal">{t.footer.home}</Link>
-            <Link to="/home-office" className="text-charcoal-soft hover:text-charcoal">{t.footer.treatments}</Link>
-            <Link to="/kontakt" className="text-charcoal-soft hover:text-charcoal">{t.footer.contact}</Link>
+            <Link to="/$studioSlug" params={{ studioSlug }} className="text-charcoal-soft hover:text-charcoal">{t.footer.home}</Link>
+            <Link to="/$studioSlug/home-office" params={{ studioSlug }} className="text-charcoal-soft hover:text-charcoal">{t.footer.treatments}</Link>
+            <Link to="/$studioSlug/kontakt" params={{ studioSlug }} className="text-charcoal-soft hover:text-charcoal">{t.footer.contact}</Link>
           </div>
         </div>
       </div>

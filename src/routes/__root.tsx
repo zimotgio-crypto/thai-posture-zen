@@ -1,10 +1,11 @@
-import { QueryClient, QueryClientProvider } from "@tanstack/react-query";
+import { QueryClient, QueryClientProvider, useQuery } from "@tanstack/react-query";
 import {
   Outlet,
   Link,
   createRootRouteWithContext,
   useRouter,
   useRouterState,
+  useParams,
   HeadContent,
   Scripts,
 } from "@tanstack/react-router";
@@ -18,6 +19,8 @@ import { BookingProvider } from "@/components/booking-provider";
 import { Toaster } from "@/components/ui/sonner";
 import { LanguageProvider } from "@/lib/i18n";
 import { supabase } from "@/integrations/supabase/client";
+import { StudioProvider, studioPublicQuery } from "@/lib/studio-context";
+import { DEFAULT_STUDIO_SLUG } from "@/lib/studio";
 
 function NotFoundComponent() {
   return (
@@ -150,17 +153,28 @@ function RootComponent() {
   return (
     <QueryClientProvider client={queryClient}>
       <LanguageProvider>
-      <BookingProvider>
-        <div className="flex min-h-screen flex-col bg-ivory text-charcoal">
-          {!isChromeless && <SiteHeader />}
-          <main className="flex-1">
-            <Outlet />
-          </main>
-          {!isChromeless && <SiteFooter />}
-        </div>
-        <Toaster position="top-center" />
-      </BookingProvider>
+      <StudioShell>
+        <BookingProvider>
+          <div className="flex min-h-screen flex-col bg-ivory text-charcoal">
+            {!isChromeless && <SiteHeader />}
+            <main className="flex-1">
+              <Outlet />
+            </main>
+            {!isChromeless && <SiteFooter />}
+          </div>
+          <Toaster position="top-center" />
+        </BookingProvider>
+      </StudioShell>
       </LanguageProvider>
     </QueryClientProvider>
   );
+}
+
+// Resolves the studio of the current URL (falling back to the pilot studio for
+// studio-less pages such as /datenschutz) and shares it with the whole tree.
+function StudioShell({ children }: { children: ReactNode }) {
+  const params = useParams({ strict: false }) as { studioSlug?: string };
+  const slug = params.studioSlug ?? DEFAULT_STUDIO_SLUG;
+  const { data } = useQuery({ ...studioPublicQuery(slug), retry: false, throwOnError: false });
+  return <StudioProvider studio={data ?? null}>{children}</StudioProvider>;
 }

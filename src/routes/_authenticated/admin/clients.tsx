@@ -10,6 +10,7 @@ import { AddClientDialog } from "@/components/admin/add-client-dialog";
 import { Sheet, SheetContent } from "@/components/ui/sheet";
 import { ClientProfileView } from "@/components/admin/client-profile-view";
 import { useAdminT } from "@/lib/admin-i18n";
+import { useAdminStudio } from "@/lib/admin-studio-context";
 
 export const Route = createFileRoute("/_authenticated/admin/clients")({
   component: ClientsPage,
@@ -34,11 +35,12 @@ function ClientsPage() {
   const t = useAdminT();
   const [q, setQ] = useState("");
   const listFn = useServerFn(listClients);
+  const { studioId } = useAdminStudio();
   const [selectedClient, setSelectedClient] = useState<ClientRow | null>(null);
   const [addOpen, setAddOpen] = useState(false);
   const clients = useQuery({
-    queryKey: ["admin", "clients", q],
-    queryFn: () => listFn({ data: { q: q || undefined } }),
+    queryKey: ["admin", "clients", studioId, q],
+    queryFn: () => listFn({ data: { q: q || undefined, studioId } }),
   });
 
   function handleRowClick(client: ClientRow) {
