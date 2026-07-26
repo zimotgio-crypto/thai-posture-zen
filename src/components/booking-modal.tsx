@@ -10,8 +10,8 @@ import { Check, Sparkles, ChevronLeft, ChevronRight } from "lucide-react";
 import { toast } from "sonner";
 import { cn } from "@/lib/utils";
 import { useT } from "@/lib/i18n";
-import { optionsForTreatment, priceForTreatment, BUFFER_MIN, formatDuration } from "@/lib/pricing";
-import { DEFAULT_STUDIO_SLUG } from "@/lib/studio";
+import { formatDuration } from "@/lib/pricing";
+import { useStudio } from "@/lib/studio-context";
 
 function ymd(d: Date) {
   const y = d.getFullYear();
@@ -42,20 +42,6 @@ function buildMonthGrid(cursor: Date) {
   return cells;
 }
 
-// Studio opening hours (24h). null = closed.
-// Index 0 = Sunday ... 6 = Saturday to match JS Date.getDay().
-const HOURS: ({ open: number; close: number } | null)[] = [
-  null,                       // Sun — closed
-  { open: 9 * 60, close: 20 * 60 },  // Mon
-  { open: 9 * 60, close: 20 * 60 },  // Tue
-  { open: 9 * 60, close: 20 * 60 },  // Wed
-  { open: 9 * 60, close: 20 * 60 },  // Thu
-  { open: 9 * 60, close: 20 * 60 },  // Fri
-  { open: 10 * 60, close: 18 * 60 }, // Sat
-];
-
-const SLOT_STEP = 15;          // minutes between start times
-
 function fmt(min: number) {
   const h = Math.floor(min / 60);
   const m = min % 60;
@@ -69,23 +55,25 @@ function parseTime(s: string) {
 
 type BookedSlot = { time: string; duration: number };
 
+type Window = { open: number; close: number } | null;
+
 function generateStartTimes(
   dateKey: string,
   booked: BookedSlot[],
   nowMinutes: number | null,
-  treatmentMin: number
+  treatmentMin: number,
+  hours: Window,
+  slotStep: number,
+  bufferMin: number
 ) {
-  const [y, mo, d] = dateKey.split("-").map(Number);
-  const dow = new Date(y, mo - 1, d).getDay();
-  const hours = HOURS[dow];
   if (!hours) return [];
   const bookedRanges = booked.map((b) => {
     const start = parseTime(b.time);
-    return [start, start + b.duration + BUFFER_MIN] as const;
+    return [start, start + b.duration + bufferMin] as const;
   });
-  const newBlock = treatmentMin + BUFFER_MIN;
+  const newBlock = treatmentMin + bufferMin;
   const out: { time: string; disabled: boolean; reason?: "booked" | "past" }[] = [];
-  for (let t = hours.open; t + treatmentMin <= hours.close; t += SLOT_STEP) {
+  for (let t = hours.open; t + treatmentMin <= hours.close; t += slotStep) {
     // A new slot occupies [t, t + newBlock). Reject overlap with any booking.
     const overlaps = bookedRanges.some(([bs, be]) => t < be && t + newBlock > bs);
     const isPast = nowMinutes !== null && t <= nowMinutes;
