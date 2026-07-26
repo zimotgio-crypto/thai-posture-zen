@@ -149,6 +149,7 @@ export function BookingModal({
   const dateSectionRef = useRef<HTMLElement | null>(null);
   const timeSectionRef = useRef<HTMLElement | null>(null);
   const [bookedTimes, setBookedTimes] = useState<BookedSlot[]>([]);
+  const [availabilityError, setAvailabilityError] = useState(false);
   const [submitting, setSubmitting] = useState(false);
   const listBooked = useServerFn(listBookedTimes);
   const submitBookingFn = useServerFn(submitBooking);
@@ -157,15 +158,23 @@ export function BookingModal({
   useEffect(() => {
     if (!open || !day) {
       setBookedTimes([]);
+      setAvailabilityError(false);
       return;
     }
     let cancelled = false;
     listBooked({ data: { day } })
       .then((rows) => {
-        if (!cancelled) setBookedTimes(rows);
+        if (cancelled) return;
+        setBookedTimes(rows);
+        setAvailabilityError(false);
       })
-      .catch(() => {
-        if (!cancelled) setBookedTimes([]);
+      .catch((err) => {
+        console.error("[booking-modal] availability fetch failed", err);
+        if (cancelled) return;
+        // Fail closed: with unknown availability we offer no slots at all.
+        setBookedTimes([]);
+        setAvailabilityError(true);
+        setTime(null);
       });
     return () => {
       cancelled = true;
@@ -203,8 +212,9 @@ export function BookingModal({
   }, [day]);
   const slots = useMemo(() => {
     if (!day) return [];
+    if (availabilityError) return [];
     return generateStartTimes(day, bookedTimes, nowMinutesToday, durationMin);
-  }, [day, bookedTimes, nowMinutesToday, durationMin]);
+  }, [day, bookedTimes, nowMinutesToday, durationMin, availabilityError]);
 
   async function submit(e: React.FormEvent) {
     e.preventDefault();
