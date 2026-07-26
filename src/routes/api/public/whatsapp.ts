@@ -4,17 +4,23 @@
 import { createFileRoute } from "@tanstack/react-router";
 import { createHmac, timingSafeEqual } from "node:crypto";
 
-function verifySignature(rawBody: string, header: string | null, appSecret: string): boolean {
-  if (!header || !header.startsWith("sha256=")) return false;
-  const provided = header.slice("sha256=".length).trim();
+function verifySignature(
+  rawBody: string,
+  header: string | null,
+  appSecret: string,
+): { ok: boolean; providedPrefix: string; expectedPrefix: string } {
+  const provided = (header ?? "").startsWith("sha256=")
+    ? header!.slice("sha256=".length).trim()
+    : "";
   const expected = createHmac("sha256", appSecret).update(rawBody, "utf8").digest("hex");
+  const info = { providedPrefix: provided.slice(0, 10), expectedPrefix: expected.slice(0, 10) };
   const a = Buffer.from(provided, "hex");
   const b = Buffer.from(expected, "hex");
-  if (a.length !== b.length || a.length === 0) return false;
+  if (a.length !== b.length || a.length === 0) return { ok: false, ...info };
   try {
-    return timingSafeEqual(a, b);
+    return { ok: timingSafeEqual(a, b), ...info };
   } catch {
-    return false;
+    return { ok: false, ...info };
   }
 }
 
@@ -41,14 +47,17 @@ export const Route = createFileRoute("/api/public/whatsapp")({
           )}`,
         );
 
-        const appSecret = process.env.WHATSAPP_APP_SECRET;
+        const appSecret = process.env.WHATSAPP_APP_SECRET?.trim();
         if (!appSecret) {
           console.error("[whatsapp webhook] WHATSAPP_APP_SECRET not set — rejecting");
           return new Response("Forbidden", { status: 403 });
         }
         const signature = request.headers.get("x-hub-signature-256");
-        if (!verifySignature(rawBody, signature, appSecret)) {
-          console.error("[whatsapp webhook] invalid signature");
+        const check = verifySignature(rawBody, signature, appSecret);
+        if (!check.ok) {
+          console.error(
+            `[whatsapp webhook] invalid signature secretLength=${appSecret.length} providedPrefix=${check.providedPrefix} expectedPrefix=${check.expectedPrefix}`,
+          );
           return new Response("Forbidden", { status: 403 });
         }
 
