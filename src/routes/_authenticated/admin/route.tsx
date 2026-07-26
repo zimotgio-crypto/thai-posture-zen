@@ -2,7 +2,7 @@ import { createFileRoute, Link, Outlet, useNavigate, useRouterState } from "@tan
 import { useServerFn } from "@tanstack/react-start";
 import { useQuery, useQueryClient } from "@tanstack/react-query";
 import { useState } from "react";
-import { CalendarDays, Users, LogOut, Plus, Sparkles } from "lucide-react";
+import { CalendarDays, Users, LogOut, Plus, Sparkles, Settings, Building2 } from "lucide-react";
 import { supabase } from "@/integrations/supabase/client";
 import { claimAdmin, getAdminStatus, getCurrentStudio, listMyStudios } from "@/lib/admin.functions";
 import { Button } from "@/components/ui/button";
@@ -164,7 +164,11 @@ function AdminShell() {
   const navItems = [
     { to: "/admin/calendar", label: t.shell.calendar, icon: CalendarDays },
     { to: "/admin/clients", label: t.shell.clients, icon: Users },
-  ] as const;
+    { to: "/admin/einstellungen", label: t.settings.title, icon: Settings },
+    ...(myStudios.data?.isPlatformAdmin
+      ? [{ to: "/admin/studios", label: t.studios.title, icon: Building2 } as const]
+      : []),
+  ] as { to: string; label: string; icon: typeof CalendarDays }[];
 
   // Signed in, but not linked to any studio yet.
   if (myStudios.isSuccess && myStudios.data.studios.length === 0) {
@@ -236,7 +240,7 @@ function AdminShell() {
               return (
                 <Link
                   key={n.to}
-                  to={n.to}
+                  to={n.to as "/admin/calendar"}
                   className={cn(
                     "inline-flex items-center gap-2 rounded-sm px-4 py-2 text-[0.72rem] uppercase tracking-[0.22em] transition",
                     active
@@ -288,7 +292,7 @@ function AdminShell() {
             return (
               <Link
                 key={n.to}
-                to={n.to}
+                to={n.to as "/admin/calendar"}
                 className={cn(
                   "flex-1 inline-flex items-center justify-center gap-2 rounded-sm px-3 py-2 text-[0.7rem] uppercase tracking-[0.2em] transition",
                   active ? "bg-gold-soft/60 text-gold-deep" : "text-charcoal-soft"

@@ -65,6 +65,12 @@ function getCredentials(): { email: string; key: string } {
 const SA_EMAIL = () => getCredentials().email;
 const SA_KEY = () => getCredentials().key;
 
+// Shown in the studio settings so the therapist knows which address the
+// Google calendar must be shared with. Never exposes the private key.
+export function serviceAccountEmail(): string {
+  return getCredentials().email;
+}
+
 function describeKeyShape(): {
   rawLength: number;
   normalizedLength: number;

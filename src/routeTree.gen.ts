@@ -24,6 +24,8 @@ import { Route as AuthenticatedAdminRouteRouteImport } from './routes/_authentic
 import { Route as AuthenticatedAdminIndexRouteImport } from './routes/_authenticated/admin/index'
 import { Route as ApiPublicWhatsappRouteImport } from './routes/api/public/whatsapp'
 import { Route as ApiPublicPingRouteImport } from './routes/api/public/ping'
+import { Route as AuthenticatedAdminStudiosRouteImport } from './routes/_authenticated/admin/studios'
+import { Route as AuthenticatedAdminEinstellungenRouteImport } from './routes/_authenticated/admin/einstellungen'
 import { Route as AuthenticatedAdminClientsRouteImport } from './routes/_authenticated/admin/clients'
 import { Route as AuthenticatedAdminCalendarRouteImport } from './routes/_authenticated/admin/calendar'
 import { Route as AuthenticatedAdminClientsIdRouteImport } from './routes/_authenticated/admin/clients.$id'
@@ -102,6 +104,18 @@ const ApiPublicPingRoute = ApiPublicPingRouteImport.update({
   path: '/api/public/ping',
   getParentRoute: () => rootRouteImport,
 } as any)
+const AuthenticatedAdminStudiosRoute =
+  AuthenticatedAdminStudiosRouteImport.update({
+    id: '/studios',
+    path: '/studios',
+    getParentRoute: () => AuthenticatedAdminRouteRoute,
+  } as any)
+const AuthenticatedAdminEinstellungenRoute =
+  AuthenticatedAdminEinstellungenRouteImport.update({
+    id: '/einstellungen',
+    path: '/einstellungen',
+    getParentRoute: () => AuthenticatedAdminRouteRoute,
+  } as any)
 const AuthenticatedAdminClientsRoute =
   AuthenticatedAdminClientsRouteImport.update({
     id: '/clients',
@@ -135,6 +149,8 @@ export interface FileRoutesByFullPath {
   '/$studioSlug/': typeof StudioSlugIndexRoute
   '/admin/calendar': typeof AuthenticatedAdminCalendarRoute
   '/admin/clients': typeof AuthenticatedAdminClientsRouteWithChildren
+  '/admin/einstellungen': typeof AuthenticatedAdminEinstellungenRoute
+  '/admin/studios': typeof AuthenticatedAdminStudiosRoute
   '/api/public/ping': typeof ApiPublicPingRoute
   '/api/public/whatsapp': typeof ApiPublicWhatsappRoute
   '/admin/': typeof AuthenticatedAdminIndexRoute
@@ -152,6 +168,8 @@ export interface FileRoutesByTo {
   '/$studioSlug': typeof StudioSlugIndexRoute
   '/admin/calendar': typeof AuthenticatedAdminCalendarRoute
   '/admin/clients': typeof AuthenticatedAdminClientsRouteWithChildren
+  '/admin/einstellungen': typeof AuthenticatedAdminEinstellungenRoute
+  '/admin/studios': typeof AuthenticatedAdminStudiosRoute
   '/api/public/ping': typeof ApiPublicPingRoute
   '/api/public/whatsapp': typeof ApiPublicWhatsappRoute
   '/admin': typeof AuthenticatedAdminIndexRoute
@@ -173,6 +191,8 @@ export interface FileRoutesById {
   '/$studioSlug/': typeof StudioSlugIndexRoute
   '/_authenticated/admin/calendar': typeof AuthenticatedAdminCalendarRoute
   '/_authenticated/admin/clients': typeof AuthenticatedAdminClientsRouteWithChildren
+  '/_authenticated/admin/einstellungen': typeof AuthenticatedAdminEinstellungenRoute
+  '/_authenticated/admin/studios': typeof AuthenticatedAdminStudiosRoute
   '/api/public/ping': typeof ApiPublicPingRoute
   '/api/public/whatsapp': typeof ApiPublicWhatsappRoute
   '/_authenticated/admin/': typeof AuthenticatedAdminIndexRoute
@@ -194,6 +214,8 @@ export interface FileRouteTypes {
     | '/$studioSlug/'
     | '/admin/calendar'
     | '/admin/clients'
+    | '/admin/einstellungen'
+    | '/admin/studios'
     | '/api/public/ping'
     | '/api/public/whatsapp'
     | '/admin/'
@@ -211,6 +233,8 @@ export interface FileRouteTypes {
     | '/$studioSlug'
     | '/admin/calendar'
     | '/admin/clients'
+    | '/admin/einstellungen'
+    | '/admin/studios'
     | '/api/public/ping'
     | '/api/public/whatsapp'
     | '/admin'
@@ -231,6 +255,8 @@ export interface FileRouteTypes {
     | '/$studioSlug/'
     | '/_authenticated/admin/calendar'
     | '/_authenticated/admin/clients'
+    | '/_authenticated/admin/einstellungen'
+    | '/_authenticated/admin/studios'
     | '/api/public/ping'
     | '/api/public/whatsapp'
     | '/_authenticated/admin/'
@@ -357,6 +383,20 @@ declare module '@tanstack/react-router' {
       preLoaderRoute: typeof ApiPublicPingRouteImport
       parentRoute: typeof rootRouteImport
     }
+    '/_authenticated/admin/studios': {
+      id: '/_authenticated/admin/studios'
+      path: '/studios'
+      fullPath: '/admin/studios'
+      preLoaderRoute: typeof AuthenticatedAdminStudiosRouteImport
+      parentRoute: typeof AuthenticatedAdminRouteRoute
+    }
+    '/_authenticated/admin/einstellungen': {
+      id: '/_authenticated/admin/einstellungen'
+      path: '/einstellungen'
+      fullPath: '/admin/einstellungen'
+      preLoaderRoute: typeof AuthenticatedAdminEinstellungenRouteImport
+      parentRoute: typeof AuthenticatedAdminRouteRoute
+    }
     '/_authenticated/admin/clients': {
       id: '/_authenticated/admin/clients'
       path: '/clients'
@@ -414,6 +454,8 @@ const AuthenticatedAdminClientsRouteWithChildren =
 interface AuthenticatedAdminRouteRouteChildren {
   AuthenticatedAdminCalendarRoute: typeof AuthenticatedAdminCalendarRoute
   AuthenticatedAdminClientsRoute: typeof AuthenticatedAdminClientsRouteWithChildren
+  AuthenticatedAdminEinstellungenRoute: typeof AuthenticatedAdminEinstellungenRoute
+  AuthenticatedAdminStudiosRoute: typeof AuthenticatedAdminStudiosRoute
   AuthenticatedAdminIndexRoute: typeof AuthenticatedAdminIndexRoute
 }
 
@@ -421,6 +463,8 @@ const AuthenticatedAdminRouteRouteChildren: AuthenticatedAdminRouteRouteChildren
   {
     AuthenticatedAdminCalendarRoute: AuthenticatedAdminCalendarRoute,
     AuthenticatedAdminClientsRoute: AuthenticatedAdminClientsRouteWithChildren,
+    AuthenticatedAdminEinstellungenRoute: AuthenticatedAdminEinstellungenRoute,
+    AuthenticatedAdminStudiosRoute: AuthenticatedAdminStudiosRoute,
     AuthenticatedAdminIndexRoute: AuthenticatedAdminIndexRoute,
   }
 
@@ -455,13 +499,3 @@ const rootRouteChildren: RootRouteChildren = {
 export const routeTree = rootRouteImport
   ._addFileChildren(rootRouteChildren)
   ._addFileTypes<FileRouteTypes>()
-
-import type { getRouter } from './router.tsx'
-import type { startInstance } from './start.ts'
-declare module '@tanstack/react-start' {
-  interface Register {
-    ssr: true
-    router: Awaited<ReturnType<typeof getRouter>>
-    config: Awaited<ReturnType<typeof startInstance.getOptions>>
-  }
-}

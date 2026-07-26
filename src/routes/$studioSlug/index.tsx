@@ -45,6 +45,7 @@ function Index() {
     studio.features.length > 0
       ? studio.features.map((f) => ({ t: f.title, d: f.text }))
       : t.home.features;
+  const firstTreatmentKey = studio.treatments[0]?.key;
   return (
     <>
       {/* Hero */}
@@ -176,7 +177,7 @@ function Index() {
             </h2>
             <p className="mx-auto mt-4 max-w-xl text-charcoal-soft">{t.home.bridgeP}</p>
             <div className="mt-8 flex flex-wrap items-center justify-center gap-4">
-              <button onClick={() => open("deep-release")} className="btn-gold rounded-sm px-7 py-4 text-[0.78rem] uppercase tracking-[0.24em]">
+              <button onClick={() => open(firstTreatmentKey)} className="btn-gold rounded-sm px-7 py-4 text-[0.78rem] uppercase tracking-[0.24em]">
                 {t.home.bridgeCta}
               </button>
               <Link

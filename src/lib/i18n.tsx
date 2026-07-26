@@ -115,6 +115,14 @@ export const translations = {
     contact: {
       eyebrow: "Kontakt & Info",
       h1: "An der Eschenstrasse 24. Mitten in Zuzwil.",
+      h1Tpl: "An der {street}. Mitten in {city}.",
+      mapHTpl: "{street}, {city}.",
+      mapTitleTpl: "Standort {name}",
+      promiseDescTpl:
+        "Präzise Griffe, fundiertes Haltungswissen und eine ungestörte, professionelle Atmosphäre. Jede Behandlung im {name} wird nach höchsten Schweizer Hygiene- und Qualitätsstandards durchgeführt. Deine Erholung steht in einem respektvollen Rahmen mit geschützter Privatsphäre im Mittelpunkt.",
+      closed: "Geschlossen",
+      weekdayNames: ["Sonntag", "Montag", "Dienstag", "Mittwoch", "Donnerstag", "Freitag", "Samstag"],
+      countries: { CH: "Schweiz" } as Record<string, string>,
       intro: "Ein ruhiger Ort — bewusst klein, bewusst persönlich. Termine ausschließlich nach Vereinbarung.",
       address: "Adresse",
       addressLines: ["Eschenstrasse 24", "9524 Zuzwil SG", "Schweiz"],
@@ -308,6 +316,14 @@ export const translations = {
     contact: {
       eyebrow: "Contact & Info",
       h1: "On Eschenstrasse 24. Right in the middle of Zuzwil.",
+      h1Tpl: "On {street}. Right in the middle of {city}.",
+      mapHTpl: "{street}, {city}.",
+      mapTitleTpl: "{name} location",
+      promiseDescTpl:
+        "Precise techniques, deep postural knowledge and an undisturbed, professional environment. Every treatment at {name} meets the highest Swiss hygiene and quality standards. Your recovery unfolds in a respectful atmosphere with complete privacy.",
+      closed: "Closed",
+      weekdayNames: ["Sunday", "Monday", "Tuesday", "Wednesday", "Thursday", "Friday", "Saturday"],
+      countries: { CH: "Switzerland" } as Record<string, string>,
       intro: "A quiet place — deliberately small, deliberately personal. Appointments strictly by reservation.",
       address: "Address",
       addressLines: ["Eschenstrasse 24", "9524 Zuzwil SG", "Switzerland"],

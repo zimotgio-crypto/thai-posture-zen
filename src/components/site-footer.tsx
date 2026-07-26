@@ -2,28 +2,35 @@ import { Link, useParams } from "@tanstack/react-router";
 import { useT } from "@/lib/i18n";
 import { useStudioOptional } from "@/lib/studio-context";
 import { DEFAULT_STUDIO_SLUG } from "@/lib/studio";
+import { addressLinesOf } from "@/lib/studio-display";
 
 export function SiteFooter() {
   const t = useT();
   const studio = useStudioOptional();
   const params = useParams({ strict: false }) as { studioSlug?: string };
   const studioSlug = params.studioSlug ?? studio?.slug ?? DEFAULT_STUDIO_SLUG;
+  const addressLines = studio ? addressLinesOf(studio, t.contact.countries) : [];
+  const copyright = studio
+    ? [studio.name, studio.city].filter(Boolean).join(" · ")
+    : t.footer.copyright;
   return (
     <footer className="mt-24 border-t border-border/60 bg-ivory-deep/60">
       <div className="mx-auto grid max-w-7xl gap-10 px-6 py-14 lg:grid-cols-4 lg:px-10">
         <div className="lg:col-span-2 space-y-3">
-          <div className="font-serif text-2xl text-charcoal">{studio?.name ?? "Thai Posture Lab"}</div>
+          <div className="font-serif text-2xl text-charcoal">{studio?.name ?? ""}</div>
           <p className="max-w-sm text-sm leading-relaxed text-charcoal-soft">
             {studio?.tagline ?? t.footer.tagline}
           </p>
         </div>
         <div className="space-y-2 text-sm">
           <div className="text-[0.7rem] uppercase tracking-[0.25em] text-gold-deep">{t.footer.studio}</div>
-          <p className="text-charcoal-soft">{studio?.street ?? "Eschenstrasse 24"}</p>
-          <p className="text-charcoal-soft">
-            {studio ? `${studio.zip ?? ""} ${studio.city ?? ""}`.trim() : "9524 Zuzwil SG"}
-          </p>
-          <p className="text-charcoal-soft">{studio?.phone ?? t.contact.addressLines[2]}</p>
+          {addressLines.map((line) => (
+            <p key={line} className="text-charcoal-soft">
+              {line}
+            </p>
+          ))}
+          {studio?.phone && <p className="text-charcoal-soft">{studio.phone}</p>}
+          {studio?.email && <p className="text-charcoal-soft">{studio.email}</p>}
         </div>
         <div className="space-y-2 text-sm">
           <div className="text-[0.7rem] uppercase tracking-[0.25em] text-gold-deep">{t.footer.navigation}</div>
@@ -37,7 +44,7 @@ export function SiteFooter() {
       <div className="border-t border-border/60">
         <div className="mx-auto flex max-w-7xl flex-col items-start justify-between gap-2 px-6 py-5 text-xs text-charcoal-soft sm:flex-row sm:items-center lg:px-10">
           <span className="flex flex-wrap items-center gap-3">
-            <span>© {new Date().getFullYear()} {t.footer.copyright}</span>
+            <span>© {new Date().getFullYear()} {copyright}</span>
             <Link to="/datenschutz" className="text-charcoal-soft/80 hover:text-charcoal">
               Datenschutz
             </Link>
