@@ -1,6 +1,5 @@
 import { createFileRoute, Link, Outlet } from "@tanstack/react-router";
-import { useSuspenseQuery } from "@tanstack/react-query";
-import { StudioProvider, studioPublicQuery } from "@/lib/studio-context";
+import { studioPublicQuery } from "@/lib/studio-context";
 
 export const Route = createFileRoute("/$studioSlug")({
   loader: ({ params, context }) =>
@@ -11,13 +10,7 @@ export const Route = createFileRoute("/$studioSlug")({
 });
 
 function StudioLayout() {
-  const { studioSlug } = Route.useParams();
-  const { data: studio } = useSuspenseQuery(studioPublicQuery(studioSlug));
-  return (
-    <StudioProvider studio={studio}>
-      <Outlet />
-    </StudioProvider>
-  );
+  return <Outlet />;
 }
 
 function StudioNotFound() {

@@ -20,7 +20,7 @@ export function StudioProvider({
   studio,
   children,
 }: {
-  studio: PublicStudio;
+  studio: PublicStudio | null;
   children: ReactNode;
 }) {
   return <StudioCtx.Provider value={studio}>{children}</StudioCtx.Provider>;
