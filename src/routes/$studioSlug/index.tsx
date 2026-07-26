@@ -7,6 +7,7 @@ import { Eyebrow, Section } from "@/components/section";
 import { useBooking } from "@/components/booking-provider";
 import { useT } from "@/lib/i18n";
 import { studioPublicQuery, useStudio } from "@/lib/studio-context";
+import { fill } from "@/lib/studio-display";
 
 const SITE_URL = "https://thai-posture-zen.lovable.app";
 
