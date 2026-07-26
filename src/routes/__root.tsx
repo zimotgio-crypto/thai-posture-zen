@@ -178,7 +178,7 @@ function StudioShell({ children }: { children: ReactNode }) {
   const slug = params.studioSlug ?? DEFAULT_STUDIO_SLUG;
   const queryClient = useQueryClient();
   const options = studioPublicQuery(slug);
-  const { data } = useQuery({ ...options, retry: 2, throwOnError: false });
+  const { data, isError } = useQuery({ ...options, retry: 2, throwOnError: false });
   const cached = queryClient.getQueryData<PublicStudio>(options.queryKey);
   const lastKnown = useRef<PublicStudio | null>(null);
   const studio = data ?? cached ?? lastKnown.current;
@@ -187,7 +187,7 @@ function StudioShell({ children }: { children: ReactNode }) {
   // Never unmount the page just because a client-side refetch failed: keep the
   // last known studio. Only a genuinely unknown slug reaches the route's
   // notFound handling.
-  if (!studio) {
+  if (!studio && !isError) {
     return (
       <StudioProvider studio={null}>
         <div className="min-h-screen" aria-busy="true" />
