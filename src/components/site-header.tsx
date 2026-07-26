@@ -1,20 +1,25 @@
 import { useEffect, useState } from "react";
-import { Link } from "@tanstack/react-router";
+import { Link, useParams } from "@tanstack/react-router";
 import { Menu, X } from "lucide-react";
 import { useBooking } from "./booking-provider";
 import { cn } from "@/lib/utils";
 import { useLanguage } from "@/lib/i18n";
+import { useStudioOptional } from "@/lib/studio-context";
+import { DEFAULT_STUDIO_SLUG } from "@/lib/studio";
 
 export function SiteHeader() {
   const { open } = useBooking();
   const { lang, setLang, t } = useLanguage();
   const [scrolled, setScrolled] = useState(false);
   const [mobile, setMobile] = useState(false);
+  const studio = useStudioOptional();
+  const params = useParams({ strict: false }) as { studioSlug?: string };
+  const studioSlug = params.studioSlug ?? studio?.slug ?? DEFAULT_STUDIO_SLUG;
 
   const links = [
-    { to: "/", label: t.nav.home, exact: true },
-    { to: "/home-office", label: t.nav.treatments, exact: false },
-    { to: "/kontakt", label: t.nav.contact, exact: false },
+    { to: "/$studioSlug", label: t.nav.home, exact: true },
+    { to: "/$studioSlug/home-office", label: t.nav.treatments, exact: false },
+    { to: "/$studioSlug/kontakt", label: t.nav.contact, exact: false },
   ] as const;
 
   useEffect(() => {
@@ -65,10 +70,16 @@ export function SiteHeader() {
       )}
     >
       <div className="mx-auto flex max-w-7xl items-center justify-between gap-4 px-6 py-4 lg:px-10">
-        <Link to="/" className="group flex flex-col leading-none lg:flex-row lg:items-baseline lg:gap-2">
-          <span className="font-serif text-xl tracking-tight text-charcoal">Thai Posture Lab</span>
+        <Link
+          to="/$studioSlug"
+          params={{ studioSlug }}
+          className="group flex flex-col leading-none lg:flex-row lg:items-baseline lg:gap-2"
+        >
+          <span className="font-serif text-xl tracking-tight text-charcoal">
+            {studio?.name ?? "Thai Posture Lab"}
+          </span>
           <span className="mt-1 text-[0.6rem] uppercase tracking-[0.32em] text-gold-deep lg:mt-0 lg:text-[0.62rem] lg:tracking-[0.35em]">
-            Zuzwil
+            {studio?.city ?? ""}
           </span>
         </Link>
 
@@ -77,6 +88,7 @@ export function SiteHeader() {
             <Link
               key={l.to}
               to={l.to}
+              params={{ studioSlug }}
               activeOptions={{ exact: l.exact }}
               activeProps={{ className: "text-charcoal after:w-full" }}
               inactiveProps={{ className: "text-charcoal-soft/80 hover:text-charcoal" }}
@@ -115,6 +127,7 @@ export function SiteHeader() {
               <Link
                 key={l.to}
                 to={l.to}
+                params={{ studioSlug }}
                 onClick={() => setMobile(false)}
                 className="py-3 text-sm uppercase tracking-[0.2em] text-charcoal-soft"
               >
