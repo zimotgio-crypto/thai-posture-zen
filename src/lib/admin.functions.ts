@@ -3,16 +3,16 @@ import { requireSupabaseAuth } from "@/integrations/supabase/auth-middleware";
 import { z } from "zod";
 import { getOrCreateClient } from "@/lib/client-records";
 
-async function assertAdmin(userId: string) {
-  const { supabaseAdmin } = await import("@/integrations/supabase/client.server");
-  const { data } = await supabaseAdmin
-    .from("user_roles")
-    .select("role")
-    .eq("user_id", userId)
-    .eq("role", "admin")
-    .maybeSingle();
-  if (!data) throw new Error("Forbidden");
-  return supabaseAdmin;
+// Resolves the studio the caller may act in. Never trusts a client-sent id.
+async function studioContext(userId: string, studioId?: string | null) {
+  const { resolveStudioContext } = await import("@/lib/studio.server");
+  return resolveStudioContext(userId, studioId ?? null);
+}
+
+async function studioCalendar(studioId: string): Promise<string | null> {
+  const { getStudioById } = await import("@/lib/studio.server");
+  const studio = await getStudioById(studioId);
+  return studio?.google_calendar_id ?? null;
 }
 
 // Returns { isAdmin, canClaim } for the current signed-in user.
@@ -20,7 +20,7 @@ export const getAdminStatus = createServerFn({ method: "GET" })
   .middleware([requireSupabaseAuth])
   .handler(async ({ context }) => {
     const { supabaseAdmin } = await import("@/integrations/supabase/client.server");
-    const [{ data: mine }, { count }] = await Promise.all([
+    const [{ data: mine }, { count }, { data: membership }] = await Promise.all([
       supabaseAdmin
         .from("user_roles")
         .select("role")
@@ -31,9 +31,15 @@ export const getAdminStatus = createServerFn({ method: "GET" })
         .from("user_roles")
         .select("role", { count: "exact", head: true })
         .eq("role", "admin"),
+      supabaseAdmin
+        .from("studio_members")
+        .select("studio_id")
+        .eq("user_id", context.userId)
+        .limit(1)
+        .maybeSingle(),
     ]);
     return {
-      isAdmin: Boolean(mine),
+      isAdmin: Boolean(mine) || Boolean(membership),
       canClaim: (count ?? 0) === 0,
     };
   });
@@ -52,22 +58,80 @@ export const claimAdmin = createServerFn({ method: "POST" })
       .from("user_roles")
       .insert({ user_id: context.userId, role: "admin" });
     if (error) throw new Error(error.message);
+    // Bootstrap tenant access: owner of the first active studio + platform admin.
+    const { data: studio } = await supabaseAdmin
+      .from("studios")
+      .select("id")
+      .eq("active", true)
+      .order("created_at", { ascending: true })
+      .limit(1)
+      .maybeSingle();
+    if (studio) {
+      await supabaseAdmin
+        .from("studio_members")
+        .insert({ studio_id: studio.id, user_id: context.userId, role: "owner" });
+    }
+    await supabaseAdmin.from("platform_admins").insert({ user_id: context.userId });
     return { ok: true as const };
   });
+
+// Master data, opening hours and treatments of the caller's studio.
+export const getCurrentStudio = createServerFn({ method: "GET" })
+  .middleware([requireSupabaseAuth])
+  .inputValidator((data: unknown) => studioScopeInput.parse(data ?? {}))
+  .handler(async ({ data, context }) => {
+    const { studioId } = await studioContext(context.userId, data.studioId);
+    const { getStudioById, listTreatments, treatmentOptions } = await import(
+      "@/lib/studio.server"
+    );
+    const studio = await getStudioById(studioId);
+    if (!studio) throw new Error("Studio not found");
+    const treatments = await listTreatments(studioId);
+    return {
+      studio: {
+        id: studio.id,
+        slug: studio.slug,
+        name: studio.name,
+        street: studio.street,
+        zip: studio.zip,
+        city: studio.city,
+        country: studio.country,
+        phone: studio.phone,
+        email: studio.email,
+        timezone: studio.timezone,
+        bufferMinutes: studio.buffer_minutes,
+        slotStepMinutes: studio.slot_step_minutes,
+        openingHours: studio.opening_hours,
+        googleCalendarConfigured: Boolean(studio.google_calendar_id),
+      },
+      treatments: treatments.map((t) => ({
+        id: t.id,
+        key: t.key,
+        label: t.label,
+        description: t.description,
+        sortOrder: t.sort_order,
+        options: treatmentOptions(t),
+      })),
+    };
+  });
+
+const studioScopeInput = z.object({ studioId: z.string().uuid().optional() });
 
 const rangeInput = z.object({
   from: z.string().regex(/^\d{4}-\d{2}-\d{2}$/),
   to: z.string().regex(/^\d{4}-\d{2}-\d{2}$/),
+  studioId: z.string().uuid().optional(),
 });
 
 export const listBookingsInRange = createServerFn({ method: "GET" })
   .middleware([requireSupabaseAuth])
   .inputValidator((data: unknown) => rangeInput.parse(data))
   .handler(async ({ data, context }) => {
-    const admin = await assertAdmin(context.userId);
+    const { supabaseAdmin: admin, studioId } = await studioContext(context.userId, data.studioId);
     const { data: rows, error } = await admin
       .from("bookings")
       .select("id, day, time, treatment, duration_minutes, silent, source, notes, client_id, clients:client_id (id, first_name, last_name, phone, email, street, zip, city)")
+      .eq("studio_id", studioId)
       .gte("day", data.from)
       .lte("day", data.to)
       .order("day", { ascending: true })
@@ -77,6 +141,7 @@ export const listBookingsInRange = createServerFn({ method: "GET" })
   });
 
 const addBookingInput = z.object({
+  studioId: z.string().uuid().optional(),
   treatment: z.string().min(1).max(100),
   day: z.string().regex(/^\d{4}-\d{2}-\d{2}$/),
   time: z.string().regex(/^\d{2}:\d{2}$/),
@@ -97,7 +162,9 @@ export const addBooking = createServerFn({ method: "POST" })
   .middleware([requireSupabaseAuth])
   .inputValidator((data: unknown) => addBookingInput.parse(data))
   .handler(async ({ data, context }) => {
-    const admin = await assertAdmin(context.userId);
+    const { supabaseAdmin: admin, studioId } = await studioContext(context.userId, data.studioId);
+    const { getStudioById } = await import("@/lib/studio.server");
+    const studio = await getStudioById(studioId);
     const { createGoogleEvent } = await import("@/lib/google-calendar.server");
     let clientId: string | null = data.clientId ?? null;
     let clientName = "";
@@ -108,15 +175,19 @@ export const addBooking = createServerFn({ method: "POST" })
       if (!data.email || !data.firstName || !data.lastName || !data.phone || !data.street || !data.zip || !data.city) {
         throw new Error("Missing client details");
       }
-      const client = await getOrCreateClient(admin, {
-        firstName: data.firstName,
-        lastName: data.lastName,
-        email: data.email,
-        phone: data.phone,
-        street: data.street,
-        zip: data.zip,
-        city: data.city,
-      });
+      const client = await getOrCreateClient(
+        admin,
+        {
+          firstName: data.firstName,
+          lastName: data.lastName,
+          email: data.email,
+          phone: data.phone,
+          street: data.street,
+          zip: data.zip,
+          city: data.city,
+        },
+        studioId,
+      );
       clientId = client.id;
       clientName = `${data.firstName} ${data.lastName}`.trim();
       clientPhone = data.phone;
@@ -126,6 +197,7 @@ export const addBooking = createServerFn({ method: "POST" })
         .from("clients")
         .select("first_name, last_name, phone")
         .eq("id", clientId)
+        .eq("studio_id", studioId)
         .maybeSingle();
       if (c) {
         clientName = `${c.first_name} ${c.last_name}`.trim();
@@ -136,6 +208,7 @@ export const addBooking = createServerFn({ method: "POST" })
     const insert = await admin
       .from("bookings")
       .insert({
+        studio_id: studioId,
         client_id: clientId,
         treatment: data.block ? "Blockiert" : data.treatment,
         day: data.day,
@@ -156,6 +229,8 @@ export const addBooking = createServerFn({ method: "POST" })
         clientName,
         clientPhone,
         source,
+        calendarId: studio?.google_calendar_id ?? null,
+        studioName: studio?.name ?? null,
       });
       if (eventId && insert.data?.id) {
         await admin
@@ -169,48 +244,58 @@ export const addBooking = createServerFn({ method: "POST" })
     return { ok: true as const };
   });
 
-const deleteBookingInput = z.object({ id: z.string().uuid() });
+const deleteBookingInput = z.object({ id: z.string().uuid(), studioId: z.string().uuid().optional() });
 export const deleteBooking = createServerFn({ method: "POST" })
   .middleware([requireSupabaseAuth])
   .inputValidator((data: unknown) => deleteBookingInput.parse(data))
   .handler(async ({ data, context }) => {
-    const admin = await assertAdmin(context.userId);
+    const { supabaseAdmin: admin, studioId } = await studioContext(context.userId, data.studioId);
     const { deleteGoogleEvent } = await import("@/lib/google-calendar.server");
     const { data: row } = await admin
       .from("bookings")
       .select("google_event_id")
       .eq("id", data.id)
+      .eq("studio_id", studioId)
       .maybeSingle();
     if (row?.google_event_id) {
       try {
-        await deleteGoogleEvent(row.google_event_id);
+        await deleteGoogleEvent(row.google_event_id, await studioCalendar(studioId));
       } catch (err) {
         console.error("[deleteBooking] google delete failed", err);
       }
     }
-    const { error } = await admin.from("bookings").delete().eq("id", data.id);
+    const { error } = await admin
+      .from("bookings")
+      .delete()
+      .eq("id", data.id)
+      .eq("studio_id", studioId);
     if (error) throw new Error(error.message);
     return { ok: true as const };
   });
 
 export const getGoogleCalendarStatus = createServerFn({ method: "GET" })
   .middleware([requireSupabaseAuth])
-  .handler(async ({ context }) => {
-    await assertAdmin(context.userId);
+  .inputValidator((data: unknown) => studioScopeInput.parse(data ?? {}))
+  .handler(async ({ data, context }) => {
+    const { studioId } = await studioContext(context.userId, data.studioId);
     const { isGoogleConfigured } = await import("@/lib/google-calendar.server");
-    return { configured: isGoogleConfigured() };
+    return { configured: isGoogleConfigured(await studioCalendar(studioId)) };
   });
 
 export const listGoogleBusyInRange = createServerFn({ method: "GET" })
   .middleware([requireSupabaseAuth])
   .inputValidator((data: unknown) => rangeInput.parse(data))
   .handler(async ({ data, context }) => {
-    await assertAdmin(context.userId);
+    const { studioId } = await studioContext(context.userId, data.studioId);
     try {
       const { getGoogleBusyIntervalsInRange } = await import(
         "@/lib/google-calendar.server"
       );
-      return await getGoogleBusyIntervalsInRange(data.from, data.to);
+      return await getGoogleBusyIntervalsInRange(
+        data.from,
+        data.to,
+        await studioCalendar(studioId),
+      );
     } catch (err) {
       console.error("[listGoogleBusyInRange] failed", err);
       return [];
@@ -219,22 +304,24 @@ export const listGoogleBusyInRange = createServerFn({ method: "GET" })
 
 const debugGoogleInput = z.object({
   day: z.string().regex(/^\d{4}-\d{2}-\d{2}$/),
+  studioId: z.string().uuid().optional(),
 });
 
 export const debugGoogleCalendar = createServerFn({ method: "GET" })
   .middleware([requireSupabaseAuth])
   .inputValidator((data: unknown) => debugGoogleInput.parse(data))
   .handler(async ({ data, context }) => {
-    await assertAdmin(context.userId);
+    const { studioId } = await studioContext(context.userId, data.studioId);
+    const calendarId = await studioCalendar(studioId);
     const [{ debugGoogleCalendarDay }, { listBookedTimesForDay }] = await Promise.all([
       import("@/lib/google-calendar.server"),
       import("@/lib/booking-availability.server"),
     ]);
-    const google = await debugGoogleCalendarDay(data.day);
+    const google = await debugGoogleCalendarDay(data.day, calendarId);
     const exceptions = [...google.exceptions];
     let listBookedTimesResult: { time: string; duration: number }[] | null = null;
     try {
-      listBookedTimesResult = await listBookedTimesForDay(data.day);
+      listBookedTimesResult = await listBookedTimesForDay(studioId, data.day, calendarId);
     } catch (err) {
       const normalized =
         err instanceof Error
@@ -254,15 +341,19 @@ export const debugGoogleCalendar = createServerFn({ method: "GET" })
     };
   });
 
-const listClientsInput = z.object({ q: z.string().trim().max(120).optional() });
+const listClientsInput = z.object({
+  q: z.string().trim().max(120).optional(),
+  studioId: z.string().uuid().optional(),
+});
 export const listClients = createServerFn({ method: "GET" })
   .middleware([requireSupabaseAuth])
   .inputValidator((data: unknown) => listClientsInput.parse(data ?? {}))
   .handler(async ({ data, context }) => {
-    const admin = await assertAdmin(context.userId);
+    const { supabaseAdmin: admin, studioId } = await studioContext(context.userId, data.studioId);
     let query = admin
       .from("clients")
       .select("id, first_name, last_name, email, phone, street, zip, city, created_at")
+      .eq("studio_id", studioId)
       .order("last_name", { ascending: true })
       .order("first_name", { ascending: true });
     if (data.q) {
@@ -276,9 +367,10 @@ export const listClients = createServerFn({ method: "GET" })
     return rows ?? [];
   });
 
-const clientIdInput = z.object({ id: z.string().uuid() });
+const clientIdInput = z.object({ id: z.string().uuid(), studioId: z.string().uuid().optional() });
 
 const addClientInput = z.object({
+  studioId: z.string().uuid().optional(),
   firstName: z.string().trim().min(1).max(80),
   lastName: z.string().trim().min(1).max(80),
   email: z.string().trim().email().max(200),
@@ -291,13 +383,14 @@ export const addClient = createServerFn({ method: "POST" })
   .middleware([requireSupabaseAuth])
   .inputValidator((data: unknown) => addClientInput.parse(data))
   .handler(async ({ data, context }) => {
-    const admin = await assertAdmin(context.userId);
-    const client = await getOrCreateClient(admin, data);
+    const { supabaseAdmin: admin, studioId } = await studioContext(context.userId, data.studioId);
+    const client = await getOrCreateClient(admin, data, studioId);
     return { ok: true as const, id: client.id, merged: !client.created };
   });
 
 const updateClientInput = z.object({
   id: z.string().uuid(),
+  studioId: z.string().uuid().optional(),
   firstName: z.string().trim().min(1).max(80),
   lastName: z.string().trim().min(1).max(80),
   email: z.string().trim().email().max(200),
@@ -310,7 +403,7 @@ export const updateClient = createServerFn({ method: "POST" })
   .middleware([requireSupabaseAuth])
   .inputValidator((data: unknown) => updateClientInput.parse(data))
   .handler(async ({ data, context }) => {
-    const admin = await assertAdmin(context.userId);
+    const { supabaseAdmin: admin, studioId } = await studioContext(context.userId, data.studioId);
     const { error } = await admin
       .from("clients")
       .update({
@@ -322,7 +415,8 @@ export const updateClient = createServerFn({ method: "POST" })
         zip: data.zip,
         city: data.city,
       })
-      .eq("id", data.id);
+      .eq("id", data.id)
+      .eq("studio_id", studioId);
     if (error) throw new Error(error.message);
     return { ok: true as const, id: data.id };
   });
@@ -331,8 +425,12 @@ export const deleteClient = createServerFn({ method: "POST" })
   .middleware([requireSupabaseAuth])
   .inputValidator((data: unknown) => clientIdInput.parse(data))
   .handler(async ({ data, context }) => {
-    const admin = await assertAdmin(context.userId);
-    const { error } = await admin.from("clients").delete().eq("id", data.id);
+    const { supabaseAdmin: admin, studioId } = await studioContext(context.userId, data.studioId);
+    const { error } = await admin
+      .from("clients")
+      .delete()
+      .eq("id", data.id)
+      .eq("studio_id", studioId);
     if (error) throw new Error(error.message);
     return { ok: true as const };
   });
@@ -341,19 +439,21 @@ export const getClient = createServerFn({ method: "GET" })
   .middleware([requireSupabaseAuth])
   .inputValidator((data: unknown) => clientIdInput.parse(data))
   .handler(async ({ data, context }) => {
-    const admin = await assertAdmin(context.userId);
+    const { supabaseAdmin: admin, studioId } = await studioContext(context.userId, data.studioId);
     const [client, bookings, logs] = await Promise.all([
-      admin.from("clients").select("*").eq("id", data.id).maybeSingle(),
+      admin.from("clients").select("*").eq("id", data.id).eq("studio_id", studioId).maybeSingle(),
       admin
         .from("bookings")
         .select("id, day, time, treatment, duration_minutes, silent, source")
         .eq("client_id", data.id)
+        .eq("studio_id", studioId)
         .order("day", { ascending: false })
         .order("time", { ascending: false }),
       admin
         .from("session_logs")
         .select("id, body_html, created_at, booking_id, treatment_date, treatment_name, duration_minutes, body_map, pain_level, mobility, tension, bookings:booking_id (day, treatment, duration_minutes)")
         .eq("client_id", data.id)
+        .eq("studio_id", studioId)
         .order("created_at", { ascending: false }),
     ]);
     if (client.error) throw new Error(client.error.message);
@@ -373,6 +473,7 @@ const bodyMapSchema = z.object({
 });
 
 const addNoteInput = z.object({
+  studioId: z.string().uuid().optional(),
   clientId: z.string().uuid(),
   bookingId: z.string().uuid().nullish(),
   bodyHtml: z.string().trim().min(1).max(20000),
@@ -387,10 +488,18 @@ export const addSessionLog = createServerFn({ method: "POST" })
   .middleware([requireSupabaseAuth])
   .inputValidator((data: unknown) => addNoteInput.parse(data))
   .handler(async ({ data, context }) => {
-    const admin = await assertAdmin(context.userId);
+    const { supabaseAdmin: admin, studioId } = await studioContext(context.userId, data.studioId);
+    const owner = await admin
+      .from("clients")
+      .select("id")
+      .eq("id", data.clientId)
+      .eq("studio_id", studioId)
+      .maybeSingle();
+    if (!owner.data) throw new Error("Client not found");
     const tensionValues = Object.values(data.tensionZones ?? {});
     const maxTension = tensionValues.length > 0 ? Math.max(...tensionValues) : null;
     const { error } = await admin.from("session_logs").insert({
+      studio_id: studioId,
       client_id: data.clientId,
       booking_id: data.bookingId ?? null,
       author_id: context.userId,

@@ -82,23 +82,47 @@ export const Route = createFileRoute("/api/public/whatsapp")({
           const body = JSON.parse(rawBody) as {
             entry?: Array<{
               changes?: Array<{
-                value?: { messages?: Array<Record<string, unknown>> };
+                value?: {
+                  metadata?: { phone_number_id?: string };
+                  messages?: Array<Record<string, unknown>>;
+                };
               }>;
             }>;
           };
-          const messages: Record<string, unknown>[] = [];
+          // Each change carries the receiving number id -> resolves the studio.
+          const batches: { phoneNumberId: string; messages: Record<string, unknown>[] }[] = [];
           for (const entry of body.entry ?? []) {
             for (const change of entry.changes ?? []) {
-              for (const m of change.value?.messages ?? []) messages.push(m);
+              const messages = change.value?.messages ?? [];
+              if (messages.length === 0) continue;
+              batches.push({
+                phoneNumberId: change.value?.metadata?.phone_number_id ?? "",
+                messages,
+              });
             }
           }
-          if (messages.length > 0) {
-            const { handleIncomingMessage } = await import("@/lib/whatsapp-dialog.server");
-            for (const m of messages) {
-              try {
-                await handleIncomingMessage(m);
-              } catch (err) {
-                console.error("[whatsapp webhook] handler error", err);
+          if (batches.length > 0) {
+            const [{ handleIncomingMessage }, { getStudioByWhatsappPhoneNumberId }] =
+              await Promise.all([
+                import("@/lib/whatsapp-dialog.server"),
+                import("@/lib/studio.server"),
+              ]);
+            for (const batch of batches) {
+              const studio = batch.phoneNumberId
+                ? await getStudioByWhatsappPhoneNumberId(batch.phoneNumberId)
+                : null;
+              if (!studio) {
+                console.error(
+                  `[whatsapp webhook] no studio for phone_number_id=${batch.phoneNumberId || "(missing)"} — ignoring ${batch.messages.length} message(s)`,
+                );
+                continue;
+              }
+              for (const m of batch.messages) {
+                try {
+                  await handleIncomingMessage(m, studio);
+                } catch (err) {
+                  console.error("[whatsapp webhook] handler error", err);
+                }
               }
             }
           }

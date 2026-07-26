@@ -69,7 +69,11 @@ function sortByOldest(rows: ClientRecord[]) {
   });
 }
 
-export async function getOrCreateClient(supabase: DbClient, clientData: ClientData) {
+export async function getOrCreateClient(
+  supabase: DbClient,
+  clientData: ClientData,
+  studioId: string,
+) {
   const client = normalizeClientData(clientData);
   const firstNameKey = normalizeForMatch(client.firstName);
   const lastNameKey = normalizeForMatch(client.lastName);
@@ -87,6 +91,7 @@ export async function getOrCreateClient(supabase: DbClient, clientData: ClientDa
         city: client.city,
       })
       .eq("id", id)
+      .eq("studio_id", studioId)
       .select("id")
       .single();
 
@@ -97,6 +102,7 @@ export async function getOrCreateClient(supabase: DbClient, clientData: ClientDa
   const { data: possibleMatches, error: findError } = await supabase
     .from("clients")
     .select("id, first_name, last_name, email, created_at")
+    .eq("studio_id", studioId)
     .ilike("first_name", `%${client.firstName}%`)
     .ilike("last_name", `%${client.lastName}%`)
     .order("created_at", { ascending: true });
@@ -112,13 +118,25 @@ export async function getOrCreateClient(supabase: DbClient, clientData: ClientDa
     const duplicateIds = duplicates.map((row) => row.id);
 
     if (duplicateIds.length > 0) {
-      const bookingsMove = await supabase.from("bookings").update({ client_id: keeper.id }).in("client_id", duplicateIds);
+      const bookingsMove = await supabase
+        .from("bookings")
+        .update({ client_id: keeper.id })
+        .eq("studio_id", studioId)
+        .in("client_id", duplicateIds);
       if (bookingsMove.error) throw new Error(bookingsMove.error.message);
 
-      const logsMove = await supabase.from("session_logs").update({ client_id: keeper.id }).in("client_id", duplicateIds);
+      const logsMove = await supabase
+        .from("session_logs")
+        .update({ client_id: keeper.id })
+        .eq("studio_id", studioId)
+        .in("client_id", duplicateIds);
       if (logsMove.error) throw new Error(logsMove.error.message);
 
-      const duplicateDelete = await supabase.from("clients").delete().in("id", duplicateIds);
+      const duplicateDelete = await supabase
+        .from("clients")
+        .delete()
+        .eq("studio_id", studioId)
+        .in("id", duplicateIds);
       if (duplicateDelete.error) throw new Error(duplicateDelete.error.message);
     }
 
@@ -128,6 +146,7 @@ export async function getOrCreateClient(supabase: DbClient, clientData: ClientDa
   const insert = await supabase
     .from("clients")
     .insert({
+      studio_id: studioId,
       first_name: client.firstName,
       last_name: client.lastName,
       email: client.email,
@@ -144,6 +163,7 @@ export async function getOrCreateClient(supabase: DbClient, clientData: ClientDa
       const retry = await supabase
         .from("clients")
         .select("id, first_name, last_name, email, created_at")
+        .eq("studio_id", studioId)
         .ilike("first_name", `%${client.firstName}%`)
         .ilike("last_name", `%${client.lastName}%`)
         .order("created_at", { ascending: true });
