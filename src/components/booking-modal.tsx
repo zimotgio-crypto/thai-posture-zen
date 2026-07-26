@@ -96,17 +96,23 @@ export function BookingModal({
   initialTreatment?: string;
 }) {
   const t = useT();
-  const treatments = t.booking.treatments;
+  const studio = useStudio();
+  const treatments = studio.treatments;
+  const optionsFor = (key: string) => treatments.find((tr) => tr.key === key)?.options ?? [];
   const resolveInitial = (id: string | undefined) => {
-    // Legacy id fallback (Ohne Öl was removed) → route to the standard variant.
-    if (id === "thai-stretch-nooil") return "thai-stretch-oil";
-    if (id && treatments.some((tr) => tr.id === id)) return id;
-    return treatments[0].id;
+    if (id && treatments.some((tr) => tr.key === id)) return id;
+    // Legacy id fallback (e.g. removed "Ohne Öl" variant) → closest match.
+    const stem = id?.split("-").slice(0, 2).join("-");
+    const near = stem ? treatments.find((tr) => tr.key.startsWith(stem)) : undefined;
+    return near?.key ?? treatments[0]?.key ?? "";
   };
   const [treatment, setTreatment] = useState(() => resolveInitial(initialTreatment));
-  const durationOptions = useMemo(() => optionsForTreatment(treatment), [treatment]);
+  const durationOptions = useMemo(
+    () => treatments.find((tr) => tr.key === treatment)?.options ?? [],
+    [treatments, treatment]
+  );
   const [durationMin, setDurationMin] = useState<number>(() => {
-    const opts = optionsForTreatment(resolveInitial(initialTreatment));
+    const opts = optionsFor(resolveInitial(initialTreatment));
     return (opts.find((o) => o.minutes === 60) ?? opts[0])?.minutes ?? 60;
   });
 
@@ -151,7 +157,7 @@ export function BookingModal({
       return;
     }
     let cancelled = false;
-    listBooked({ data: { day, studioSlug: DEFAULT_STUDIO_SLUG } })
+    listBooked({ data: { day, studioSlug: studio.slug } })
       .then((rows) => {
         if (cancelled) return;
         setBookedTimes(rows);
@@ -168,7 +174,7 @@ export function BookingModal({
     return () => {
       cancelled = true;
     };
-  }, [open, day, listBooked]);
+  }, [open, day, listBooked, studio.slug]);
 
   const today = useMemo(() => startOfDay(new Date()), []);
   const cells = useMemo(() => buildMonthGrid(cursor), [cursor]);
@@ -186,7 +192,7 @@ export function BookingModal({
     return endOfPrev >= today;
     void prev;
   }, [cursor, today]);
-  const current = treatments.find((x) => x.id === treatment) ?? treatments[0];
+  const current = treatments.find((x) => x.key === treatment) ?? treatments[0];
 
   const now = useMemo(() => new Date(), [day, open]);
   const nowMinutesToday = useMemo(() => {
@@ -197,13 +203,31 @@ export function BookingModal({
   const dayHours = useMemo(() => {
     if (!day) return null;
     const [y, mo, d] = day.split("-").map(Number);
-    return HOURS[new Date(y, mo - 1, d).getDay()];
-  }, [day]);
+    const dow = new Date(y, mo - 1, d).getDay();
+    return studio.openingHours[String(dow)] ?? null;
+  }, [day, studio.openingHours]);
   const slots = useMemo(() => {
     if (!day) return [];
     if (availabilityError) return [];
-    return generateStartTimes(day, bookedTimes, nowMinutesToday, durationMin);
-  }, [day, bookedTimes, nowMinutesToday, durationMin, availabilityError]);
+    return generateStartTimes(
+      day,
+      bookedTimes,
+      nowMinutesToday,
+      durationMin,
+      dayHours,
+      studio.slotStepMinutes,
+      studio.bufferMinutes
+    );
+  }, [
+    day,
+    bookedTimes,
+    nowMinutesToday,
+    durationMin,
+    availabilityError,
+    dayHours,
+    studio.slotStepMinutes,
+    studio.bufferMinutes,
+  ]);
 
   async function submit(e: React.FormEvent) {
     e.preventDefault();
