@@ -6,6 +6,7 @@ import { Eyebrow, Section } from "@/components/section";
 import { useBooking } from "@/components/booking-provider";
 import { useT } from "@/lib/i18n";
 import { studioPublicQuery, useStudio } from "@/lib/studio-context";
+import { addressLinesOf, fill, formatOpeningHours, mapsQueryOf } from "@/lib/studio-display";
 
 const SITE_URL = "https://thai-posture-zen.lovable.app";
 
@@ -37,11 +38,21 @@ function Kontakt() {
   const { open } = useBooking();
   const t = useT();
   const studio = useStudio();
+  const mapsQuery = mapsQueryOf(studio);
   const mapsUrl =
     studio.mapsUrl ??
-    `https://www.google.com/maps/search/?api=1&query=${encodeURIComponent(
-      [studio.street, studio.zip, studio.city].filter(Boolean).join(" "),
-    )}`;
+    `https://www.google.com/maps/search/?api=1&query=${encodeURIComponent(mapsQuery)}`;
+  const addressLines = addressLinesOf(studio, t.contact.countries);
+  const hours = formatOpeningHours(
+    studio.openingHours,
+    t.contact.weekdayNames,
+    t.contact.closed,
+  );
+  const vars = {
+    name: studio.name,
+    street: studio.street ?? "",
+    city: studio.city ?? "",
+  };
   const faqs = t.contact.faqs.map((f, i) =>
     i === t.contact.faqs.length - 1 && studio.parkingNote ? { ...f, a: studio.parkingNote } : f,
   );
@@ -51,17 +62,26 @@ function Kontakt() {
         <div className="grid gap-14 lg:grid-cols-12">
           <div className="lg:col-span-7">
             <Eyebrow>{t.contact.eyebrow}</Eyebrow>
-            <h1 className="mt-6 text-5xl leading-[1.05] text-charcoal lg:text-6xl">{t.contact.h1}</h1>
+            <h1 className="mt-6 text-5xl leading-[1.05] text-charcoal lg:text-6xl">
+              {fill(t.contact.h1Tpl, vars)}
+            </h1>
             <p className="mt-6 max-w-lg text-lg text-charcoal-soft">{t.contact.intro}</p>
 
             <div className="mt-12 grid gap-6 sm:grid-cols-2">
               <InfoCard icon={MapPin} title={t.contact.address}>
-                {t.contact.addressLines.map((line, i) => (
-                  <span key={i}>{line}{i < t.contact.addressLines.length - 1 && <br />}</span>
+                {addressLines.map((line, i) => (
+                  <span key={i}>{line}{i < addressLines.length - 1 && <br />}</span>
                 ))}
+                {(studio.phone || studio.email) && (
+                  <>
+                    <br />
+                    {studio.phone && <span>{studio.phone}<br /></span>}
+                    {studio.email && <span>{studio.email}</span>}
+                  </>
+                )}
               </InfoCard>
               <InfoCard icon={Clock} title={t.contact.hoursTitle}>
-                {t.contact.hours.map((h) => (
+                {hours.map((h) => (
                   <div key={h.d} className="flex justify-between gap-4 py-0.5">
                     <span>{h.d}</span>
                     <span className="text-charcoal">{h.h}</span>
@@ -100,7 +120,9 @@ function Kontakt() {
             </div>
             <div className="mt-8 rounded-sm border border-border/60 bg-card p-6">
               <div className="text-[0.7rem] uppercase tracking-[0.25em] text-gold-deep">{t.contact.promise}</div>
-              <p className="mt-3 text-sm leading-relaxed text-charcoal-soft">{t.contact.promiseDesc}</p>
+              <p className="mt-3 text-sm leading-relaxed text-charcoal-soft">
+                {fill(t.contact.promiseDescTpl, vars)}
+              </p>
             </div>
           </aside>
         </div>
@@ -111,7 +133,9 @@ function Kontakt() {
           <div className="mb-8 flex flex-wrap items-end justify-between gap-4">
             <div>
               <Eyebrow>{t.contact.mapEyebrow}</Eyebrow>
-              <h2 className="mt-4 text-4xl leading-tight text-charcoal">{t.contact.mapH}</h2>
+              <h2 className="mt-4 text-4xl leading-tight text-charcoal">
+                {fill(t.contact.mapHTpl, vars)}
+              </h2>
             </div>
             <a
               href={mapsUrl}
@@ -124,11 +148,8 @@ function Kontakt() {
           </div>
           <div className="overflow-hidden rounded-sm border border-border/60 shadow-[var(--shadow-soft)]">
             <iframe
-              title={t.contact.mapTitle}
-              src={`https://www.google.com/maps?q=${encodeURIComponent(
-                [studio.street, studio.zip, studio.city].filter(Boolean).join(" ") ||
-                  "Eschenstrasse 24 9524 Zuzwil",
-              )}&output=embed`}
+              title={fill(t.contact.mapTitleTpl, vars)}
+              src={`https://www.google.com/maps?q=${encodeURIComponent(mapsQuery || studio.name)}&output=embed`}
               className="h-[440px] w-full grayscale-[35%]"
               loading="lazy"
               referrerPolicy="no-referrer-when-downgrade"

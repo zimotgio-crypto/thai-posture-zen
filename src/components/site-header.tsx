@@ -76,7 +76,7 @@ export function SiteHeader() {
           className="group flex flex-col leading-none lg:flex-row lg:items-baseline lg:gap-2"
         >
           <span className="font-serif text-xl tracking-tight text-charcoal">
-            {studio?.name ?? "Thai Posture Lab"}
+            {studio?.name ?? ""}
           </span>
           <span className="mt-1 text-[0.6rem] uppercase tracking-[0.32em] text-gold-deep lg:mt-0 lg:text-[0.62rem] lg:tracking-[0.35em]">
             {studio?.city ?? ""}

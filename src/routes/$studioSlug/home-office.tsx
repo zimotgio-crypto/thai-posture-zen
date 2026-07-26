@@ -6,7 +6,8 @@ import { useBooking } from "@/components/booking-provider";
 import { cn } from "@/lib/utils";
 import { useState } from "react";
 import { useT } from "@/lib/i18n";
-import { studioPublicQuery } from "@/lib/studio-context";
+import { studioPublicQuery, useStudio } from "@/lib/studio-context";
+import { formatPrice, fill } from "@/lib/studio-display";
 
 const SITE_URL = "https://thai-posture-zen.lovable.app";
 
@@ -34,42 +35,54 @@ export const Route = createFileRoute("/$studioSlug/home-office")({
   component: HomeOffice,
 });
 
-const menuMeta: { id: string; price: string; featured?: boolean }[] = [
-  { id: "deep-release", price: "CHF 100.–", featured: true },
-  { id: "thai-stretch", price: "CHF 120.–" },
-  { id: "zuzwiler", price: "CHF 140.–" },
-];
-
 const ritualIcons = [Monitor, Hand, Flame] as const;
 
 function HomeOffice() {
   const { open } = useBooking();
   const t = useT();
-  const [activeTab, setActiveTab] = useState<string>(menuMeta[0].id);
-  const [oilVariant, setOilVariant] = useState<"oil" | "nooil">("oil");
-
-  const activeIdx = menuMeta.findIndex((m) => m.id === activeTab);
-  const active = menuMeta[activeIdx] ?? menuMeta[0];
+  const studio = useStudio();
+  const menu = studio.treatments;
+  const [activeTab, setActiveTab] = useState<string>("");
+  const activeIdx = Math.max(
+    0,
+    menu.findIndex((m) => m.key === activeTab),
+  );
+  const active = menu[activeIdx];
   const activeCopy = t.treatments.menu[activeIdx] ?? t.treatments.menu[0];
-  const isStretch = active.id === "thai-stretch";
-  const displayPrice = isStretch
-    ? oilVariant === "oil" ? "CHF 120.–" : "CHF 100.–"
-    : active.price;
-  const bookingId = isStretch
-    ? oilVariant === "oil" ? "thai-stretch-oil" : "thai-stretch-nooil"
-    : active.id;
+  const [durationIdx, setDurationIdx] = useState(0);
+  const options = active?.options ?? [];
+  const selected = options[durationIdx] ?? options[0];
+  const featured = activeIdx === 0;
+  const displayPrice = selected ? formatPrice(selected.price) : "";
+  const firstTreatmentKey = menu[0]?.key;
+  const lead = menu[0]?.options[0];
+  const heroEyebrow = studio.city
+    ? fill(t.treatments.eyebrowTpl, { city: studio.city })
+    : t.treatments.eyebrow;
+  const heroIntro2 =
+    lead && studio.city
+      ? fill(t.treatments.intro2Tpl, {
+          minutes: String(lead.minutes),
+          price: String(lead.price),
+          city: studio.city,
+        })
+      : t.treatments.intro2;
+
+  if (!active) return null;
 
   return (
     <>
       <section className="relative overflow-hidden">
         <div className="mx-auto grid max-w-7xl gap-14 px-6 pb-20 pt-10 lg:grid-cols-12 lg:px-10 lg:pb-28 lg:pt-16">
           <div className="relative z-10 flex flex-col justify-center lg:col-span-7">
-            <Eyebrow>{t.treatments.eyebrow}</Eyebrow>
+            <Eyebrow>{heroEyebrow}</Eyebrow>
             <h1 className="mt-6 text-[2.4rem] leading-[1.05] text-charcoal sm:text-6xl lg:text-[4rem]">
               {t.treatments.h1a}<span className="text-gold-deep">{t.treatments.h1b}</span>
             </h1>
             <p className="mt-6 max-w-xl text-lg leading-relaxed text-charcoal-soft">
-              {t.treatments.intro1}<strong className="font-medium text-charcoal">{t.treatments.introEm}</strong>{t.treatments.intro2}
+              {t.treatments.intro1}
+              <strong className="font-medium text-charcoal">{menu[0]?.label ?? t.treatments.introEm}</strong>
+              {heroIntro2}
             </p>
 
             <ul className="mt-8 space-y-3">
@@ -84,7 +97,7 @@ function HomeOffice() {
             </ul>
 
             <div className="mt-10">
-              <button onClick={() => open("deep-release")} className="btn-gold inline-flex items-center gap-2 rounded-sm px-8 py-5 text-sm uppercase tracking-[0.24em]">
+              <button onClick={() => open(firstTreatmentKey)} className="btn-gold inline-flex items-center gap-2 rounded-sm px-8 py-5 text-sm uppercase tracking-[0.24em]">
                 {t.treatments.ctaMain} <ArrowRight className="h-4 w-4" />
               </button>
               <p className="mt-3 text-xs uppercase tracking-[0.22em] text-charcoal-soft">{t.treatments.confirmation}</p>
@@ -142,72 +155,78 @@ function HomeOffice() {
             <h2 className="mt-5 text-4xl leading-tight text-charcoal">{t.treatments.menuH}</h2>
           </div>
           <div role="tablist" aria-label={t.treatments.menuEyebrow} className="mx-auto mt-14 flex flex-wrap justify-center gap-2 border-b border-border/60">
-            {menuMeta.map((m, i) => {
-              const isActive = m.id === activeTab;
+            {menu.map((m, i) => {
+              const isActive = i === activeIdx;
               return (
                 <button
-                  key={m.id}
+                  key={m.key}
                   role="tab"
                   aria-selected={isActive}
-                  onClick={() => setActiveTab(m.id)}
+                  onClick={() => {
+                    setActiveTab(m.key);
+                    setDurationIdx(0);
+                  }}
                   className={cn(
                     "-mb-px border-b-2 px-5 py-4 text-[0.72rem] uppercase tracking-[0.24em] transition",
                     isActive ? "border-gold text-gold-deep" : "border-transparent text-charcoal-soft hover:text-charcoal"
                   )}
                 >
-                  {t.treatments.menu[i].name}
+                  {m.label}
                 </button>
               );
             })}
           </div>
           <div className="mx-auto mt-10 max-w-xl">
             <div
-              key={active.id}
+              key={active.key}
               className={cn(
                 "relative flex h-full flex-col rounded-sm border bg-card p-10 transition",
-                active.featured ? "border-gold shadow-[var(--shadow-gold)]" : "border-border/60"
+                featured ? "border-gold shadow-[var(--shadow-gold)]" : "border-border/60"
               )}
             >
-              {active.featured && (
+              {featured && (
                 <div className="absolute -top-3 left-8 rounded-sm bg-gold px-3 py-1 text-[0.62rem] uppercase tracking-[0.28em] text-primary-foreground">
                   {t.treatments.signature}
                 </div>
               )}
-              <div className="text-[0.7rem] uppercase tracking-[0.25em] text-charcoal-soft">{activeCopy.time}</div>
-              <h3 className="mt-3 font-serif text-3xl leading-tight text-charcoal">{activeCopy.name}</h3>
+              <div className="text-[0.7rem] uppercase tracking-[0.25em] text-charcoal-soft">
+                {selected ? `${selected.minutes} Min.` : activeCopy.time}
+              </div>
+              <h3 className="mt-3 font-serif text-3xl leading-tight text-charcoal">{active.label}</h3>
               <div className="mt-2 font-serif text-4xl text-gold-deep">{displayPrice}</div>
-              <p className="mt-5 flex-1 text-base leading-relaxed text-charcoal-soft">{activeCopy.desc}</p>
-              {isStretch && (
-                <div role="radiogroup" aria-label={t.treatments.oilOptionLabel} className="mt-6 grid grid-cols-2 gap-2">
-                  {[
-                    { id: "oil" as const, label: t.treatments.withOil, price: "CHF 120.–" },
-                    { id: "nooil" as const, label: t.treatments.withoutOil, price: "CHF 100.–" },
-                  ].map((opt) => {
-                    const selected = oilVariant === opt.id;
+              <p className="mt-5 flex-1 text-base leading-relaxed text-charcoal-soft">
+                {active.description ?? activeCopy.desc}
+              </p>
+              {options.length > 1 && (
+                <div role="radiogroup" aria-label={t.treatments.menuEyebrow} className="mt-6 grid grid-cols-2 gap-2 sm:grid-cols-4">
+                  {options.map((opt, i) => {
+                    const isSel = i === durationIdx;
                     return (
                       <button
-                        key={opt.id}
+                        key={opt.minutes}
                         type="button"
                         role="radio"
-                        aria-checked={selected}
-                        onClick={() => setOilVariant(opt.id)}
+                        aria-checked={isSel}
+                        onClick={() => setDurationIdx(i)}
                         className={cn(
                           "flex flex-col items-start rounded-sm border px-4 py-3 text-left transition",
-                          selected ? "border-gold bg-gold-soft/40" : "border-border/60 hover:border-gold/60"
+                          isSel ? "border-gold bg-gold-soft/40" : "border-border/60 hover:border-gold/60"
                         )}
                       >
-                        <span className="text-[0.68rem] uppercase tracking-[0.24em] text-charcoal-soft">{opt.label}</span>
-                        <span className="mt-1 font-serif text-lg text-charcoal">{opt.price}</span>
+                        <span className="text-[0.68rem] uppercase tracking-[0.24em] text-charcoal-soft">
+                          {opt.minutes} Min.
+                        </span>
+                        <span className="mt-1 font-serif text-lg text-charcoal">{formatPrice(opt.price)}</span>
                       </button>
                     );
                   })}
                 </div>
               )}
               <button
-                onClick={() => open(bookingId)}
+                onClick={() => open(active.key)}
                 className={cn(
                   "mt-8 rounded-sm py-4 text-[0.72rem] uppercase tracking-[0.24em] transition",
-                  active.featured ? "btn-gold" : "border border-charcoal/70 text-charcoal hover:bg-charcoal hover:text-ivory"
+                  featured ? "btn-gold" : "border border-charcoal/70 text-charcoal hover:bg-charcoal hover:text-ivory"
                 )}
               >
                 {t.treatments.book}
@@ -249,7 +268,7 @@ function HomeOffice() {
             <h2 className="mx-auto mt-4 max-w-2xl text-4xl leading-tight text-ivory sm:text-5xl">
               {t.treatments.ctaH1}<em className="not-italic text-gold-soft">{t.treatments.ctaHEm}</em>{t.treatments.ctaH2}
             </h2>
-            <button onClick={() => open("deep-release")} className="btn-gold mt-10 rounded-sm px-8 py-5 text-sm uppercase tracking-[0.24em]">
+            <button onClick={() => open(firstTreatmentKey)} className="btn-gold mt-10 rounded-sm px-8 py-5 text-sm uppercase tracking-[0.24em]">
               {t.treatments.ctaBtn}
             </button>
           </div>
