@@ -1,5 +1,3 @@
-import { JWT } from "google-auth-library";
-
 const CALENDAR_ID = () => process.env.GOOGLE_CALENDAR_ID ?? "";
 const PEM_BEGIN = "-----BEGIN PRIVATE KEY-----";
 const PEM_END = "-----END PRIVATE KEY-----";
