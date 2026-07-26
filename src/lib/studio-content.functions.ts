@@ -92,14 +92,14 @@ export const updateStudioContent = createServerFn({ method: "POST" })
       const value = (data as Record<string, unknown>)[key];
       if (value !== undefined) patch[column] = value === "" ? null : value;
     }
-    if (Object.keys(patch).length === 0) return { ok: true as const };
-    const { error } = await supabaseAdmin.from("studios")
+    if (Object.keys(patch).length === 0) return { ok: true as const, slug: null as string | null };
+    const { data: row, error } = await supabaseAdmin.from("studios")
       .update(patch as never)
       .eq("id", studioId)
       .select("slug")
       .maybeSingle();
     if (error) throw new Error(error.message);
-    return { ok: true as const };
+    return { ok: true as const, slug: (row as { slug: string } | null)?.slug ?? null };
   });
 
 const slotSchema = z.enum(["logo", "hero", "room", "portrait"]);
