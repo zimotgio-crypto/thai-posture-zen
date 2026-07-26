@@ -152,6 +152,7 @@ export type SessionDraft = {
 };
 
 export type Session = {
+  studioId: string;
   phone: string;
   state: SessionState;
   draft: SessionDraft;
@@ -160,22 +161,24 @@ export type Session = {
 
 const SESSION_TTL_MIN = 30;
 
-export async function loadSession(phone: string): Promise<Session> {
+export async function loadSession(studioId: string, phone: string): Promise<Session> {
   const { supabaseAdmin } = await import("@/integrations/supabase/client.server");
   const { data } = await supabaseAdmin
     .from("whatsapp_sessions")
     .select("phone, state, draft, updated_at")
+    .eq("studio_id", studioId)
     .eq("phone", phone)
     .maybeSingle();
   if (!data) {
-    return { phone, state: "idle", draft: {}, updatedAt: new Date().toISOString() };
+    return { studioId, phone, state: "idle", draft: {}, updatedAt: new Date().toISOString() };
   }
   const updated = new Date(data.updated_at as string).getTime();
   const expired = Date.now() - updated > SESSION_TTL_MIN * 60 * 1000;
   if (expired) {
-    return { phone, state: "idle", draft: {}, updatedAt: new Date().toISOString() };
+    return { studioId, phone, state: "idle", draft: {}, updatedAt: new Date().toISOString() };
   }
   return {
+    studioId,
     phone,
     state: (data.state as SessionState) ?? "idle",
     draft: (data.draft as SessionDraft) ?? {},
@@ -183,15 +186,20 @@ export async function loadSession(phone: string): Promise<Session> {
   };
 }
 
-export async function saveSession(phone: string, state: SessionState, draft: SessionDraft): Promise<void> {
+export async function saveSession(
+  studioId: string,
+  phone: string,
+  state: SessionState,
+  draft: SessionDraft,
+): Promise<void> {
   const { supabaseAdmin } = await import("@/integrations/supabase/client.server");
   const { error } = await supabaseAdmin.from("whatsapp_sessions").upsert(
-    { phone, state, draft, updated_at: new Date().toISOString() },
-    { onConflict: "phone" },
+    { studio_id: studioId, phone, state, draft, updated_at: new Date().toISOString() },
+    { onConflict: "studio_id,phone" },
   );
   if (error) console.error("[whatsapp] saveSession error", error.message);
 }
 
-export async function resetSession(phone: string): Promise<void> {
-  await saveSession(phone, "idle", {});
+export async function resetSession(studioId: string, phone: string): Promise<void> {
+  await saveSession(studioId, phone, "idle", {});
 }
