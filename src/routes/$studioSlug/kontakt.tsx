@@ -53,9 +53,14 @@ function Kontakt() {
     street: studio.street ?? "",
     city: studio.city ?? "",
   };
-  const faqs = t.contact.faqs.map((f, i) =>
-    i === t.contact.faqs.length - 1 && studio.parkingNote ? { ...f, a: studio.parkingNote } : f,
-  );
+  const faqs =
+    studio.faqs.length > 0
+      ? studio.faqs.map((f) => ({ q: f.question, a: f.answer }))
+      : t.contact.faqs.map((f, i) =>
+          i === t.contact.faqs.length - 1 && studio.parkingNote
+            ? { ...f, a: studio.parkingNote }
+            : f,
+        );
   return (
     <>
       <Section className="pt-14 lg:pt-20">
