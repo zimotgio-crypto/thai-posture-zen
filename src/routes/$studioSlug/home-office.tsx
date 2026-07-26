@@ -7,7 +7,7 @@ import { cn } from "@/lib/utils";
 import { useState } from "react";
 import { useT } from "@/lib/i18n";
 import { studioPublicQuery, useStudio } from "@/lib/studio-context";
-import { formatPrice } from "@/lib/studio-display";
+import { formatPrice, fill } from "@/lib/studio-display";
 
 const SITE_URL = "https://thai-posture-zen.lovable.app";
 
