@@ -57,6 +57,8 @@ export function ContentTab({ studioId }: { studioId: string }) {
     aboutHeading: "",
     aboutText: "",
     features: [] as { title: string; text: string }[],
+    testimonials: [] as { quote: string; author: string }[],
+    faqs: [] as { question: string; answer: string }[],
   });
   const [busy, setBusy] = useState(false);
 
@@ -69,6 +71,8 @@ export function ContentTab({ studioId }: { studioId: string }) {
       aboutHeading: d.aboutHeading ?? "",
       aboutText: d.aboutText ?? "",
       features: d.features ?? [],
+      testimonials: d.testimonials ?? [],
+      faqs: d.faqs ?? [],
     });
   }, [content.data]);
 
@@ -83,6 +87,12 @@ export function ContentTab({ studioId }: { studioId: string }) {
           aboutHeading: form.aboutHeading,
           aboutText: form.aboutText,
           features: form.features.filter((f) => f.title.trim() || f.text.trim()),
+          testimonials: form.testimonials
+            .filter((v) => v.quote.trim())
+            .map((v) => ({ quote: v.quote.trim(), author: v.author.trim() })),
+          faqs: form.faqs
+            .filter((f) => f.question.trim())
+            .map((f) => ({ question: f.question.trim(), answer: f.answer.trim() })),
         },
       });
       if (res.slug) invalidateStudioPublic(qc, res.slug);
