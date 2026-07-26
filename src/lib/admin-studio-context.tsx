@@ -11,9 +11,16 @@ export type AdminStudio = {
   email: string | null;
 };
 
+export type AdminTreatment = {
+  key: string;
+  label: string;
+  options: { minutes: number; price: number }[];
+};
+
 export type AdminStudioValue = {
   studioId: string;
   studio: AdminStudio;
+  treatments: AdminTreatment[];
   studios: { id: string; name: string; city: string | null }[];
   isPlatformAdmin: boolean;
   setStudioId: (id: string) => void;

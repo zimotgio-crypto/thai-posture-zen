@@ -211,6 +211,11 @@ function AdminShell() {
          phone: studio.phone,
          email: studio.email,
        },
+       treatments: currentStudio.data.treatments.map((tr) => ({
+         key: tr.key,
+         label: tr.label,
+         options: tr.options,
+       })),
        studios: myStudios.data?.studios ?? [],
        isPlatformAdmin: myStudios.data?.isPlatformAdmin ?? false,
        setStudioId: switchStudio,
