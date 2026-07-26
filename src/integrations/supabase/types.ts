@@ -25,6 +25,7 @@ export type Database = {
           notes: string | null
           silent: boolean
           source: Database["public"]["Enums"]["booking_source"]
+          studio_id: string
           time: string
           treatment: string
         }
@@ -38,6 +39,7 @@ export type Database = {
           notes?: string | null
           silent?: boolean
           source?: Database["public"]["Enums"]["booking_source"]
+          studio_id: string
           time: string
           treatment: string
         }
@@ -51,6 +53,7 @@ export type Database = {
           notes?: string | null
           silent?: boolean
           source?: Database["public"]["Enums"]["booking_source"]
+          studio_id?: string
           time?: string
           treatment?: string
         }
@@ -60,6 +63,13 @@ export type Database = {
             columns: ["client_id"]
             isOneToOne: false
             referencedRelation: "clients"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "bookings_studio_id_fkey"
+            columns: ["studio_id"]
+            isOneToOne: false
+            referencedRelation: "studios"
             referencedColumns: ["id"]
           },
         ]
@@ -74,6 +84,7 @@ export type Database = {
           last_name: string
           phone: string
           street: string
+          studio_id: string
           updated_at: string
           zip: string
         }
@@ -86,6 +97,7 @@ export type Database = {
           last_name: string
           phone: string
           street: string
+          studio_id: string
           updated_at?: string
           zip: string
         }
@@ -98,8 +110,32 @@ export type Database = {
           last_name?: string
           phone?: string
           street?: string
+          studio_id?: string
           updated_at?: string
           zip?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "clients_studio_id_fkey"
+            columns: ["studio_id"]
+            isOneToOne: false
+            referencedRelation: "studios"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      platform_admins: {
+        Row: {
+          created_at: string
+          user_id: string
+        }
+        Insert: {
+          created_at?: string
+          user_id: string
+        }
+        Update: {
+          created_at?: string
+          user_id?: string
         }
         Relationships: []
       }
@@ -115,6 +151,7 @@ export type Database = {
           id: string
           mobility: Json
           pain_level: number | null
+          studio_id: string
           tension: Json
           treatment_date: string | null
           treatment_name: string | null
@@ -130,6 +167,7 @@ export type Database = {
           id?: string
           mobility?: Json
           pain_level?: number | null
+          studio_id: string
           tension?: Json
           treatment_date?: string | null
           treatment_name?: string | null
@@ -145,6 +183,7 @@ export type Database = {
           id?: string
           mobility?: Json
           pain_level?: number | null
+          studio_id?: string
           tension?: Json
           treatment_date?: string | null
           treatment_name?: string | null
@@ -162,6 +201,149 @@ export type Database = {
             columns: ["client_id"]
             isOneToOne: false
             referencedRelation: "clients"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "session_logs_studio_id_fkey"
+            columns: ["studio_id"]
+            isOneToOne: false
+            referencedRelation: "studios"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      studio_members: {
+        Row: {
+          created_at: string
+          id: string
+          role: string
+          studio_id: string
+          user_id: string
+        }
+        Insert: {
+          created_at?: string
+          id?: string
+          role?: string
+          studio_id: string
+          user_id: string
+        }
+        Update: {
+          created_at?: string
+          id?: string
+          role?: string
+          studio_id?: string
+          user_id?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "studio_members_studio_id_fkey"
+            columns: ["studio_id"]
+            isOneToOne: false
+            referencedRelation: "studios"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      studios: {
+        Row: {
+          active: boolean
+          buffer_minutes: number
+          city: string | null
+          country: string | null
+          created_at: string
+          email: string | null
+          google_calendar_id: string | null
+          id: string
+          name: string
+          opening_hours: Json
+          phone: string | null
+          slot_step_minutes: number
+          slug: string
+          street: string | null
+          timezone: string
+          whatsapp_phone_number_id: string | null
+          zip: string | null
+        }
+        Insert: {
+          active?: boolean
+          buffer_minutes?: number
+          city?: string | null
+          country?: string | null
+          created_at?: string
+          email?: string | null
+          google_calendar_id?: string | null
+          id?: string
+          name: string
+          opening_hours?: Json
+          phone?: string | null
+          slot_step_minutes?: number
+          slug: string
+          street?: string | null
+          timezone?: string
+          whatsapp_phone_number_id?: string | null
+          zip?: string | null
+        }
+        Update: {
+          active?: boolean
+          buffer_minutes?: number
+          city?: string | null
+          country?: string | null
+          created_at?: string
+          email?: string | null
+          google_calendar_id?: string | null
+          id?: string
+          name?: string
+          opening_hours?: Json
+          phone?: string | null
+          slot_step_minutes?: number
+          slug?: string
+          street?: string | null
+          timezone?: string
+          whatsapp_phone_number_id?: string | null
+          zip?: string | null
+        }
+        Relationships: []
+      }
+      treatments: {
+        Row: {
+          active: boolean
+          created_at: string
+          description: string | null
+          id: string
+          key: string
+          label: string
+          options: Json
+          sort_order: number
+          studio_id: string
+        }
+        Insert: {
+          active?: boolean
+          created_at?: string
+          description?: string | null
+          id?: string
+          key: string
+          label: string
+          options?: Json
+          sort_order?: number
+          studio_id: string
+        }
+        Update: {
+          active?: boolean
+          created_at?: string
+          description?: string | null
+          id?: string
+          key?: string
+          label?: string
+          options?: Json
+          sort_order?: number
+          studio_id?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "treatments_studio_id_fkey"
+            columns: ["studio_id"]
+            isOneToOne: false
+            referencedRelation: "studios"
             referencedColumns: ["id"]
           },
         ]
@@ -194,6 +376,7 @@ export type Database = {
           last_message_id: string | null
           phone: string
           state: string
+          studio_id: string
           updated_at: string
         }
         Insert: {
@@ -202,6 +385,7 @@ export type Database = {
           last_message_id?: string | null
           phone: string
           state?: string
+          studio_id: string
           updated_at?: string
         }
         Update: {
@@ -210,9 +394,18 @@ export type Database = {
           last_message_id?: string | null
           phone?: string
           state?: string
+          studio_id?: string
           updated_at?: string
         }
-        Relationships: []
+        Relationships: [
+          {
+            foreignKeyName: "whatsapp_sessions_studio_id_fkey"
+            columns: ["studio_id"]
+            isOneToOne: false
+            referencedRelation: "studios"
+            referencedColumns: ["id"]
+          },
+        ]
       }
     }
     Views: {
@@ -224,6 +417,11 @@ export type Database = {
           _role: Database["public"]["Enums"]["app_role"]
           _user_id: string
         }
+        Returns: boolean
+      }
+      is_platform_admin: { Args: { _user_id: string }; Returns: boolean }
+      is_studio_member: {
+        Args: { _studio_id: string; _user_id: string }
         Returns: boolean
       }
     }

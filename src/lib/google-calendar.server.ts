@@ -1,4 +1,9 @@
-const CALENDAR_ID = () => process.env.GOOGLE_CALENDAR_ID ?? "";
+// Per-studio calendar id, with the platform-wide env var as fallback.
+function calId(explicit?: string | null): string {
+  const trimmed = explicit?.trim();
+  if (trimmed) return trimmed;
+  return process.env.GOOGLE_CALENDAR_ID ?? "";
+}
 const PEM_BEGIN = "-----BEGIN PRIVATE KEY-----";
 const PEM_END = "-----END PRIVATE KEY-----";
 
@@ -98,8 +103,8 @@ function describeKeyShape(): {
   };
 }
 
-export function isGoogleConfigured(): boolean {
-  return Boolean(CALENDAR_ID() && SA_EMAIL() && SA_KEY());
+export function isGoogleConfigured(calendarId?: string | null): boolean {
+  return Boolean(calId(calendarId) && SA_EMAIL() && SA_KEY());
 }
 
 let cachedToken: { token: string; exp: number } | null = null;
@@ -211,6 +216,8 @@ type CreateInput = {
   clientName: string;
   clientPhone?: string | null;
   source: "online" | "manual" | "block";
+  calendarId?: string | null;
+  studioName?: string | null;
 };
 
 type JsonValue = string | number | boolean | null | JsonValue[] | { [key: string]: JsonValue };
@@ -223,7 +230,7 @@ function normalizeException(err: unknown): GoogleException {
   return { message: String(err), stack: null };
 }
 
-function freeBusyRequestBody(day: string) {
+function freeBusyRequestBody(day: string, calendarId?: string | null) {
   // Generous UTC window that safely covers the full Zurich day regardless of DST.
   const timeMin = new Date(`${day}T00:00:00Z`);
   timeMin.setUTCHours(timeMin.getUTCHours() - 3);
@@ -233,11 +240,11 @@ function freeBusyRequestBody(day: string) {
     timeMin: timeMin.toISOString(),
     timeMax: timeMax.toISOString(),
     timeZone: "Europe/Zurich",
-    items: [{ id: CALENDAR_ID() }],
+    items: [{ id: calId(calendarId) }],
   };
 }
 
-function freeBusyRangeRequestBody(from: string, to: string) {
+function freeBusyRangeRequestBody(from: string, to: string, calendarId?: string | null) {
   const timeMin = new Date(`${from}T00:00:00Z`);
   timeMin.setUTCHours(timeMin.getUTCHours() - 3);
   const timeMax = new Date(`${to}T23:59:59Z`);
@@ -246,19 +253,20 @@ function freeBusyRangeRequestBody(from: string, to: string) {
     timeMin: timeMin.toISOString(),
     timeMax: timeMax.toISOString(),
     timeZone: "Europe/Zurich",
-    items: [{ id: CALENDAR_ID() }],
+    items: [{ id: calId(calendarId) }],
   };
 }
 
 function deriveRangeIntervalsFromFreeBusy(
   json: unknown,
+  calendarId?: string | null,
 ): { day: string; time: string; duration: number }[] {
   if (!json || typeof json !== "object") return [];
-  const calendarId = CALENDAR_ID();
+  const target = calId(calendarId);
   const root = json as {
     calendars?: Record<string, { busy?: { start: string; end: string }[] }>;
   };
-  const busy = root.calendars?.[calendarId]?.busy ?? [];
+  const busy = root.calendars?.[target]?.busy ?? [];
   const fmt = new Intl.DateTimeFormat("de-CH", {
     timeZone: "Europe/Zurich",
     hour: "2-digit",
@@ -289,8 +297,9 @@ function deriveRangeIntervalsFromFreeBusy(
 export async function getGoogleBusyIntervalsInRange(
   from: string,
   to: string,
+  calendarId?: string | null,
 ): Promise<{ day: string; time: string; duration: number }[]> {
-  if (!isGoogleConfigured()) return [];
+  if (!isGoogleConfigured(calendarId)) return [];
   try {
     const token = await getAuthToken();
     if (!token) return [];
@@ -300,7 +309,7 @@ export async function getGoogleBusyIntervalsInRange(
         Authorization: `Bearer ${token}`,
         "Content-Type": "application/json",
       },
-      body: JSON.stringify(freeBusyRangeRequestBody(from, to)),
+      body: JSON.stringify(freeBusyRangeRequestBody(from, to, calendarId)),
       signal: AbortSignal.timeout(5000),
     });
     const text = await res.text().catch(() => "");
@@ -309,14 +318,14 @@ export async function getGoogleBusyIntervalsInRange(
       console.error(`[google-calendar] freeBusy range failed ${res.status}: ${text}`);
       return [];
     }
-    const calendarErrors = extractCalendarErrors(json);
+    const calendarErrors = extractCalendarErrors(json, calendarId);
     if (calendarErrors) {
       console.error("[google-calendar] freeBusy range calendar errors", {
         calendarErrors,
         rawResponse: json ?? text,
       });
     }
-    return deriveRangeIntervalsFromFreeBusy(json);
+    return deriveRangeIntervalsFromFreeBusy(json, calendarId);
   } catch (err) {
     console.error("[google-calendar] freeBusy range error", normalizeException(err));
     return [];
@@ -334,13 +343,14 @@ function parseJsonBody(text: string): JsonValue | null {
 function deriveIntervalsFromFreeBusy(
   day: string,
   json: unknown,
+  calendarId?: string | null,
 ): { time: string; duration: number }[] {
   if (!json || typeof json !== "object") return [];
-  const calendarId = CALENDAR_ID();
+  const target = calId(calendarId);
   const root = json as {
     calendars?: Record<string, { busy?: { start: string; end: string }[] }>;
   };
-  const busy = root.calendars?.[calendarId]?.busy ?? [];
+  const busy = root.calendars?.[target]?.busy ?? [];
   const fmt = new Intl.DateTimeFormat("de-CH", {
     timeZone: "Europe/Zurich",
     hour: "2-digit",
@@ -369,25 +379,25 @@ function deriveIntervalsFromFreeBusy(
   return out;
 }
 
-function extractCalendarErrors(json: unknown): JsonValue | null {
+function extractCalendarErrors(json: unknown, calendarId?: string | null): JsonValue | null {
   if (!json || typeof json !== "object") return null;
-  const calendarId = CALENDAR_ID();
+  const target = calId(calendarId);
   const root = json as { calendars?: Record<string, { errors?: JsonValue }> };
-  return root.calendars?.[calendarId]?.errors ?? null;
+  return root.calendars?.[target]?.errors ?? null;
 }
 
 export async function createGoogleEvent(input: CreateInput): Promise<string | null> {
-  if (!isGoogleConfigured()) return null;
+  if (!isGoogleConfigured(input.calendarId)) return null;
   try {
     const token = await getAuthToken();
     if (!token) return null;
-    const url = `https://www.googleapis.com/calendar/v3/calendars/${encodeURIComponent(CALENDAR_ID())}/events`;
+    const url = `https://www.googleapis.com/calendar/v3/calendars/${encodeURIComponent(calId(input.calendarId))}/events`;
     const body = {
       summary:
         input.source === "block"
           ? "Blockiert"
           : `${input.treatment} — ${input.clientName}`,
-      description: `Thai Posture Lab Buchung\nTelefon: ${input.clientPhone ?? "—"}\nQuelle: ${input.source}`,
+      description: `${input.studioName ?? "Thai Posture Lab"} Buchung\nTelefon: ${input.clientPhone ?? "—"}\nQuelle: ${input.source}`,
       start: { dateTime: `${input.day}T${input.time}:00`, timeZone: "Europe/Zurich" },
       end: {
         dateTime: addMinutesIso(input.day, input.time, input.durationMinutes),
@@ -417,12 +427,15 @@ export async function createGoogleEvent(input: CreateInput): Promise<string | nu
   }
 }
 
-export async function deleteGoogleEvent(eventId: string): Promise<void> {
-  if (!isGoogleConfigured() || !eventId) return;
+export async function deleteGoogleEvent(
+  eventId: string,
+  calendarId?: string | null,
+): Promise<void> {
+  if (!isGoogleConfigured(calendarId) || !eventId) return;
   try {
     const token = await getAuthToken();
     if (!token) return;
-    const url = `https://www.googleapis.com/calendar/v3/calendars/${encodeURIComponent(CALENDAR_ID())}/events/${encodeURIComponent(eventId)}`;
+    const url = `https://www.googleapis.com/calendar/v3/calendars/${encodeURIComponent(calId(calendarId))}/events/${encodeURIComponent(eventId)}`;
     const res = await fetch(url, {
       method: "DELETE",
       headers: { Authorization: `Bearer ${token}` },
@@ -439,8 +452,9 @@ export async function deleteGoogleEvent(eventId: string): Promise<void> {
 
 export async function getGoogleBusyIntervals(
   day: string,
+  calendarId?: string | null,
 ): Promise<{ time: string; duration: number }[]> {
-  if (!isGoogleConfigured()) return [];
+  if (!isGoogleConfigured(calendarId)) return [];
   try {
     const token = await getAuthToken();
     if (!token) return [];
@@ -450,7 +464,7 @@ export async function getGoogleBusyIntervals(
         Authorization: `Bearer ${token}`,
         "Content-Type": "application/json",
       },
-      body: JSON.stringify(freeBusyRequestBody(day)),
+      body: JSON.stringify(freeBusyRequestBody(day, calendarId)),
       signal: AbortSignal.timeout(5000),
     });
     const text = await res.text().catch(() => "");
@@ -459,21 +473,24 @@ export async function getGoogleBusyIntervals(
       console.error(`[google-calendar] freeBusy failed ${res.status}: ${text}`);
       return [];
     }
-    const calendarErrors = extractCalendarErrors(json);
+    const calendarErrors = extractCalendarErrors(json, calendarId);
     if (calendarErrors) {
       console.error("[google-calendar] freeBusy calendar errors", {
         calendarErrors,
         rawResponse: json ?? text,
       });
     }
-    return deriveIntervalsFromFreeBusy(day, json);
+    return deriveIntervalsFromFreeBusy(day, json, calendarId);
   } catch (err) {
     console.error("[google-calendar] freeBusy error", normalizeException(err));
     return [];
   }
 }
 
-export async function debugGoogleCalendarDay(day: string): Promise<{
+export async function debugGoogleCalendarDay(
+  day: string,
+  calendarId?: string | null,
+): Promise<{
   configured: boolean;
   accessTokenOk: boolean;
   keyShape: ReturnType<typeof describeKeyShape>;
@@ -488,7 +505,7 @@ export async function debugGoogleCalendarDay(day: string): Promise<{
   exceptions: GoogleException[];
 }> {
   const exceptions: GoogleException[] = [];
-  const configured = isGoogleConfigured();
+  const configured = isGoogleConfigured(calendarId);
   const keyShape = describeKeyShape();
   let accessTokenOk = false;
   let freeBusyRaw: {
@@ -513,7 +530,7 @@ export async function debugGoogleCalendarDay(day: string): Promise<{
         Authorization: `Bearer ${token}`,
         "Content-Type": "application/json",
       },
-      body: JSON.stringify(freeBusyRequestBody(day)),
+      body: JSON.stringify(freeBusyRequestBody(day, calendarId)),
       signal: AbortSignal.timeout(5000),
     });
     const bodyText = await res.text();
@@ -529,7 +546,7 @@ export async function debugGoogleCalendarDay(day: string): Promise<{
     if (!res.ok) {
       console.error(`[google-calendar] debug freeBusy failed ${res.status}: ${bodyText}`);
     }
-    const calendarErrors = extractCalendarErrors(bodyJson);
+    const calendarErrors = extractCalendarErrors(bodyJson, calendarId);
     if (calendarErrors) {
       console.error("[google-calendar] debug freeBusy calendar errors", {
         calendarErrors,
@@ -537,7 +554,7 @@ export async function debugGoogleCalendarDay(day: string): Promise<{
       });
     }
     if (res.ok && bodyJson) {
-      derivedIntervals = deriveIntervalsFromFreeBusy(day, bodyJson);
+      derivedIntervals = deriveIntervalsFromFreeBusy(day, bodyJson, calendarId);
     }
   } catch (err) {
     const normalized = normalizeException(err);
