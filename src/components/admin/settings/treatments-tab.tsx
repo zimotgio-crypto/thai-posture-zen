@@ -14,6 +14,7 @@ import {
 } from "@/lib/studio-settings.functions";
 import { invalidateStudioPublic } from "@/lib/studio-context";
 import { SectionCard, TextField, AreaField, Field } from "./field";
+import { StudioText } from "@/components/studio-text";
 
 export type SettingsTreatment = {
   id: string;
@@ -127,10 +128,15 @@ export function TreatmentsTab({
         <SectionCard key={item.id}>
           <div className="flex flex-wrap items-start justify-between gap-3">
             <div>
-              <div className="font-serif text-xl text-charcoal">{item.label}</div>
-              <div className="mt-1 text-[0.66rem] uppercase tracking-[0.22em] text-charcoal-soft">
+              <StudioText as="div" className="font-serif text-xl text-charcoal">
+                {item.label}
+              </StudioText>
+              <StudioText
+                as="div"
+                className="mt-1 text-[0.66rem] uppercase tracking-[0.22em] text-charcoal-soft"
+              >
                 {item.key}
-              </div>
+              </StudioText>
               <div className="mt-2 flex flex-wrap gap-2">
                 {item.options.map((o) => (
                   <span
