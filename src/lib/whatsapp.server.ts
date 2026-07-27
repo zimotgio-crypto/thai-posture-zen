@@ -16,6 +16,14 @@ export function isWhatsAppConfigured(): boolean {
   return Boolean(process.env.WHATSAPP_PHONE_NUMBER_ID && process.env.WHATSAPP_ACCESS_TOKEN);
 }
 
+// Diagnostic only: logs non-sensitive shape metadata about the token, never its value.
+function logTokenShape(): void {
+  const raw = process.env.WHATSAPP_ACCESS_TOKEN ?? "";
+  console.log(
+    `[whatsapp] token shape length=${raw.length} startsWithEAA=${raw.startsWith("EAA")} hasSpace=${/\s/.test(raw)} hasNewline=${/[\r\n]/.test(raw)} hasQuote=${/["']/.test(raw)} first4=${raw.slice(0, 4)} last4=${raw.slice(-4)} phoneNumberId=${process.env.WHATSAPP_PHONE_NUMBER_ID ?? "(missing)"}`,
+  );
+}
+
 async function post(payload: Record<string, unknown>): Promise<void> {
   if (!isWhatsAppConfigured()) {
     console.error("[whatsapp] not configured, cannot send message");
@@ -34,6 +42,7 @@ async function post(payload: Record<string, unknown>): Promise<void> {
     if (!res.ok) {
       const text = await res.text().catch(() => "");
       console.error(`[whatsapp] send failed ${res.status}: ${text}`);
+      logTokenShape();
     }
   } catch (err) {
     console.error("[whatsapp] send exception", err);
