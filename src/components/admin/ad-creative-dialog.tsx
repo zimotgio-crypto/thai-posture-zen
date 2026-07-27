@@ -26,6 +26,7 @@ import {
   type AdFormatKey,
   type AdTemplateKey,
   type AdTextPosition,
+  type AdCreativeInput,
 } from "@/lib/ad-creative";
 
 function roundChf(v: number) {
