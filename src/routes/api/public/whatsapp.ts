@@ -112,7 +112,7 @@ export const Route = createFileRoute("/api/public/whatsapp")({
                 ? await getStudioByWhatsappPhoneNumberId(batch.phoneNumberId)
                 : null;
               if (!studio) {
-                console.error(
+                console.warn(
                   `[whatsapp webhook] no studio for phone_number_id=${batch.phoneNumberId || "(missing)"} — ignoring ${batch.messages.length} message(s)`,
                 );
                 continue;
