@@ -521,6 +521,10 @@ async function handleConfirm(
   }
 
   const { supabaseAdmin } = await import("@/integrations/supabase/client.server");
+  const bookedPrice =
+    treatmentByKey(st, treatmentId)
+      ?.options?.find?.((o: { minutes: number; price: number }) => o.minutes === durationMinutes)
+      ?.price ?? null;
   const insert = await supabaseAdmin
     .from("bookings")
     .insert({
@@ -532,6 +536,7 @@ async function handleConfirm(
       duration_minutes: durationMinutes,
       silent: false,
       source: "online",
+      price_chf: bookedPrice,
     })
     .select("id")
     .single();
