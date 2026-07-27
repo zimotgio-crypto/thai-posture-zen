@@ -108,6 +108,7 @@ export const submitBooking = createServerFn({ method: "POST" })
         duration_minutes: data.durationMinutes,
         silent: data.silent,
         source: "online",
+        price_chf: price,
       })
       .select("id")
       .single();
