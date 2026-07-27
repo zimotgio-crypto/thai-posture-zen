@@ -350,7 +350,7 @@ export function BookingModal({
                     treatment === tr.key ? "border-gold bg-gold-soft/30" : "border-border hover:border-gold/60"
                   )}
                 >
-                  <span className="font-medium text-charcoal">{tr.label}</span>
+                  <StudioText className="font-medium text-charcoal">{tr.label}</StudioText>
                 </button>
               ))}
             </div>
