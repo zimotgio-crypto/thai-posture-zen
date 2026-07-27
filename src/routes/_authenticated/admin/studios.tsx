@@ -14,6 +14,7 @@ import {
   setStudioActive,
 } from "@/lib/platform-studios.functions";
 import { SectionCard, TextField } from "@/components/admin/settings/field";
+import { MediaGrid, MediaUploadForm, useMediaAssets } from "@/components/admin/media-library";
 
 export const Route = createFileRoute("/_authenticated/admin/studios")({
   head: () => ({
@@ -24,7 +25,8 @@ export const Route = createFileRoute("/_authenticated/admin/studios")({
 
 function StudiosPage() {
   const t = useAdminT();
-  const { isPlatformAdmin } = useAdminStudio();
+  const { isPlatformAdmin, studioId } = useAdminStudio();
+  const library = useMediaAssets(isPlatformAdmin ? studioId : null);
   const list = useServerFn(listAllStudios);
   const create = useServerFn(createStudio);
   const toggle = useServerFn(setStudioActive);
@@ -194,6 +196,27 @@ function StudiosPage() {
             </div>
           </SectionCard>
         ))}
+      </div>
+
+      <div className="space-y-4">
+        <h2 className="font-serif text-2xl text-charcoal">{t.media.platformSection}</h2>
+        <p className="text-sm text-charcoal-soft">{t.media.platformHint}</p>
+        <MediaUploadForm
+          scope="platform"
+          studioId={studioId}
+          onUploaded={() => library.refetch()}
+        />
+        {library.isLoading ? (
+          <p className="text-sm text-charcoal-soft">{t.common.loading}</p>
+        ) : (
+          <MediaGrid
+            assets={library.data?.library ?? []}
+            studioId={studioId}
+            editable
+            empty={t.media.emptyLibrary}
+            onChanged={() => library.refetch()}
+          />
+        )}
       </div>
     </div>
   );
