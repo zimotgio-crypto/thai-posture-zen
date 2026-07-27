@@ -645,6 +645,7 @@ export function BookingModal({
 
           <section className="flex items-start gap-4 rounded-sm border border-gold/40 bg-gold-soft/20 p-4">
             <Switch checked={silent} onCheckedChange={setSilent} id="silent" className="mt-1" />
+            {null}
             <div className="space-y-1">
               <Label htmlFor="silent" className="text-charcoal">{t.booking.silent}</Label>
               <p className="text-sm text-charcoal-soft">{t.booking.silentDesc}</p>
