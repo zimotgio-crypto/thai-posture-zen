@@ -178,14 +178,6 @@ export function BookingModal({
     }
   }, [open]);
 
-  const unusedCodeMessages: Record<string, string> = {
-    unbekannt: "Code unbekannt",
-    abgelaufen: "Aktion abgelaufen",
-    ausgebucht: "Aktion ausgebucht",
-    andere_behandlung: "Code gilt für eine andere Behandlung",
-    nur_neukunden: "Code gilt nur für Erstbuchungen",
-  };
-
   // Fetch existing bookings for the selected day so we can hide occupied slots.
   useEffect(() => {
     if (!open || !day) {
