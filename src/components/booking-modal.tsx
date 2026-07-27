@@ -1,6 +1,7 @@
 import { useEffect, useMemo, useRef, useState } from "react";
 import { useServerFn } from "@tanstack/react-start";
-import { submitBooking, listBookedTimes } from "@/lib/booking.functions";
+import { submitBooking, listBookedTimes, validateCampaignCode } from "@/lib/booking.functions";
+import type { CampaignCheckResult } from "@/lib/booking.functions";
 import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogDescription } from "@/components/ui/dialog";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
@@ -149,6 +150,18 @@ export function BookingModal({
   const [submitting, setSubmitting] = useState(false);
   const listBooked = useServerFn(listBookedTimes);
   const submitBookingFn = useServerFn(submitBooking);
+  const checkCode = useServerFn(validateCampaignCode);
+  const [code, setCode] = useState("");
+  const [codeState, setCodeState] = useState<CampaignCheckResult | null>(null);
+  const [codeChecking, setCodeChecking] = useState(false);
+
+  const codeMessages: Record<string, string> = {
+    unbekannt: "Code unbekannt",
+    abgelaufen: "Aktion abgelaufen",
+    ausgebucht: "Aktion ausgebucht",
+    andere_behandlung: "Code gilt für eine andere Behandlung",
+    nur_neukunden: "Code gilt nur für Erstbuchungen",
+  };
 
   // Fetch existing bookings for the selected day so we can hide occupied slots.
   useEffect(() => {
@@ -176,6 +189,44 @@ export function BookingModal({
       cancelled = true;
     };
   }, [open, day, listBooked, studio.slug]);
+
+  // Code verzögert prüfen; Behandlung und Dauer fliessen mit ein, weil sich
+  // Preis und Gültigkeit dadurch ändern.
+  useEffect(() => {
+    const trimmed = code.trim();
+    if (!open || !trimmed || !treatment) {
+      setCodeState(null);
+      setCodeChecking(false);
+      return;
+    }
+    setCodeChecking(true);
+    let cancelled = false;
+    const handle = setTimeout(() => {
+      checkCode({
+        data: {
+          studioSlug: studio.slug,
+          code: trimmed,
+          treatmentKey: treatment,
+          durationMinutes: durationMin,
+        },
+      })
+        .then((res) => {
+          if (!cancelled) setCodeState(res);
+        })
+        .catch(() => {
+          if (!cancelled) setCodeState({ valid: false, reason: "unbekannt" });
+        })
+        .finally(() => {
+          if (!cancelled) setCodeChecking(false);
+        });
+    }, 500);
+    return () => {
+      cancelled = true;
+      clearTimeout(handle);
+      setCodeChecking(false);
+      clearTimeout(handle);
+    };
+  }, [open, code, treatment, durationMin, checkCode, studio.slug]);
 
   const today = useMemo(() => startOfDay(new Date()), []);
   const cells = useMemo(() => buildMonthGrid(cursor), [cursor]);
@@ -281,9 +332,22 @@ export function BookingModal({
           street: street.trim(),
           zip: zip.trim(),
           city: city.trim(),
+          code: code.trim() || undefined,
         },
       });
       if (!res.ok) {
+        const reason = (res as { reason?: string }).reason ?? "";
+        if (reason.startsWith("code_")) {
+          const key = reason.slice(5);
+          if (key === "ausgebucht") {
+            toast.error("Die Aktion ist inzwischen ausgebucht. Bitte ohne Code buchen.");
+          } else {
+            toast.error(codeMessages[key] ?? "Der Gutscheincode ist ungültig.");
+          }
+          setCode("");
+          setCodeState(null);
+          return;
+        }
         toast.error(t.booking.noSlots);
         // Refresh availability so the disabled state shows up immediately.
         listBooked({ data: { day, studioSlug: studio.slug } })
@@ -304,6 +368,8 @@ export function BookingModal({
       setStreet("");
       setZip("");
       setCity("");
+      setCode("");
+      setCodeState(null);
       setErrors({});
       setDateError(false);
       setTimeError(false);
