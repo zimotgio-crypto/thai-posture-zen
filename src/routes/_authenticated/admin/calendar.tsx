@@ -15,10 +15,10 @@ import {
   DialogTitle,
   DialogDescription,
 } from "@/components/ui/dialog";
-import { formatSwissDate, formatDuration, priceForTreatment } from "@/lib/pricing";
+import { formatSwissDate, formatDuration } from "@/lib/pricing";
 import { useT } from "@/lib/i18n";
 import { useAdminT, useAdminLocale } from "@/lib/admin-i18n";
-import { useAdminStudio } from "@/lib/admin-studio-context";
+import { useAdminStudio, type AdminTreatment } from "@/lib/admin-studio-context";
 
 type BookingRow = {
   id: string;
@@ -30,6 +30,7 @@ type BookingRow = {
   source: string | null;
   notes: string | null;
   client_id: string | null;
+  price_chf?: number | string | null;
   clients?: {
     id: string;
     first_name: string;
