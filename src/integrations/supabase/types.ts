@@ -255,6 +255,66 @@ export type Database = {
           },
         ]
       }
+      media_assets: {
+        Row: {
+          consent_ok: boolean
+          created_at: string
+          height: number | null
+          id: string
+          kind: string
+          license_note: string | null
+          source: string
+          storage_path: string
+          studio_id: string | null
+          tags: string[]
+          title: string
+          width: number | null
+        }
+        Insert: {
+          consent_ok?: boolean
+          created_at?: string
+          height?: number | null
+          id?: string
+          kind?: string
+          license_note?: string | null
+          source?: string
+          storage_path: string
+          studio_id?: string | null
+          tags?: string[]
+          title: string
+          width?: number | null
+        }
+        Update: {
+          consent_ok?: boolean
+          created_at?: string
+          height?: number | null
+          id?: string
+          kind?: string
+          license_note?: string | null
+          source?: string
+          storage_path?: string
+          studio_id?: string | null
+          tags?: string[]
+          title?: string
+          width?: number | null
+        }
+        Relationships: [
+          {
+            foreignKeyName: "media_assets_studio_id_fkey"
+            columns: ["studio_id"]
+            isOneToOne: false
+            referencedRelation: "studios"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "media_assets_studio_id_fkey"
+            columns: ["studio_id"]
+            isOneToOne: false
+            referencedRelation: "studios_public"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
       platform_admins: {
         Row: {
           created_at: string
