@@ -643,9 +643,46 @@ export function BookingModal({
             )}
           </section>
 
+          <section className="space-y-3">
+            <Label htmlFor="campaign-code" className="text-xs uppercase tracking-[0.2em] text-charcoal-soft">
+              Gutscheincode (optional)
+            </Label>
+            <Input
+              id="campaign-code"
+              value={code}
+              onChange={(e) => setCode(e.target.value)}
+              placeholder="z. B. HERBST25"
+              autoComplete="off"
+              className="uppercase"
+            />
+            {code.trim() && codeChecking && (
+              <p className="text-sm text-charcoal-soft">Code wird geprüft …</p>
+            )}
+            {code.trim() && !codeChecking && codeState?.valid && (
+              <div className="rounded-sm border border-gold/40 bg-gold-soft/20 px-4 py-3 text-sm text-charcoal">
+                <StudioText className="font-medium">{codeState.title}</StudioText>
+                <p className="mt-1">
+                  <span className="line-through text-charcoal-soft">
+                    CHF {codeState.originalPrice}.–
+                  </span>{" "}
+                  <span className="font-serif text-lg">CHF {codeState.finalPrice}.–</span>
+                </p>
+                {typeof codeState.remaining === "number" && codeState.maxRedemptions != null && (
+                  <p className="mt-1 text-xs text-charcoal-soft">
+                    Noch {codeState.remaining} von {codeState.maxRedemptions} Plätzen
+                  </p>
+                )}
+              </div>
+            )}
+            {code.trim() && !codeChecking && codeState && !codeState.valid && (
+              <p role="alert" className="text-sm text-destructive">
+                {codeMessages[codeState.reason ?? "unbekannt"]}
+              </p>
+            )}
+          </section>
+
           <section className="flex items-start gap-4 rounded-sm border border-gold/40 bg-gold-soft/20 p-4">
             <Switch checked={silent} onCheckedChange={setSilent} id="silent" className="mt-1" />
-            {null}
             <div className="space-y-1">
               <Label htmlFor="silent" className="text-charcoal">{t.booking.silent}</Label>
               <p className="text-sm text-charcoal-soft">{t.booking.silentDesc}</p>
