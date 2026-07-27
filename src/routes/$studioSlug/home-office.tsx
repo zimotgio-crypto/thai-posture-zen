@@ -171,7 +171,7 @@ function HomeOffice() {
                     isActive ? "border-gold text-gold-deep" : "border-transparent text-charcoal-soft hover:text-charcoal"
                   )}
                 >
-                  {m.label}
+                  <span translate="no" className="notranslate">{m.label}</span>
                 </button>
               );
             })}
@@ -192,11 +192,22 @@ function HomeOffice() {
               <div className="text-[0.7rem] uppercase tracking-[0.25em] text-charcoal-soft">
                 {selected ? `${selected.minutes} Min.` : activeCopy.time}
               </div>
-              <h3 className="mt-3 font-serif text-3xl leading-tight text-charcoal">{active.label}</h3>
+              <h3 translate="no" className="notranslate mt-3 font-serif text-3xl leading-tight text-charcoal">
+                {active.label}
+              </h3>
               <div className="mt-2 font-serif text-4xl text-gold-deep">{displayPrice}</div>
-              <p className="mt-5 flex-1 text-base leading-relaxed text-charcoal-soft">
-                {active.description ?? activeCopy.desc}
-              </p>
+              {active.description ? (
+                <p
+                  translate="no"
+                  className="notranslate mt-5 flex-1 text-base leading-relaxed text-charcoal-soft"
+                >
+                  {active.description}
+                </p>
+              ) : (
+                <p className="mt-5 flex-1 text-base leading-relaxed text-charcoal-soft">
+                  {activeCopy.desc}
+                </p>
+              )}
               {options.length > 1 && (
                 <div role="radiogroup" aria-label={t.treatments.menuEyebrow} className="mt-6 grid grid-cols-2 gap-2 sm:grid-cols-4">
                   {options.map((opt, i) => {
@@ -249,12 +260,18 @@ function HomeOffice() {
                 className="flex h-full flex-col rounded-sm border border-border/60 bg-card p-8 transition hover:border-gold/60 hover:shadow-[var(--shadow-soft)]"
               >
                 <span aria-hidden className="font-serif text-4xl leading-none text-gold-deep">“</span>
-                <blockquote className="mt-4 flex-1 text-base leading-relaxed text-charcoal-soft">
+                <blockquote
+                  translate="no"
+                  className="notranslate mt-4 flex-1 text-base leading-relaxed text-charcoal-soft"
+                >
                   {it.quote}
                 </blockquote>
                 <div className="gold-rule mt-6 w-8" />
                 {it.author && (
-                  <figcaption className="mt-4 text-[0.7rem] uppercase tracking-[0.25em] text-charcoal">
+                  <figcaption
+                    translate="no"
+                    className="notranslate mt-4 text-[0.7rem] uppercase tracking-[0.25em] text-charcoal"
+                  >
                     {it.author}
                   </figcaption>
                 )}

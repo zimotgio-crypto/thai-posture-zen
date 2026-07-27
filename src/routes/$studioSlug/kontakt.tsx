@@ -53,13 +53,14 @@ function Kontakt() {
     street: studio.street ?? "",
     city: studio.city ?? "",
   };
-  const faqs =
+  // Studio-Inhalte werden nie übersetzt (raw), Fallback-Texte schon.
+  const faqs: { q: string; a: string; raw?: boolean }[] =
     studio.faqs.length > 0
-      ? studio.faqs.map((f) => ({ q: f.question, a: f.answer }))
+      ? studio.faqs.map((f) => ({ q: f.question, a: f.answer, raw: true }))
       : t.contact.faqs.map((f, i) =>
           i === t.contact.faqs.length - 1 && studio.parkingNote
-            ? { ...f, a: studio.parkingNote }
-            : f,
+            ? { q: f.q, a: studio.parkingNote, raw: true }
+            : { q: f.q, a: f.a },
         );
   return (
     <>
@@ -74,16 +75,18 @@ function Kontakt() {
 
             <div className="mt-12 grid gap-6 sm:grid-cols-2">
               <InfoCard icon={MapPin} title={t.contact.address}>
-                {addressLines.map((line, i) => (
-                  <span key={i}>{line}{i < addressLines.length - 1 && <br />}</span>
-                ))}
-                {(studio.phone || studio.email) && (
-                  <>
-                    <br />
-                    {studio.phone && <span>{studio.phone}<br /></span>}
-                    {studio.email && <span>{studio.email}</span>}
-                  </>
-                )}
+                <span translate="no" className="notranslate">
+                  {addressLines.map((line, i) => (
+                    <span key={i}>{line}{i < addressLines.length - 1 && <br />}</span>
+                  ))}
+                  {(studio.phone || studio.email) && (
+                    <>
+                      <br />
+                      {studio.phone && <span>{studio.phone}<br /></span>}
+                      {studio.email && <span>{studio.email}</span>}
+                    </>
+                  )}
+                </span>
               </InfoCard>
               <InfoCard icon={Clock} title={t.contact.hoursTitle}>
                 {hours.map((h) => (
@@ -94,9 +97,13 @@ function Kontakt() {
                 ))}
               </InfoCard>
               <InfoCard icon={Wallet} title={t.contact.payment}>
-                {studio.paymentMethods.length > 0
-                  ? studio.paymentMethods.join(" · ")
-                  : t.contact.paymentDesc}
+                {studio.paymentMethods.length > 0 ? (
+                  <span translate="no" className="notranslate">
+                    {studio.paymentMethods.join(" · ")}
+                  </span>
+                ) : (
+                  t.contact.paymentDesc
+                )}
               </InfoCard>
               <InfoCard icon={ShieldCheck} title={t.contact.hygiene}>{t.contact.hygieneDesc}</InfoCard>
               <InfoCard icon={ClipboardList} title={t.contact.diary} className="sm:col-span-2">
@@ -174,10 +181,18 @@ function Kontakt() {
             <Accordion type="single" collapsible className="w-full">
               {faqs.map((f, i) => (
                 <AccordionItem key={i} value={`item-${i}`} className="border-border/70">
-                  <AccordionTrigger className="text-left font-serif text-lg text-charcoal hover:text-gold-deep">
+                  <AccordionTrigger
+                    {...(f.raw ? { translate: "no" as const } : {})}
+                    className={`text-left font-serif text-lg text-charcoal hover:text-gold-deep${f.raw ? " notranslate" : ""}`}
+                  >
                     {f.q}
                   </AccordionTrigger>
-                  <AccordionContent className="text-charcoal-soft">{f.a}</AccordionContent>
+                  <AccordionContent
+                    {...(f.raw ? { translate: "no" as const } : {})}
+                    className={`text-charcoal-soft${f.raw ? " notranslate" : ""}`}
+                  >
+                    {f.a}
+                  </AccordionContent>
                 </AccordionItem>
               ))}
             </Accordion>

@@ -12,6 +12,7 @@ import { cn } from "@/lib/utils";
 import { useT } from "@/lib/i18n";
 import { formatDuration } from "@/lib/pricing";
 import { useStudio } from "@/lib/studio-context";
+import { StudioText } from "@/components/studio-text";
 
 function ymd(d: Date) {
   const y = d.getFullYear();
@@ -350,7 +351,7 @@ export function BookingModal({
                     treatment === tr.key ? "border-gold bg-gold-soft/30" : "border-border hover:border-gold/60"
                   )}
                 >
-                  <span className="font-medium text-charcoal">{tr.label}</span>
+                  <StudioText className="font-medium text-charcoal">{tr.label}</StudioText>
                 </button>
               ))}
             </div>

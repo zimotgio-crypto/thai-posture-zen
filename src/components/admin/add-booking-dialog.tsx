@@ -148,7 +148,7 @@ export function AddBookingDialog({
                   className="w-full rounded-sm border border-input bg-background px-3 py-2 text-sm"
                 >
                   {treatments.map((tr) => (
-                    <option key={tr.key} value={tr.key}>
+                    <option key={tr.key} value={tr.key} translate="no">
                       {tr.label}
                     </option>
                   ))}

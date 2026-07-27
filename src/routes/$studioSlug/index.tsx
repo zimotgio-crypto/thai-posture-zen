@@ -42,10 +42,11 @@ function Index() {
   const t = useT();
   const studio = useStudio();
   const { studioSlug } = Route.useParams();
-  const features =
+  // Studio-Inhalte werden nie übersetzt (raw), Fallback-Texte schon.
+  const features: { t: string; d: string; raw?: boolean }[] =
     studio.features.length > 0
-      ? studio.features.map((f) => ({ t: f.title, d: f.text }))
-      : t.home.features;
+      ? studio.features.map((f) => ({ t: f.title, d: f.text, raw: true }))
+      : t.home.features.map((f) => ({ t: f.t, d: f.d }));
   const firstTreatmentKey = studio.treatments[0]?.key;
   const lead = studio.treatments[0];
   const leadOption = lead?.options[0];
@@ -62,10 +63,16 @@ function Index() {
         <div className="pointer-events-none absolute inset-x-0 top-0 h-[60%] bg-gradient-to-b from-ivory-deep/70 to-transparent" />
         <div className="mx-auto grid max-w-7xl gap-8 px-6 pb-16 pt-6 lg:grid-cols-12 lg:gap-10 lg:px-10 lg:pb-32 lg:pt-16">
           <div className="relative z-10 order-1 flex flex-col justify-center lg:col-span-6">
-            <Eyebrow>{studio.tagline ?? t.home.eyebrow}</Eyebrow>
+            <Eyebrow>
+              {studio.tagline ? (
+                <span translate="no" className="notranslate">{studio.tagline}</span>
+              ) : (
+                t.home.eyebrow
+              )}
+            </Eyebrow>
             <h1 className="mt-4 text-[2rem] leading-[1.08] text-charcoal sm:text-6xl sm:mt-6 sm:leading-[1.05] lg:text-[4.2rem]">
               {studio.heroHeading ? (
-                studio.heroHeading
+                <span translate="no" className="notranslate">{studio.heroHeading}</span>
               ) : (
                 <>
                   {t.home.title1}
@@ -74,9 +81,18 @@ function Index() {
                 </>
               )}
             </h1>
-            <p className="mt-4 max-w-lg text-base leading-relaxed text-charcoal-soft sm:mt-6 sm:text-lg">
-              {studio.heroText ?? t.home.intro}
-            </p>
+            {studio.heroText ? (
+              <p
+                translate="no"
+                className="notranslate mt-4 max-w-lg text-base leading-relaxed text-charcoal-soft sm:mt-6 sm:text-lg"
+              >
+                {studio.heroText}
+              </p>
+            ) : (
+              <p className="mt-4 max-w-lg text-base leading-relaxed text-charcoal-soft sm:mt-6 sm:text-lg">
+                {t.home.intro}
+              </p>
+            )}
             <div className="mt-6 flex flex-wrap items-center gap-4 sm:mt-10">
               <button onClick={() => open()} className="btn-gold inline-flex w-full items-center justify-center gap-2 rounded-sm px-7 py-4 text-[0.78rem] uppercase tracking-[0.24em] sm:w-auto">
                 {t.home.cta} <ArrowRight className="h-4 w-4" />
@@ -151,9 +167,19 @@ function Index() {
           <div>
             <Eyebrow>{t.home.studioEyebrow}</Eyebrow>
             <h2 className="mt-5 text-4xl leading-tight text-charcoal">
-              {studio.aboutHeading ?? t.home.studioH}
+              {studio.aboutHeading ? (
+                <span translate="no" className="notranslate">{studio.aboutHeading}</span>
+              ) : (
+                t.home.studioH
+              )}
             </h2>
-            <p className="mt-5 max-w-lg text-charcoal-soft">{studio.aboutText ?? t.home.studioP}</p>
+            {studio.aboutText ? (
+              <p translate="no" className="notranslate mt-5 max-w-lg text-charcoal-soft">
+                {studio.aboutText}
+              </p>
+            ) : (
+              <p className="mt-5 max-w-lg text-charcoal-soft">{t.home.studioP}</p>
+            )}
             <ul className="mt-8 grid gap-4 sm:grid-cols-2">
               {features.map((f, i) => {
                 const Icon = featureIcons[i % featureIcons.length];
@@ -162,7 +188,7 @@ function Index() {
                     <div className="mt-0.5 flex h-9 w-9 shrink-0 items-center justify-center rounded-sm bg-gold-soft/40 text-gold-deep">
                       <Icon className="h-4 w-4" />
                     </div>
-                    <div>
+                    <div {...(f.raw ? { translate: "no" as const, className: "notranslate" } : {})}>
                       <div className="font-medium text-charcoal">{f.t}</div>
                       <div className="text-sm text-charcoal-soft">{f.d}</div>
                     </div>
