@@ -320,12 +320,11 @@ export function AdCreativeDialog({
                     <div className="text-[0.6rem] uppercase tracking-[0.2em] text-charcoal-soft">
                       {format.label} · {ta.formats[format.key]}
                     </div>
-                    <canvas
-                      ref={(el) => {
-                        refs.current[format.key] = el;
-                      }}
-                      className="w-full rounded-sm border border-border/60 bg-charcoal"
-                      style={{ aspectRatio: `${format.width} / ${format.height}` }}
+                    <AdCanvasPreview
+                      format={format}
+                      input={input}
+                      register={register}
+                      onRenderState={setRendering}
                     />
                     <Button
                       type="button"
@@ -373,5 +372,42 @@ export function AdCreativeDialog({
         }}
       />
     </>
+  );
+}
+
+/** Eine Vorschau je Format. Zeichnet bei jeder Änderung neu. */
+function AdCanvasPreview({
+  format,
+  input,
+  register,
+  onRenderState,
+}: {
+  format: (typeof AD_FORMATS)[number];
+  input: AdCreativeInput;
+  register: (key: AdFormatKey, canvas: HTMLCanvasElement | null) => void;
+  onRenderState: (busy: boolean) => void;
+}) {
+  const ref = useRef<HTMLCanvasElement | null>(null);
+
+  useEffect(() => {
+    const canvas = ref.current;
+    if (!canvas) return;
+    register(format.key, canvas);
+    let cancelled = false;
+    onRenderState(true);
+    void renderAdCreative(canvas, format, input).finally(() => {
+      if (!cancelled) onRenderState(false);
+    });
+    return () => {
+      cancelled = true;
+    };
+  }, [format, input, register, onRenderState]);
+
+  return (
+    <canvas
+      ref={ref}
+      className="w-full rounded-sm border border-border/60 bg-charcoal"
+      style={{ aspectRatio: `${format.width} / ${format.height}` }}
+    />
   );
 }
