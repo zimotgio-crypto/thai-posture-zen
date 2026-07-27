@@ -53,9 +53,12 @@ export function ensureAdFonts(): Promise<void> {
       `500 100px "${FONT_SANS}"`,
       `600 100px "${FONT_SANS}"`,
     ];
-    fontsPromise = Promise.all(specs.map((s) => document.fonts.load(s).catch(() => null)))
+    const load = Promise.all(specs.map((s) => document.fonts.load(s).catch(() => null)))
       .then(() => document.fonts.ready)
       .then(() => undefined);
+    // Sicherheitsnetz: falls die Schriftdateien hängen, wird trotzdem gezeichnet.
+    const timeout = new Promise<void>((resolve) => setTimeout(resolve, 4000));
+    fontsPromise = Promise.race([load, timeout]);
   }
   return fontsPromise;
 }
