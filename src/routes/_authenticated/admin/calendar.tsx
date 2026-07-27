@@ -99,7 +99,7 @@ function CalendarPage() {
   const listFn = useServerFn(listBookingsInRange);
   const statusFn = useServerFn(getGoogleCalendarStatus);
   const gBusyFn = useServerFn(listGoogleBusyInRange);
-  const { studioId } = useAdminStudio();
+  const { studioId, treatments: studioTreatments } = useAdminStudio();
   const gStatus = useQuery({
     queryKey: ["google-calendar-status", studioId],
     queryFn: () => statusFn({ data: { studioId } }),
@@ -361,7 +361,7 @@ function CalendarPage() {
 
       <BookingDetailsDialog
         booking={selected}
-        treatments={t.booking.treatments}
+        treatments={studioTreatments}
         at={at}
         onClose={() => setSelected(null)}
         onDelete={async (id) => {
@@ -381,7 +381,7 @@ function BookingDetailsDialog({
   onDelete,
 }: {
   booking: BookingRow | null;
-  treatments: ReadonlyArray<{ id: string; label: string }>;
+  treatments: ReadonlyArray<AdminTreatment>;
   at: ReturnType<typeof useAdminT>;
   onClose: () => void;
   onDelete: (id: string) => void | Promise<void>;
@@ -399,8 +399,18 @@ function BookingDetailsDialog({
   const [hh, mm] = booking.time.split(":").map(Number);
   const endMin = hh * 60 + mm + dur;
   const endStr = `${String(Math.floor(endMin / 60)).padStart(2, "0")}:${String(endMin % 60).padStart(2, "0")}`;
-  const treatmentId = treatments.find((tr) => tr.label === booking.treatment)?.id;
-  const price = treatmentId ? priceForTreatment(treatmentId, dur) : 0;
+  // Preis: bevorzugt der bei der Buchung gespeicherte Betrag, sonst aus den
+  // Behandlungen dieses Studios. Ohne eindeutige Zuordnung: kein Preis.
+  const storedPrice =
+    booking.price_chf === null || booking.price_chf === undefined
+      ? null
+      : Number(booking.price_chf);
+  const matched = treatments.find(
+    (tr) => tr.label === booking.treatment || tr.key === booking.treatment,
+  );
+  const optionPrice = matched?.options.find((o) => o.minutes === dur)?.price ?? null;
+  const price =
+    storedPrice !== null && Number.isFinite(storedPrice) ? storedPrice : optionPrice;
   const client = booking.clients;
   const sourceLabel =
     booking.source === "online"
@@ -429,7 +439,9 @@ function BookingDetailsDialog({
           {!isBlock && (
             <>
               <DetailRow label={at.calendar.treatment} value={booking.treatment} />
-              {price > 0 && <DetailRow label={at.calendar.price} value={`CHF ${price}.–`} />}
+              {price !== null && price > 0 && (
+                <DetailRow label={at.calendar.price} value={`CHF ${price}.–`} />
+              )}
               {client && (
                 <>
                   <DetailRow
