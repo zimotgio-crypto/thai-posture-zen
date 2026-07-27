@@ -618,13 +618,33 @@ export function useAdminLocale(): string {
   return useAdminLanguage().t.weekdays.locale;
 }
 
+/**
+ * Schlägt einen Übersetzungsschlüssel nach.
+ *
+ * Wichtig: Ist der Schlüssel unbekannt, wird der übergebene Text UNVERÄNDERT
+ * zurückgegeben und einmalig per console.warn gemeldet. Studio-Inhalte
+ * (Behandlungsnamen, Beschreibungen, Kundenstimmen …) dürfen grundsätzlich
+ * nicht durch diese Funktion laufen — sie werden immer roh ausgegeben.
+ */
+export function translateKey(
+  map: Record<string, string>,
+  key: string,
+  scope = "admin",
+): string {
+  const hit = map[key];
+  if (typeof hit === "string") return hit;
+  console.warn(
+    `[admin-i18n] Unbekannter Übersetzungsschlüssel "${key}" (${scope}) — Text wird unverändert ausgegeben. ` +
+      `Falls dies ein Datenbankwert ist, darf er nicht durch die Übersetzung laufen.`,
+  );
+  return key;
+}
+
 /** Helper zum Übersetzen einer Zone (Tension oder Mobility) anhand des Schlüssels. */
 export function tensionZoneLabel(t: AdminDict, key: string): string {
-  const map = t.tensionZones as Record<string, string>;
-  return map[key] ?? key;
+  return translateKey(t.tensionZones as Record<string, string>, key, "tensionZones");
 }
 
 export function mobilityZoneLabel(t: AdminDict, key: string): string {
-  const map = t.mobilityZones as Record<string, string>;
-  return map[key] ?? key;
+  return translateKey(t.mobilityZones as Record<string, string>, key, "mobilityZones");
 }
