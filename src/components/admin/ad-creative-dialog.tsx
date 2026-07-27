@@ -1,4 +1,4 @@
-import { useEffect, useMemo, useRef, useState } from "react";
+import { useCallback, useEffect, useMemo, useRef, useState } from "react";
 import { useServerFn } from "@tanstack/react-start";
 import { useQuery } from "@tanstack/react-query";
 import { toast } from "sonner";
@@ -96,7 +96,7 @@ export function AdCreativeDialog({
   );
   const [overlay, setOverlay] = useState(0.6);
   const [busy, setBusy] = useState(false);
-  const [rendering, setRendering] = useState(false);
+  const [rendering, setRendering] = useState(true);
 
   const refs = useRef<Record<AdFormatKey, HTMLCanvasElement | null>>({
     feed: null,
@@ -110,34 +110,25 @@ export function AdCreativeDialog({
     enabled: Boolean(open && campaign?.id),
   });
 
-  useEffect(() => {
-    if (!open) return;
-    let cancelled = false;
-    setRendering(true);
-    (async () => {
-      for (const format of AD_FORMATS) {
-        const canvas = refs.current[format.key];
-        if (!canvas) continue;
-        await renderAdCreative(canvas, format, {
-          imageUrl: asset?.url ?? null,
-          headline,
-          subline,
-          code,
-          cta,
-          position,
-          overlay,
-          template,
-          studioName: studio.name,
-          studioCity: studio.city ?? "",
-        });
-        if (cancelled) return;
-      }
-      if (!cancelled) setRendering(false);
-    })();
-    return () => {
-      cancelled = true;
-    };
-  }, [open, asset, headline, subline, code, cta, position, overlay, template, studio.name, studio.city]);
+  const input = useMemo(
+    () => ({
+      imageUrl: asset?.url ?? null,
+      headline,
+      subline,
+      code,
+      cta,
+      position,
+      overlay,
+      template,
+      studioName: studio.name,
+      studioCity: studio.city ?? "",
+    }),
+    [asset, headline, subline, code, cta, position, overlay, template, studio.name, studio.city],
+  );
+
+  const register = useCallback((key: AdFormatKey, canvas: HTMLCanvasElement | null) => {
+    refs.current[key] = canvas;
+  }, []);
 
   function fileName(format: AdFormatKey) {
     const slug = (code || headline || "werbebild")
