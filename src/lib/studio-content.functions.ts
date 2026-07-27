@@ -133,6 +133,14 @@ const slotColumn = {
   portrait: "portrait_image_path",
 } as const;
 
+// Titel der automatisch in der Mediathek angelegten Studio-Bilder.
+const slotMediaTitle = {
+  logo: "Logo",
+  hero: "Hero",
+  room: "Studio",
+  portrait: "Portrait",
+} as const;
+
 const uploadSchema = z.object({
   studioId: z.string().uuid().optional(),
   slot: slotSchema,
