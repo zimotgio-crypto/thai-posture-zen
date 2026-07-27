@@ -25,6 +25,7 @@ import { Route as AuthenticatedAdminIndexRouteImport } from './routes/_authentic
 import { Route as ApiPublicWhatsappRouteImport } from './routes/api/public/whatsapp'
 import { Route as ApiPublicPingRouteImport } from './routes/api/public/ping'
 import { Route as AuthenticatedAdminStudiosRouteImport } from './routes/_authenticated/admin/studios'
+import { Route as AuthenticatedAdminMediathekRouteImport } from './routes/_authenticated/admin/mediathek'
 import { Route as AuthenticatedAdminMarketingRouteImport } from './routes/_authenticated/admin/marketing'
 import { Route as AuthenticatedAdminEinstellungenRouteImport } from './routes/_authenticated/admin/einstellungen'
 import { Route as AuthenticatedAdminClientsRouteImport } from './routes/_authenticated/admin/clients'
@@ -112,6 +113,12 @@ const AuthenticatedAdminStudiosRoute =
     path: '/studios',
     getParentRoute: () => AuthenticatedAdminRouteRoute,
   } as any)
+const AuthenticatedAdminMediathekRoute =
+  AuthenticatedAdminMediathekRouteImport.update({
+    id: '/mediathek',
+    path: '/mediathek',
+    getParentRoute: () => AuthenticatedAdminRouteRoute,
+  } as any)
 const AuthenticatedAdminMarketingRoute =
   AuthenticatedAdminMarketingRouteImport.update({
     id: '/marketing',
@@ -166,6 +173,7 @@ export interface FileRoutesByFullPath {
   '/admin/clients': typeof AuthenticatedAdminClientsRouteWithChildren
   '/admin/einstellungen': typeof AuthenticatedAdminEinstellungenRoute
   '/admin/marketing': typeof AuthenticatedAdminMarketingRoute
+  '/admin/mediathek': typeof AuthenticatedAdminMediathekRoute
   '/admin/studios': typeof AuthenticatedAdminStudiosRoute
   '/api/public/ping': typeof ApiPublicPingRoute
   '/api/public/whatsapp': typeof ApiPublicWhatsappRoute
@@ -187,6 +195,7 @@ export interface FileRoutesByTo {
   '/admin/clients': typeof AuthenticatedAdminClientsRouteWithChildren
   '/admin/einstellungen': typeof AuthenticatedAdminEinstellungenRoute
   '/admin/marketing': typeof AuthenticatedAdminMarketingRoute
+  '/admin/mediathek': typeof AuthenticatedAdminMediathekRoute
   '/admin/studios': typeof AuthenticatedAdminStudiosRoute
   '/api/public/ping': typeof ApiPublicPingRoute
   '/api/public/whatsapp': typeof ApiPublicWhatsappRoute
@@ -212,6 +221,7 @@ export interface FileRoutesById {
   '/_authenticated/admin/clients': typeof AuthenticatedAdminClientsRouteWithChildren
   '/_authenticated/admin/einstellungen': typeof AuthenticatedAdminEinstellungenRoute
   '/_authenticated/admin/marketing': typeof AuthenticatedAdminMarketingRoute
+  '/_authenticated/admin/mediathek': typeof AuthenticatedAdminMediathekRoute
   '/_authenticated/admin/studios': typeof AuthenticatedAdminStudiosRoute
   '/api/public/ping': typeof ApiPublicPingRoute
   '/api/public/whatsapp': typeof ApiPublicWhatsappRoute
@@ -237,6 +247,7 @@ export interface FileRouteTypes {
     | '/admin/clients'
     | '/admin/einstellungen'
     | '/admin/marketing'
+    | '/admin/mediathek'
     | '/admin/studios'
     | '/api/public/ping'
     | '/api/public/whatsapp'
@@ -258,6 +269,7 @@ export interface FileRouteTypes {
     | '/admin/clients'
     | '/admin/einstellungen'
     | '/admin/marketing'
+    | '/admin/mediathek'
     | '/admin/studios'
     | '/api/public/ping'
     | '/api/public/whatsapp'
@@ -282,6 +294,7 @@ export interface FileRouteTypes {
     | '/_authenticated/admin/clients'
     | '/_authenticated/admin/einstellungen'
     | '/_authenticated/admin/marketing'
+    | '/_authenticated/admin/mediathek'
     | '/_authenticated/admin/studios'
     | '/api/public/ping'
     | '/api/public/whatsapp'
@@ -416,6 +429,13 @@ declare module '@tanstack/react-router' {
       preLoaderRoute: typeof AuthenticatedAdminStudiosRouteImport
       parentRoute: typeof AuthenticatedAdminRouteRoute
     }
+    '/_authenticated/admin/mediathek': {
+      id: '/_authenticated/admin/mediathek'
+      path: '/mediathek'
+      fullPath: '/admin/mediathek'
+      preLoaderRoute: typeof AuthenticatedAdminMediathekRouteImport
+      parentRoute: typeof AuthenticatedAdminRouteRoute
+    }
     '/_authenticated/admin/marketing': {
       id: '/_authenticated/admin/marketing'
       path: '/marketing'
@@ -498,6 +518,7 @@ interface AuthenticatedAdminRouteRouteChildren {
   AuthenticatedAdminClientsRoute: typeof AuthenticatedAdminClientsRouteWithChildren
   AuthenticatedAdminEinstellungenRoute: typeof AuthenticatedAdminEinstellungenRoute
   AuthenticatedAdminMarketingRoute: typeof AuthenticatedAdminMarketingRoute
+  AuthenticatedAdminMediathekRoute: typeof AuthenticatedAdminMediathekRoute
   AuthenticatedAdminStudiosRoute: typeof AuthenticatedAdminStudiosRoute
   AuthenticatedAdminIndexRoute: typeof AuthenticatedAdminIndexRoute
 }
@@ -508,6 +529,7 @@ const AuthenticatedAdminRouteRouteChildren: AuthenticatedAdminRouteRouteChildren
     AuthenticatedAdminClientsRoute: AuthenticatedAdminClientsRouteWithChildren,
     AuthenticatedAdminEinstellungenRoute: AuthenticatedAdminEinstellungenRoute,
     AuthenticatedAdminMarketingRoute: AuthenticatedAdminMarketingRoute,
+    AuthenticatedAdminMediathekRoute: AuthenticatedAdminMediathekRoute,
     AuthenticatedAdminStudiosRoute: AuthenticatedAdminStudiosRoute,
     AuthenticatedAdminIndexRoute: AuthenticatedAdminIndexRoute,
   }
