@@ -122,13 +122,17 @@ export async function hasExistingBooking(
   phone: string,
   email: string,
 ): Promise<boolean> {
-  const { data: clients, error } = await admin
-    .from("clients")
-    .select("id")
-    .eq("studio_id", studioId)
-    .or(`phone.eq.${phone},email.eq.${email}`);
-  if (error) throw new Error(error.message);
-  const ids = (clients ?? []).map((c) => c.id as string);
+  // Zwei getrennte Abfragen statt .or(), damit Eingaben nicht in die
+  // Filtersyntax hineinwirken können.
+  const [byPhone, byEmail] = await Promise.all([
+    admin.from("clients").select("id").eq("studio_id", studioId).eq("phone", phone),
+    admin.from("clients").select("id").eq("studio_id", studioId).eq("email", email),
+  ]);
+  if (byPhone.error) throw new Error(byPhone.error.message);
+  if (byEmail.error) throw new Error(byEmail.error.message);
+  const ids = Array.from(
+    new Set([...(byPhone.data ?? []), ...(byEmail.data ?? [])].map((c) => c.id as string)),
+  );
   if (ids.length === 0) return false;
   const { count } = await admin
     .from("bookings")
