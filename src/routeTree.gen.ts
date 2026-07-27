@@ -29,6 +29,7 @@ import { Route as AuthenticatedAdminMarketingRouteImport } from './routes/_authe
 import { Route as AuthenticatedAdminEinstellungenRouteImport } from './routes/_authenticated/admin/einstellungen'
 import { Route as AuthenticatedAdminClientsRouteImport } from './routes/_authenticated/admin/clients'
 import { Route as AuthenticatedAdminCalendarRouteImport } from './routes/_authenticated/admin/calendar'
+import { Route as StudioSlugBehandlungTreatmentKeyRouteImport } from './routes/$studioSlug/behandlung.$treatmentKey'
 import { Route as AuthenticatedAdminClientsIdRouteImport } from './routes/_authenticated/admin/clients.$id'
 
 const SitemapDotxmlRoute = SitemapDotxmlRouteImport.update({
@@ -135,6 +136,12 @@ const AuthenticatedAdminCalendarRoute =
     path: '/calendar',
     getParentRoute: () => AuthenticatedAdminRouteRoute,
   } as any)
+const StudioSlugBehandlungTreatmentKeyRoute =
+  StudioSlugBehandlungTreatmentKeyRouteImport.update({
+    id: '/behandlung/$treatmentKey',
+    path: '/behandlung/$treatmentKey',
+    getParentRoute: () => StudioSlugRouteRoute,
+  } as any)
 const AuthenticatedAdminClientsIdRoute =
   AuthenticatedAdminClientsIdRouteImport.update({
     id: '/$id',
@@ -154,6 +161,7 @@ export interface FileRoutesByFullPath {
   '/$studioSlug/home-office': typeof StudioSlugHomeOfficeRoute
   '/$studioSlug/kontakt': typeof StudioSlugKontaktRoute
   '/$studioSlug/': typeof StudioSlugIndexRoute
+  '/$studioSlug/behandlung/$treatmentKey': typeof StudioSlugBehandlungTreatmentKeyRoute
   '/admin/calendar': typeof AuthenticatedAdminCalendarRoute
   '/admin/clients': typeof AuthenticatedAdminClientsRouteWithChildren
   '/admin/einstellungen': typeof AuthenticatedAdminEinstellungenRoute
@@ -174,6 +182,7 @@ export interface FileRoutesByTo {
   '/$studioSlug/home-office': typeof StudioSlugHomeOfficeRoute
   '/$studioSlug/kontakt': typeof StudioSlugKontaktRoute
   '/$studioSlug': typeof StudioSlugIndexRoute
+  '/$studioSlug/behandlung/$treatmentKey': typeof StudioSlugBehandlungTreatmentKeyRoute
   '/admin/calendar': typeof AuthenticatedAdminCalendarRoute
   '/admin/clients': typeof AuthenticatedAdminClientsRouteWithChildren
   '/admin/einstellungen': typeof AuthenticatedAdminEinstellungenRoute
@@ -198,6 +207,7 @@ export interface FileRoutesById {
   '/$studioSlug/home-office': typeof StudioSlugHomeOfficeRoute
   '/$studioSlug/kontakt': typeof StudioSlugKontaktRoute
   '/$studioSlug/': typeof StudioSlugIndexRoute
+  '/$studioSlug/behandlung/$treatmentKey': typeof StudioSlugBehandlungTreatmentKeyRoute
   '/_authenticated/admin/calendar': typeof AuthenticatedAdminCalendarRoute
   '/_authenticated/admin/clients': typeof AuthenticatedAdminClientsRouteWithChildren
   '/_authenticated/admin/einstellungen': typeof AuthenticatedAdminEinstellungenRoute
@@ -222,6 +232,7 @@ export interface FileRouteTypes {
     | '/$studioSlug/home-office'
     | '/$studioSlug/kontakt'
     | '/$studioSlug/'
+    | '/$studioSlug/behandlung/$treatmentKey'
     | '/admin/calendar'
     | '/admin/clients'
     | '/admin/einstellungen'
@@ -242,6 +253,7 @@ export interface FileRouteTypes {
     | '/$studioSlug/home-office'
     | '/$studioSlug/kontakt'
     | '/$studioSlug'
+    | '/$studioSlug/behandlung/$treatmentKey'
     | '/admin/calendar'
     | '/admin/clients'
     | '/admin/einstellungen'
@@ -265,6 +277,7 @@ export interface FileRouteTypes {
     | '/$studioSlug/home-office'
     | '/$studioSlug/kontakt'
     | '/$studioSlug/'
+    | '/$studioSlug/behandlung/$treatmentKey'
     | '/_authenticated/admin/calendar'
     | '/_authenticated/admin/clients'
     | '/_authenticated/admin/einstellungen'
@@ -431,6 +444,13 @@ declare module '@tanstack/react-router' {
       preLoaderRoute: typeof AuthenticatedAdminCalendarRouteImport
       parentRoute: typeof AuthenticatedAdminRouteRoute
     }
+    '/$studioSlug/behandlung/$treatmentKey': {
+      id: '/$studioSlug/behandlung/$treatmentKey'
+      path: '/behandlung/$treatmentKey'
+      fullPath: '/$studioSlug/behandlung/$treatmentKey'
+      preLoaderRoute: typeof StudioSlugBehandlungTreatmentKeyRouteImport
+      parentRoute: typeof StudioSlugRouteRoute
+    }
     '/_authenticated/admin/clients/$id': {
       id: '/_authenticated/admin/clients/$id'
       path: '/$id'
@@ -445,12 +465,14 @@ interface StudioSlugRouteRouteChildren {
   StudioSlugHomeOfficeRoute: typeof StudioSlugHomeOfficeRoute
   StudioSlugKontaktRoute: typeof StudioSlugKontaktRoute
   StudioSlugIndexRoute: typeof StudioSlugIndexRoute
+  StudioSlugBehandlungTreatmentKeyRoute: typeof StudioSlugBehandlungTreatmentKeyRoute
 }
 
 const StudioSlugRouteRouteChildren: StudioSlugRouteRouteChildren = {
   StudioSlugHomeOfficeRoute: StudioSlugHomeOfficeRoute,
   StudioSlugKontaktRoute: StudioSlugKontaktRoute,
   StudioSlugIndexRoute: StudioSlugIndexRoute,
+  StudioSlugBehandlungTreatmentKeyRoute: StudioSlugBehandlungTreatmentKeyRoute,
 }
 
 const StudioSlugRouteRouteWithChildren = StudioSlugRouteRoute._addFileChildren(

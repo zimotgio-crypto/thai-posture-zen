@@ -152,6 +152,48 @@ function Index() {
       </Section>
 
       {/* Trust / Studio */}
+      {studio.treatments.length > 0 && (
+        <Section className="pt-0">
+          <div className="mx-auto max-w-2xl text-center">
+            <Eyebrow className="justify-center">{t.treatmentPage.overviewEyebrow}</Eyebrow>
+            <h2 className="mt-5 text-4xl leading-tight text-charcoal">{t.treatmentPage.overviewH}</h2>
+          </div>
+          <div className="mt-12 grid gap-6 md:grid-cols-3">
+            {studio.treatments.map((tr) => {
+              const cheapest = tr.options.reduce(
+                (min, o) => (min === null || o.price < min.price ? o : min),
+                null as { minutes: number; price: number } | null,
+              );
+              return (
+                <Link
+                  key={tr.key}
+                  to="/$studioSlug/behandlung/$treatmentKey"
+                  params={{ studioSlug, treatmentKey: tr.key }}
+                  className="flex h-full flex-col rounded-sm border border-border/60 bg-card p-8 transition hover:border-gold/60 hover:shadow-[var(--shadow-soft)]"
+                >
+                  <h3 translate="no" className="notranslate font-serif text-2xl text-charcoal">
+                    {tr.label}
+                  </h3>
+                  {tr.description && (
+                    <p translate="no" className="notranslate mt-3 line-clamp-3 text-sm leading-relaxed text-charcoal-soft">
+                      {tr.description}
+                    </p>
+                  )}
+                  {cheapest && (
+                    <div className="mt-5 text-[0.7rem] uppercase tracking-[0.26em] text-gold-deep">
+                      {t.treatmentPage.from} CHF {cheapest.price}.– · {cheapest.minutes} {t.treatmentPage.minutes}
+                    </div>
+                  )}
+                  <span className="mt-6 text-xs uppercase tracking-[0.22em] text-charcoal-soft">
+                    {t.treatmentPage.overviewLink}
+                  </span>
+                </Link>
+              );
+            })}
+          </div>
+        </Section>
+      )}
+
       <section className="bg-ivory-deep/60">
         <div className="mx-auto grid max-w-7xl items-center gap-14 px-6 py-20 lg:grid-cols-2 lg:gap-20 lg:px-10 lg:py-28">
           <div className="relative">
