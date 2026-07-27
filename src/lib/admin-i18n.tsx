@@ -293,6 +293,7 @@ export const adminTranslations = {
     weekdays: { locale: "de-CH" as const },
   },
   th: {
+    /* placeholder */
     common: {
       cancel: "ยกเลิก",
       save: "บันทึก",
