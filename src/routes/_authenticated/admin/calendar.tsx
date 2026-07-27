@@ -450,6 +450,7 @@ function BookingDetailsDialog({
                   <DetailRow
                     label={at.calendar.client}
                     value={`${client.first_name} ${client.last_name}`.trim() || "—"}
+                    raw
                   />
                   {client.phone && <DetailRow label={at.calendar.phone} value={client.phone} />}
                   {client.email && <DetailRow label={at.calendar.email} value={client.email} />}
