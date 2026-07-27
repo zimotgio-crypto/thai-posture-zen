@@ -133,6 +133,14 @@ const slotColumn = {
   portrait: "portrait_image_path",
 } as const;
 
+// Titel der automatisch in der Mediathek angelegten Studio-Bilder.
+const slotMediaTitle = {
+  logo: "Logo",
+  hero: "Hero",
+  room: "Studio",
+  portrait: "Portrait",
+} as const;
+
 const uploadSchema = z.object({
   studioId: z.string().uuid().optional(),
   slot: slotSchema,
@@ -183,7 +191,23 @@ export const uploadStudioMedia = createServerFn({ method: "POST" })
 
     if (previousPath && previousPath !== path) {
       await supabaseAdmin.storage.from(STUDIO_MEDIA_BUCKET).remove([previousPath]);
+      await supabaseAdmin
+        .from("media_assets")
+        .delete()
+        .eq("studio_id", studioId)
+        .eq("storage_path", previousPath);
     }
+
+    // Bild automatisch in der Mediathek des Studios registrieren.
+    await supabaseAdmin.from("media_assets").insert({
+      studio_id: studioId,
+      kind: "foto",
+      title: slotMediaTitle[data.slot],
+      tags: [data.slot],
+      storage_path: path,
+      source: "upload",
+      consent_ok: false,
+    } as never);
 
     return { ok: true as const, path, url: await studioMediaUrl(path) };
   });
@@ -214,6 +238,11 @@ export const removeStudioMedia = createServerFn({ method: "POST" })
     if (error) throw new Error(error.message);
     if (previousPath) {
       await supabaseAdmin.storage.from(STUDIO_MEDIA_BUCKET).remove([previousPath]);
+      await supabaseAdmin
+        .from("media_assets")
+        .delete()
+        .eq("studio_id", studioId)
+        .eq("storage_path", previousPath);
     }
     return { ok: true as const };
   });
