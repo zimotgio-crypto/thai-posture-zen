@@ -12,6 +12,7 @@ import { cn } from "@/lib/utils";
 import { useT } from "@/lib/i18n";
 import { formatDuration } from "@/lib/pricing";
 import { useStudio } from "@/lib/studio-context";
+import { StudioText } from "@/components/studio-text";
 
 function ymd(d: Date) {
   const y = d.getFullYear();
