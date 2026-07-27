@@ -111,6 +111,7 @@ export type Database = {
           duration_minutes: number | null
           goal: string
           id: string
+          image_paths: string[]
           max_redemptions: number | null
           radius_km: number | null
           redemptions_used: number
@@ -134,6 +135,7 @@ export type Database = {
           duration_minutes?: number | null
           goal?: string
           id?: string
+          image_paths?: string[]
           max_redemptions?: number | null
           radius_km?: number | null
           redemptions_used?: number
@@ -157,6 +159,7 @@ export type Database = {
           duration_minutes?: number | null
           goal?: string
           id?: string
+          image_paths?: string[]
           max_redemptions?: number | null
           radius_km?: number | null
           redemptions_used?: number
