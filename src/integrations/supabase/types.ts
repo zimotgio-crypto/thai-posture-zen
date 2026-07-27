@@ -16,9 +16,11 @@ export type Database = {
     Tables: {
       bookings: {
         Row: {
+          campaign_id: string | null
           client_id: string | null
           created_at: string
           day: string
+          discount_chf: number | null
           duration_minutes: number
           google_event_id: string | null
           id: string
@@ -31,9 +33,11 @@ export type Database = {
           treatment: string
         }
         Insert: {
+          campaign_id?: string | null
           client_id?: string | null
           created_at?: string
           day: string
+          discount_chf?: number | null
           duration_minutes?: number
           google_event_id?: string | null
           id?: string
@@ -46,9 +50,11 @@ export type Database = {
           treatment: string
         }
         Update: {
+          campaign_id?: string | null
           client_id?: string | null
           created_at?: string
           day?: string
+          discount_chf?: number | null
           duration_minutes?: number
           google_event_id?: string | null
           id?: string
@@ -61,6 +67,13 @@ export type Database = {
           treatment?: string
         }
         Relationships: [
+          {
+            foreignKeyName: "bookings_campaign_id_fkey"
+            columns: ["campaign_id"]
+            isOneToOne: false
+            referencedRelation: "campaigns"
+            referencedColumns: ["id"]
+          },
           {
             foreignKeyName: "bookings_client_id_fkey"
             columns: ["client_id"]
@@ -80,6 +93,107 @@ export type Database = {
             columns: ["studio_id"]
             isOneToOne: false
             referencedRelation: "studios_public"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      campaigns: {
+        Row: {
+          age_max: number | null
+          age_min: number | null
+          applies_to: string
+          budget_chf: number | null
+          channels: string[]
+          code: string
+          created_at: string
+          discount_type: string
+          discount_value: number
+          duration_minutes: number | null
+          goal: string
+          id: string
+          max_redemptions: number | null
+          radius_km: number | null
+          redemptions_used: number
+          status: string
+          studio_id: string
+          title: string
+          treatment_id: string | null
+          valid_from: string
+          valid_to: string
+        }
+        Insert: {
+          age_max?: number | null
+          age_min?: number | null
+          applies_to?: string
+          budget_chf?: number | null
+          channels?: string[]
+          code: string
+          created_at?: string
+          discount_type?: string
+          discount_value: number
+          duration_minutes?: number | null
+          goal?: string
+          id?: string
+          max_redemptions?: number | null
+          radius_km?: number | null
+          redemptions_used?: number
+          status?: string
+          studio_id: string
+          title: string
+          treatment_id?: string | null
+          valid_from: string
+          valid_to: string
+        }
+        Update: {
+          age_max?: number | null
+          age_min?: number | null
+          applies_to?: string
+          budget_chf?: number | null
+          channels?: string[]
+          code?: string
+          created_at?: string
+          discount_type?: string
+          discount_value?: number
+          duration_minutes?: number | null
+          goal?: string
+          id?: string
+          max_redemptions?: number | null
+          radius_km?: number | null
+          redemptions_used?: number
+          status?: string
+          studio_id?: string
+          title?: string
+          treatment_id?: string | null
+          valid_from?: string
+          valid_to?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "campaigns_studio_id_fkey"
+            columns: ["studio_id"]
+            isOneToOne: false
+            referencedRelation: "studios"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "campaigns_studio_id_fkey"
+            columns: ["studio_id"]
+            isOneToOne: false
+            referencedRelation: "studios_public"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "campaigns_treatment_id_fkey"
+            columns: ["treatment_id"]
+            isOneToOne: false
+            referencedRelation: "treatments"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "campaigns_treatment_id_fkey"
+            columns: ["treatment_id"]
+            isOneToOne: false
+            referencedRelation: "treatments_public"
             referencedColumns: ["id"]
           },
         ]
@@ -599,6 +713,8 @@ export type Database = {
         Args: { _studio_id: string; _user_id: string }
         Returns: boolean
       }
+      redeem_campaign: { Args: { _campaign_id: string }; Returns: number }
+      release_campaign: { Args: { _campaign_id: string }; Returns: number }
     }
     Enums: {
       booking_source: "online" | "manual" | "block"
