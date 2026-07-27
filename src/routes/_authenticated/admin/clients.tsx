@@ -1,7 +1,7 @@
-import { createFileRoute } from "@tanstack/react-router";
+import { createFileRoute, useNavigate } from "@tanstack/react-router";
 import { useServerFn } from "@tanstack/react-start";
 import { useQuery } from "@tanstack/react-query";
-import { useState } from "react";
+import { useEffect, useState } from "react";
 import { Search, ChevronRight, Plus } from "lucide-react";
 import { listClients } from "@/lib/admin.functions";
 import { Input } from "@/components/ui/input";
@@ -13,6 +13,9 @@ import { useAdminT } from "@/lib/admin-i18n";
 import { useAdminStudio } from "@/lib/admin-studio-context";
 
 export const Route = createFileRoute("/_authenticated/admin/clients")({
+  validateSearch: (search: Record<string, unknown>) => ({
+    client: typeof search.client === "string" ? search.client : undefined,
+  }),
   component: ClientsPage,
 });
 
@@ -33,6 +36,8 @@ function clientName(client: Pick<ClientRow, "first_name" | "last_name">) {
 
 function ClientsPage() {
   const t = useAdminT();
+  const navigate = useNavigate();
+  const { client: clientParam } = Route.useSearch();
   const [q, setQ] = useState("");
   const listFn = useServerFn(listClients);
   const { studioId } = useAdminStudio();
@@ -42,6 +47,13 @@ function ClientsPage() {
     queryKey: ["admin", "clients", studioId, q],
     queryFn: () => listFn({ data: { q: q || undefined, studioId } }),
   });
+
+  // Direkteinstieg aus dem Marketing-Bericht: ?client=<id> öffnet das Profil.
+  useEffect(() => {
+    if (!clientParam || selectedClient) return;
+    const hit = clients.data?.find((c) => c.id === clientParam);
+    if (hit) setSelectedClient(hit);
+  }, [clientParam, clients.data, selectedClient]);
 
   function handleRowClick(client: ClientRow) {
     setSelectedClient(client);
@@ -149,7 +161,14 @@ function ClientsPage() {
         </table>
       </div>
       <AddClientDialog open={addOpen} onOpenChange={setAddOpen} />
-      <Sheet open={Boolean(selectedClient)} onOpenChange={(open) => !open && setSelectedClient(null)}>
+      <Sheet
+        open={Boolean(selectedClient)}
+        onOpenChange={(open) => {
+          if (open) return;
+          setSelectedClient(null);
+          if (clientParam) navigate({ to: "/admin/clients", search: {}, replace: true });
+        }}
+      >
         <SheetContent side="right" className="!w-[95vw] !max-w-none overflow-y-auto sm:!w-[1100px]">
           {selectedClient && (
             <ClientProfileView
