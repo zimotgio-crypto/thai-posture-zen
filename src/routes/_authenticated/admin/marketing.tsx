@@ -2,7 +2,18 @@ import { createFileRoute } from "@tanstack/react-router";
 import { useServerFn } from "@tanstack/react-start";
 import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
 import { useState } from "react";
-import { Plus, Copy, BarChart3, Play, Pause, CopyPlus, Trash2, Pencil, Square } from "lucide-react";
+import {
+  Plus,
+  Copy,
+  BarChart3,
+  Play,
+  Pause,
+  CopyPlus,
+  Trash2,
+  Pencil,
+  Square,
+  ImageIcon,
+} from "lucide-react";
 import { toast } from "sonner";
 import { Button } from "@/components/ui/button";
 import { Sheet, SheetContent } from "@/components/ui/sheet";
@@ -17,6 +28,7 @@ import {
 } from "@/lib/marketing.functions";
 import { CampaignFormDialog, type CampaignRow, type TreatmentLite } from "@/components/admin/campaign-form";
 import { CampaignDetail } from "@/components/admin/campaign-detail";
+import { AdCreativeDialog } from "@/components/admin/ad-creative-dialog";
 import { cn } from "@/lib/utils";
 
 export const Route = createFileRoute("/_authenticated/admin/marketing")({
@@ -57,6 +69,8 @@ function MarketingPage() {
   const [formOpen, setFormOpen] = useState(false);
   const [editing, setEditing] = useState<CampaignRow | null>(null);
   const [detailId, setDetailId] = useState<string | null>(null);
+  const [creativeOpen, setCreativeOpen] = useState(false);
+  const [creativeCampaign, setCreativeCampaign] = useState<CampaignRow | null>(null);
 
   const query = useQuery({
     queryKey: ["admin", "campaigns", studioId],
@@ -132,15 +146,27 @@ function MarketingPage() {
           </p>
           <h1 className="font-serif text-2xl text-charcoal">{t.marketing.title}</h1>
         </div>
-        <Button
-          onClick={() => {
-            setEditing(null);
-            setFormOpen(true);
-          }}
-          className="btn-gold rounded-sm px-4 py-2.5 text-[0.7rem] uppercase tracking-[0.22em]"
-        >
-          <Plus className="mr-1 h-4 w-4" /> {t.marketing.newCampaign}
-        </Button>
+        <div className="flex flex-wrap gap-2">
+          <Button
+            variant="outline"
+            onClick={() => {
+              setCreativeCampaign(null);
+              setCreativeOpen(true);
+            }}
+            className="rounded-sm px-4 py-2.5 text-[0.7rem] uppercase tracking-[0.22em]"
+          >
+            <ImageIcon className="mr-1 h-4 w-4" /> {t.marketing.adCreative.open}
+          </Button>
+          <Button
+            onClick={() => {
+              setEditing(null);
+              setFormOpen(true);
+            }}
+            className="btn-gold rounded-sm px-4 py-2.5 text-[0.7rem] uppercase tracking-[0.22em]"
+          >
+            <Plus className="mr-1 h-4 w-4" /> {t.marketing.newCampaign}
+          </Button>
+        </div>
       </div>
 
       <div className="rounded-sm border border-border/60 bg-card overflow-x-auto">
@@ -216,6 +242,15 @@ function MarketingPage() {
                         }}
                       >
                         <Pencil className="h-4 w-4" />
+                      </IconAction>
+                      <IconAction
+                        label={t.marketing.adCreative.open}
+                        onClick={() => {
+                          setCreativeCampaign(c);
+                          setCreativeOpen(true);
+                        }}
+                      >
+                        <ImageIcon className="h-4 w-4" />
                       </IconAction>
                       {c.status !== "aktiv" && c.status !== "beendet" && (
                         <IconAction
@@ -293,6 +328,16 @@ function MarketingPage() {
           {detailId && <CampaignDetail campaignId={detailId} />}
         </SheetContent>
       </Sheet>
+
+      {creativeOpen && (
+        <AdCreativeDialog
+          key={creativeCampaign?.id ?? "standalone"}
+          open={creativeOpen}
+          onOpenChange={setCreativeOpen}
+          campaign={creativeCampaign}
+          treatments={treatments}
+        />
+      )}
     </div>
   );
 }
