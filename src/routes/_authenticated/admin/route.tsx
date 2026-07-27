@@ -2,7 +2,7 @@ import { createFileRoute, Link, Outlet, useNavigate, useRouterState } from "@tan
 import { useServerFn } from "@tanstack/react-start";
 import { useQuery, useQueryClient } from "@tanstack/react-query";
 import { useState } from "react";
-import { CalendarDays, Users, LogOut, Plus, Sparkles, Settings, Building2, Megaphone } from "lucide-react";
+import { CalendarDays, Users, LogOut, Plus, Sparkles, Settings, Building2, Megaphone, Images } from "lucide-react";
 import { supabase } from "@/integrations/supabase/client";
 import { getCurrentStudio, listMyStudios } from "@/lib/admin.functions";
 import { Button } from "@/components/ui/button";
@@ -131,6 +131,7 @@ function AdminShell() {
     { to: "/admin/calendar", label: t.shell.calendar, icon: CalendarDays },
     { to: "/admin/clients", label: t.shell.clients, icon: Users },
     { to: "/admin/marketing", label: t.marketing.title, icon: Megaphone },
+    { to: "/admin/mediathek", label: t.media.title, icon: Images },
     { to: "/admin/einstellungen", label: t.settings.title, icon: Settings },
     ...(myStudios.data?.isPlatformAdmin
       ? [{ to: "/admin/studios", label: t.studios.title, icon: Building2 } as const]
