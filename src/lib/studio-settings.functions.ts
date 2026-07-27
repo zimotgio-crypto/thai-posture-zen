@@ -218,7 +218,21 @@ export const saveTreatment = createServerFn({ method: "POST" })
     const taken = ((existingKeys ?? []) as { id: string; key: string }[])
       .filter((r) => r.id !== data.id)
       .map((r) => r.key);
-    const resolvedKey = uniqueSlug(slugify(data.key) || slugify(data.label), taken);
+    let resolvedKey = uniqueSlug(slugify(data.key) || slugify(data.label), taken);
+    if (data.id) {
+      const current = ((existingKeys ?? []) as { id: string; key: string }[]).find(
+        (r) => r.id === data.id,
+      );
+      if (current && current.key !== resolvedKey) {
+        // Kennung sperren, sobald Termine damit gebucht wurden.
+        const { count } = await supabaseAdmin
+          .from("bookings")
+          .select("id", { count: "exact", head: true })
+          .eq("studio_id", studioId)
+          .eq("treatment", current.key);
+        if ((count ?? 0) > 0) resolvedKey = current.key;
+      }
+    }
     const payload = {
       studio_id: studioId,
       key: resolvedKey,
