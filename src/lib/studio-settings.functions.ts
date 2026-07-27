@@ -209,9 +209,19 @@ export const saveTreatment = createServerFn({ method: "POST" })
       context.userId,
       data.studioId ?? null,
     );
+    // Kennung normalisieren und Kollisionen im Studio auflösen.
+    const { slugify, uniqueSlug } = await import("@/lib/slugify");
+    const { data: existingKeys } = await supabaseAdmin
+      .from("treatments")
+      .select("id, key")
+      .eq("studio_id", studioId);
+    const taken = ((existingKeys ?? []) as { id: string; key: string }[])
+      .filter((r) => r.id !== data.id)
+      .map((r) => r.key);
+    const resolvedKey = uniqueSlug(slugify(data.key) || slugify(data.label), taken);
     const payload = {
       studio_id: studioId,
-      key: data.key,
+      key: resolvedKey,
       label: data.label,
       description: clean(data.description),
       active: data.active,
