@@ -98,7 +98,7 @@ export const listBookingsInRange = createServerFn({ method: "GET" })
     const { supabaseAdmin: admin, studioId } = await studioContext(context.userId, data.studioId);
     const { data: rows, error } = await admin
       .from("bookings")
-      .select("id, day, time, treatment, duration_minutes, silent, source, notes, client_id, clients:client_id (id, first_name, last_name, phone, email, street, zip, city)")
+      .select("id, day, time, treatment, duration_minutes, silent, source, notes, client_id, price_chf, clients:client_id (id, first_name, last_name, phone, email, street, zip, city)")
       .eq("studio_id", studioId)
       .gte("day", data.from)
       .lte("day", data.to)
@@ -173,6 +173,18 @@ export const addBooking = createServerFn({ method: "POST" })
       }
     }
     const source = data.block ? ("block" as const) : ("manual" as const);
+    // Preis zum Buchungszeitpunkt aus den Behandlungen dieses Studios festhalten.
+    let priceChf: number | null = null;
+    if (!data.block) {
+      const { listTreatments, treatmentOptions } = await import("@/lib/studio.server");
+      const treatments = await listTreatments(studioId);
+      const match =
+        treatments.find((t) => t.key === data.treatment) ??
+        treatments.find((t) => t.label === data.treatment);
+      priceChf =
+        (match && treatmentOptions(match).find((o) => o.minutes === data.durationMinutes)?.price) ??
+        null;
+    }
     const insert = await admin
       .from("bookings")
       .insert({
@@ -184,6 +196,7 @@ export const addBooking = createServerFn({ method: "POST" })
         duration_minutes: data.durationMinutes,
         silent: data.silent,
         source,
+        price_chf: priceChf,
       })
       .select("id")
       .single();
