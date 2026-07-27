@@ -163,6 +163,21 @@ export function BookingModal({
     nur_neukunden: "Code gilt nur für Erstbuchungen",
   };
 
+  // Ein über die Adresse übergebener Code (?code=…) wird beim Öffnen des
+  // Modals automatisch übernommen.
+  useEffect(() => {
+    if (!open) return;
+    try {
+      const fromUrl = new URLSearchParams(window.location.search).get("code");
+      if (fromUrl) {
+        const clean = fromUrl.trim().toUpperCase().replace(/[^A-Z0-9]/g, "");
+        if (clean) setCode((prev) => prev || clean);
+      }
+    } catch {
+      /* ignore */
+    }
+  }, [open]);
+
   // Fetch existing bookings for the selected day so we can hide occupied slots.
   useEffect(() => {
     if (!open || !day) {
