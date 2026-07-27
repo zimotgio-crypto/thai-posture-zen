@@ -23,6 +23,7 @@ export type Database = {
           google_event_id: string | null
           id: string
           notes: string | null
+          price_chf: number | null
           silent: boolean
           source: Database["public"]["Enums"]["booking_source"]
           studio_id: string
@@ -37,6 +38,7 @@ export type Database = {
           google_event_id?: string | null
           id?: string
           notes?: string | null
+          price_chf?: number | null
           silent?: boolean
           source?: Database["public"]["Enums"]["booking_source"]
           studio_id: string
@@ -51,6 +53,7 @@ export type Database = {
           google_event_id?: string | null
           id?: string
           notes?: string | null
+          price_chf?: number | null
           silent?: boolean
           source?: Database["public"]["Enums"]["booking_source"]
           studio_id?: string
