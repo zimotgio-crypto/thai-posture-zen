@@ -224,7 +224,6 @@ export function BookingModal({
       cancelled = true;
       clearTimeout(handle);
       setCodeChecking(false);
-      clearTimeout(handle);
     };
   }, [open, code, treatment, durationMin, checkCode, studio.slug]);
 
