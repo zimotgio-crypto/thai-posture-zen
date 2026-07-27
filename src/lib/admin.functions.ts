@@ -234,7 +234,7 @@ export const deleteBooking = createServerFn({ method: "POST" })
     const { deleteGoogleEvent } = await import("@/lib/google-calendar.server");
     const { data: row } = await admin
       .from("bookings")
-      .select("google_event_id")
+      .select("google_event_id, campaign_id")
       .eq("id", data.id)
       .eq("studio_id", studioId)
       .maybeSingle();
@@ -251,6 +251,27 @@ export const deleteBooking = createServerFn({ method: "POST" })
       .eq("id", data.id)
       .eq("studio_id", studioId);
     if (error) throw new Error(error.message);
+
+    // Storno gibt den Kampagnenplatz wieder frei.
+    if (row?.campaign_id) {
+      try {
+        const { releaseCampaign } = await import("@/lib/campaign.server");
+        const used = await releaseCampaign(admin, row.campaign_id);
+        const { data: campaign } = await admin
+          .from("campaigns")
+          .select("status, max_redemptions")
+          .eq("id", row.campaign_id)
+          .maybeSingle();
+        if (
+          campaign?.status === "beendet" &&
+          (campaign.max_redemptions === null || (used ?? 0) < campaign.max_redemptions)
+        ) {
+          await admin.from("campaigns").update({ status: "aktiv" }).eq("id", row.campaign_id);
+        }
+      } catch (err) {
+        console.error("[deleteBooking] campaign release failed", err);
+      }
+    }
     return { ok: true as const };
   });
 
