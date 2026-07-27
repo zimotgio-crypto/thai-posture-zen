@@ -27,6 +27,7 @@ export function TextField({
   hint,
   placeholder,
   type = "text",
+  disabled,
 }: {
   label: string;
   value: string;
@@ -34,6 +35,7 @@ export function TextField({
   hint?: string;
   placeholder?: string;
   type?: string;
+  disabled?: boolean;
 }) {
   return (
     <Field label={label} hint={hint}>
@@ -41,6 +43,7 @@ export function TextField({
         type={type}
         value={value}
         placeholder={placeholder}
+        disabled={disabled}
         onChange={(e) => onChange(e.target.value)}
         className="rounded-sm"
       />

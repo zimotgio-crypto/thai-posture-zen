@@ -209,9 +209,33 @@ export const saveTreatment = createServerFn({ method: "POST" })
       context.userId,
       data.studioId ?? null,
     );
+    // Kennung normalisieren und Kollisionen im Studio auflösen.
+    const { slugify, uniqueSlug } = await import("@/lib/slugify");
+    const { data: existingKeys } = await supabaseAdmin
+      .from("treatments")
+      .select("id, key")
+      .eq("studio_id", studioId);
+    const taken = ((existingKeys ?? []) as { id: string; key: string }[])
+      .filter((r) => r.id !== data.id)
+      .map((r) => r.key);
+    let resolvedKey = uniqueSlug(slugify(data.key) || slugify(data.label), taken);
+    if (data.id) {
+      const current = ((existingKeys ?? []) as { id: string; key: string }[]).find(
+        (r) => r.id === data.id,
+      );
+      if (current && current.key !== resolvedKey) {
+        // Kennung sperren, sobald Termine damit gebucht wurden.
+        const { count } = await supabaseAdmin
+          .from("bookings")
+          .select("id", { count: "exact", head: true })
+          .eq("studio_id", studioId)
+          .eq("treatment", current.key);
+        if ((count ?? 0) > 0) resolvedKey = current.key;
+      }
+    }
     const payload = {
       studio_id: studioId,
-      key: data.key,
+      key: resolvedKey,
       label: data.label,
       description: clean(data.description),
       active: data.active,
