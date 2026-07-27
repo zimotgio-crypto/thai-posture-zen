@@ -19,6 +19,7 @@ import { formatSwissDate, formatDuration } from "@/lib/pricing";
 import { useT } from "@/lib/i18n";
 import { useAdminT, useAdminLocale } from "@/lib/admin-i18n";
 import { useAdminStudio, type AdminTreatment } from "@/lib/admin-studio-context";
+import { StudioText } from "@/components/studio-text";
 
 type BookingRow = {
   id: string;
@@ -304,7 +305,9 @@ function CalendarPage() {
                       ) : (
                         <div className="mt-0.5 truncate">—</div>
                       )}
-                      <div className="text-charcoal-soft truncate">{b.treatment}</div>
+                      <StudioText as="div" className="text-charcoal-soft truncate">
+                        {b.treatment}
+                      </StudioText>
                       {client && <div className="text-charcoal-soft truncate">{client.phone}</div>}
                     </button>
                   );
@@ -438,7 +441,7 @@ function BookingDetailsDialog({
           <DetailRow label={at.calendar.duration} value={formatDuration(dur)} />
           {!isBlock && (
             <>
-              <DetailRow label={at.calendar.treatment} value={booking.treatment} />
+              <DetailRow label={at.calendar.treatment} value={booking.treatment} raw />
               {price !== null && price > 0 && (
                 <DetailRow label={at.calendar.price} value={`CHF ${price}.–`} />
               )}
@@ -470,7 +473,10 @@ function BookingDetailsDialog({
                   <span className="text-[0.65rem] uppercase tracking-[0.22em] text-charcoal-soft">
                     {at.calendar.notes}
                   </span>
-                  <p className="whitespace-pre-wrap rounded-sm border border-border/60 bg-card p-3 text-sm text-charcoal">
+                  <p
+                    translate="no"
+                    className="notranslate whitespace-pre-wrap rounded-sm border border-border/60 bg-card p-3 text-sm text-charcoal"
+                  >
                     {booking.notes}
                   </p>
                 </div>
@@ -501,13 +507,17 @@ function BookingDetailsDialog({
   );
 }
 
-function DetailRow({ label, value }: { label: string; value: string }) {
+function DetailRow({ label, value, raw }: { label: string; value: string; raw?: boolean }) {
   return (
     <div className="grid grid-cols-[8rem_1fr] items-baseline gap-3">
       <span className="text-[0.65rem] uppercase tracking-[0.22em] text-charcoal-soft">
         {label}
       </span>
-      <span className="text-charcoal">{value}</span>
+      {raw ? (
+        <StudioText className="text-charcoal">{value}</StudioText>
+      ) : (
+        <span className="text-charcoal">{value}</span>
+      )}
     </div>
   );
 }
