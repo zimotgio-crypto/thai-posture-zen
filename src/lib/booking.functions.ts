@@ -16,6 +16,7 @@ const submitInput = z.object({
   street: z.string().trim().min(1).max(200),
   zip: z.string().trim().min(1).max(20),
   city: z.string().trim().min(1).max(120),
+  code: z.string().trim().max(60).optional(),
 });
 
 export const submitBooking = createServerFn({ method: "POST" })
@@ -44,7 +45,7 @@ export const submitBooking = createServerFn({ method: "POST" })
     if (!option) {
       return { ok: false as const, reason: "unknown_duration" as const };
     }
-    const price = option.price;
+    let price = option.price;
 
     // Opening hours and slot grid of this studio.
     const weekday = new Date(`${data.day}T12:00:00Z`).getUTCDay();
@@ -97,6 +98,50 @@ export const submitBooking = createServerFn({ method: "POST" })
 
     const client = await getOrCreateClient(supabaseAdmin, data, studio.id);
 
+    // Gutschein: Preis und Rabatt werden hier erneut serverseitig ermittelt.
+    let campaignId: string | null = null;
+    let discount: number | null = null;
+    const rawCode = data.code?.trim() ?? "";
+    if (rawCode) {
+      const {
+        findCampaignByCode,
+        evaluateCampaign,
+        hasExistingBooking,
+        redeemCampaign,
+      } = await import("@/lib/campaign.server");
+      const campaign = await findCampaignByCode(supabaseAdmin, studio.id, rawCode);
+      const evaluation = evaluateCampaign(campaign, treatment, data.durationMinutes);
+      if (!evaluation.valid) {
+        return { ok: false as const, reason: `code_${evaluation.reason}` as const };
+      }
+      if (evaluation.campaign.applies_to === "neukunden") {
+        const returning = await hasExistingBooking(
+          supabaseAdmin,
+          studio.id,
+          data.phone.trim(),
+          data.email.trim(),
+        );
+        if (returning) {
+          return { ok: false as const, reason: "code_nur_neukunden" as const };
+        }
+      }
+      const used = await redeemCampaign(supabaseAdmin, evaluation.campaign.id);
+      if (used === null) {
+        return { ok: false as const, reason: "code_ausgebucht" as const };
+      }
+      campaignId = evaluation.campaign.id;
+      discount = evaluation.discount;
+      price = evaluation.finalPrice;
+      // Kontingent erschöpft → Kampagne automatisch beenden.
+      const max = evaluation.campaign.max_redemptions;
+      if (max !== null && used >= max) {
+        await supabaseAdmin
+          .from("campaigns")
+          .update({ status: "beendet" })
+          .eq("id", evaluation.campaign.id);
+      }
+    }
+
     const insert = await supabaseAdmin
       .from("bookings")
       .insert({
@@ -109,10 +154,18 @@ export const submitBooking = createServerFn({ method: "POST" })
         silent: data.silent,
         source: "online",
         price_chf: price,
+        campaign_id: campaignId,
+        discount_chf: discount,
       })
       .select("id")
       .single();
-    if (insert.error) throw new Error(insert.error.message);
+    if (insert.error) {
+      if (campaignId) {
+        const { releaseCampaign } = await import("@/lib/campaign.server");
+        await releaseCampaign(supabaseAdmin, campaignId).catch(() => {});
+      }
+      throw new Error(insert.error.message);
+    }
 
     // Best-effort: mirror into Google Calendar. Never fail the booking.
     try {
@@ -138,6 +191,58 @@ export const submitBooking = createServerFn({ method: "POST" })
     }
 
     return { ok: true as const, price };
+  });
+
+const validateCodeInput = z.object({
+  studioSlug: z.string().trim().min(1).max(80),
+  code: z.string().trim().min(1).max(60),
+  treatmentKey: z.string().trim().min(1).max(100),
+  durationMinutes: z.number().int().min(15).max(300),
+});
+
+export type CampaignCheckResult = {
+  valid: boolean;
+  reason?: "unbekannt" | "abgelaufen" | "ausgebucht" | "andere_behandlung" | "nur_neukunden";
+  title?: string;
+  discountType?: string;
+  discountValue?: number;
+  originalPrice?: number;
+  finalPrice?: number;
+  remaining?: number | null;
+  maxRedemptions?: number | null;
+};
+
+// Öffentliche Vorabprüfung eines Gutscheincodes. Gibt nur unkritische Felder
+// zurück – keine IDs, kein Budget, keine Zielgruppendaten.
+export const validateCampaignCode = createServerFn({ method: "GET" })
+  .inputValidator((data: unknown) => validateCodeInput.parse(data))
+  .handler(async ({ data }): Promise<CampaignCheckResult> => {
+    const { supabaseAdmin } = await import("@/integrations/supabase/client.server");
+    const { requireStudioBySlug, listTreatments } = await import("@/lib/studio.server");
+    const { findCampaignByCode, evaluateCampaign } = await import("@/lib/campaign.server");
+
+    const studio = await requireStudioBySlug(data.studioSlug);
+    const treatments = await listTreatments(studio.id);
+    const treatment =
+      treatments.find((t) => t.key === data.treatmentKey) ??
+      treatments.find((t) => t.label === data.treatmentKey) ??
+      null;
+
+    const campaign = await findCampaignByCode(supabaseAdmin, studio.id, data.code);
+    const evaluation = evaluateCampaign(campaign, treatment, data.durationMinutes);
+    if (!evaluation.valid) {
+      return { valid: false, reason: evaluation.reason };
+    }
+    return {
+      valid: true,
+      title: evaluation.campaign.title,
+      discountType: evaluation.campaign.discount_type,
+      discountValue: Number(evaluation.campaign.discount_value),
+      originalPrice: evaluation.originalPrice,
+      finalPrice: evaluation.finalPrice,
+      remaining: evaluation.remaining,
+      maxRedemptions: evaluation.campaign.max_redemptions,
+    };
   });
 
 const listInput = z.object({
