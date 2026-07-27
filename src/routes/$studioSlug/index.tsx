@@ -42,10 +42,11 @@ function Index() {
   const t = useT();
   const studio = useStudio();
   const { studioSlug } = Route.useParams();
-  const features =
+  // Studio-Inhalte werden nie übersetzt (raw), Fallback-Texte schon.
+  const features: { t: string; d: string; raw?: boolean }[] =
     studio.features.length > 0
-      ? studio.features.map((f) => ({ t: f.title, d: f.text }))
-      : t.home.features;
+      ? studio.features.map((f) => ({ t: f.title, d: f.text, raw: true }))
+      : t.home.features.map((f) => ({ t: f.t, d: f.d }));
   const firstTreatmentKey = studio.treatments[0]?.key;
   const lead = studio.treatments[0];
   const leadOption = lead?.options[0];
@@ -187,7 +188,7 @@ function Index() {
                     <div className="mt-0.5 flex h-9 w-9 shrink-0 items-center justify-center rounded-sm bg-gold-soft/40 text-gold-deep">
                       <Icon className="h-4 w-4" />
                     </div>
-                    <div>
+                    <div {...(f.raw ? { translate: "no" as const, className: "notranslate" } : {})}>
                       <div className="font-medium text-charcoal">{f.t}</div>
                       <div className="text-sm text-charcoal-soft">{f.d}</div>
                     </div>
