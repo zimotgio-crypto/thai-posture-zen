@@ -12,7 +12,6 @@ import { formatDuration } from "@/lib/pricing";
 import { cn } from "@/lib/utils";
 import { useAdminT } from "@/lib/admin-i18n";
 import { useAdminStudio } from "@/lib/admin-studio-context";
-import { StudioText } from "@/components/studio-text";
 
 export function AddBookingDialog({
   open,
