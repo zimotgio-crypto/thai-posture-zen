@@ -1,0 +1,35 @@
+-- Fix Supabase linter finding 0010 "Security Definer View" (critical).
+--
+-- Why: public.studios_public and public.treatments_public were created in
+-- 20260726134219_* without security_invoker, so they run with definer
+-- semantics: queries execute with the view owner's rights and bypass the
+-- caller's RLS on the underlying tables (public.studios, public.treatments).
+-- Combined with the existing "grant select ... to anon, authenticated",
+-- this exposed active studios/treatments to any anon caller regardless of
+-- RLS. Switching to invoker semantics makes the views honor the caller's
+-- own privileges and RLS policies — same pattern as public.booking_slots
+-- (20260714191312_*), which was created with (security_invoker = on).
+--
+-- App impact: none. The app never queries these views (only the generated
+-- types.ts mentions them); public pages read studios/treatments server-side
+-- via service_role directly from the base tables, and service_role bypasses
+-- RLS regardless of view semantics.
+--
+-- Intentional effect for anon after this change (grants/policies untouched):
+--   studios_public:    anon has no SELECT grant on public.studios
+--                      -> "permission denied" — the view is effectively closed.
+--   treatments_public: anon has SELECT on public.treatments but no anon RLS
+--                      policy -> empty result set.
+-- Both outcomes are desired; the views stay in place only for schema
+-- compatibility until they are dropped or replaced deliberately.
+--
+-- ALTER VIEW ... SET (security_invoker = on) is supported since Postgres 15
+-- (Supabase runs 15+). Chosen over CREATE OR REPLACE ... WITH (...) because
+-- it is minimally invasive: it flips only the option and cannot accidentally
+-- change the column list or the view definition.
+--
+-- Legacy-data check: not applicable — no constraint is added and no data is
+-- touched; this only changes a view option.
+
+alter view public.studios_public set (security_invoker = on);
+alter view public.treatments_public set (security_invoker = on);
