@@ -1,4 +1,4 @@
-import { useEffect, useMemo, useRef, useState } from "react";
+import { useCallback, useEffect, useMemo, useRef, useState } from "react";
 import { useServerFn } from "@tanstack/react-start";
 import { submitBooking, listBookedTimes, validateCampaignCode } from "@/lib/booking.functions";
 import type { CampaignCheckResult } from "@/lib/booking.functions";
@@ -88,6 +88,21 @@ function generateStartTimes(
 
 // (Bookings live server-side in Lovable Cloud; no localStorage cache.)
 
+type TreatmentLite = { key: string; options: { minutes: number; price: number }[] };
+
+function resolveInitialTreatment(treatments: TreatmentLite[], id: string | undefined): string {
+  if (id && treatments.some((tr) => tr.key === id)) return id;
+  // Legacy id fallback (e.g. removed "Ohne Öl" variant) → closest match.
+  const stem = id?.split("-").slice(0, 2).join("-");
+  const near = stem ? treatments.find((tr) => tr.key.startsWith(stem)) : undefined;
+  return near?.key ?? treatments[0]?.key ?? "";
+}
+
+function defaultDurationFor(treatments: TreatmentLite[], key: string): number {
+  const opts = treatments.find((tr) => tr.key === key)?.options ?? [];
+  return (opts.find((o) => o.minutes === 60) ?? opts[0])?.minutes ?? 60;
+}
+
 export function BookingModal({
   open,
   onOpenChange,
@@ -100,23 +115,16 @@ export function BookingModal({
   const t = useT();
   const studio = useStudio();
   const treatments = studio.treatments;
-  const optionsFor = (key: string) => treatments.find((tr) => tr.key === key)?.options ?? [];
-  const resolveInitial = (id: string | undefined) => {
-    if (id && treatments.some((tr) => tr.key === id)) return id;
-    // Legacy id fallback (e.g. removed "Ohne Öl" variant) → closest match.
-    const stem = id?.split("-").slice(0, 2).join("-");
-    const near = stem ? treatments.find((tr) => tr.key.startsWith(stem)) : undefined;
-    return near?.key ?? treatments[0]?.key ?? "";
-  };
-  const [treatment, setTreatment] = useState(() => resolveInitial(initialTreatment));
+  const [treatment, setTreatment] = useState(() =>
+    resolveInitialTreatment(treatments, initialTreatment),
+  );
   const durationOptions = useMemo(
     () => treatments.find((tr) => tr.key === treatment)?.options ?? [],
     [treatments, treatment]
   );
-  const [durationMin, setDurationMin] = useState<number>(() => {
-    const opts = optionsFor(resolveInitial(initialTreatment));
-    return (opts.find((o) => o.minutes === 60) ?? opts[0])?.minutes ?? 60;
-  });
+  const [durationMin, setDurationMin] = useState<number>(() =>
+    defaultDurationFor(treatments, resolveInitialTreatment(treatments, initialTreatment)),
+  );
 
   // When treatment changes, snap duration to a valid option (prefer 60 Min., else first).
   useEffect(() => {
@@ -154,6 +162,43 @@ export function BookingModal({
   const [code, setCode] = useState("");
   const [codeState, setCodeState] = useState<CampaignCheckResult | null>(null);
   const [codeChecking, setCodeChecking] = useState(false);
+
+  const resetForm = useCallback(() => {
+    setDay(null);
+    setTime(null);
+    setCursor(() => {
+      const now = new Date();
+      return new Date(now.getFullYear(), now.getMonth(), 1);
+    });
+    setSilent(true);
+    setFirstName("");
+    setLastName("");
+    setEmail("");
+    setPhone("");
+    setStreet("");
+    setZip("");
+    setCity("");
+    setCode("");
+    setCodeState(null);
+    setErrors({});
+    setDateError(false);
+    setTimeError(false);
+  }, []);
+
+  // The dialog stays mounted for the whole session (see booking-provider), so
+  // the lazy state initializers above only ran once. Sync the treatment passed
+  // for this opening, and clear the form again whenever the dialog closes —
+  // otherwise a cancelled booking leaks stale data (incl. a past date) into
+  // the next opening.
+  useEffect(() => {
+    if (open) {
+      const key = resolveInitialTreatment(treatments, initialTreatment);
+      setTreatment(key);
+      setDurationMin(defaultDurationFor(treatments, key));
+    } else {
+      resetForm();
+    }
+  }, [open, initialTreatment, treatments, resetForm]);
 
   const codeMessages: Record<string, string> = {
     unbekannt: "Code unbekannt",
@@ -372,21 +417,8 @@ export function BookingModal({
       toast.success(t.booking.success, {
         description: `${current.label} (${durationMin} Min.) · ${day} · ${time}${silent ? " · " + t.booking.silent : ""}`,
       });
+      // Closing triggers the reset effect above; no manual field reset needed.
       onOpenChange(false);
-      setDay(null);
-      setTime(null);
-      setFirstName("");
-      setLastName("");
-      setEmail("");
-      setPhone("");
-      setStreet("");
-      setZip("");
-      setCity("");
-      setCode("");
-      setCodeState(null);
-      setErrors({});
-      setDateError(false);
-      setTimeError(false);
     } catch (err) {
       console.error(err);
       toast.error(
@@ -544,13 +576,15 @@ export function BookingModal({
                 {cells.map(({ date, inMonth }) => {
                   const key = ymd(date);
                   const isPast = date < today;
-                  const isDisabled = isPast;
+                  const isClosed = !studio.openingHours[String(date.getDay())];
+                  const isDisabled = isPast || isClosed;
                   const isSelected = day === key;
                   const isToday = key === ymd(today);
                   return (
                     <button
                       key={key}
                       type="button"
+                      title={isClosed && !isPast ? t.booking.closed : undefined}
                       onClick={() => {
                         if (isDisabled) return;
                         setDay(key);
