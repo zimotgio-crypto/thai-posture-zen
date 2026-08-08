@@ -771,6 +771,7 @@ export type Database = {
       }
     }
     Functions: {
+      booking_start_minutes: { Args: { t: string }; Returns: number }
       is_platform_admin: { Args: { _user_id: string }; Returns: boolean }
       is_studio_member: {
         Args: { _studio_id: string; _user_id: string }
