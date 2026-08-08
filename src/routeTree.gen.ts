@@ -9,57 +9,33 @@
 // Additionally, you should also exclude this file from your linter and/or formatter to prevent it from being checked or modified.
 
 import { Route as rootRouteImport } from './routes/__root'
-import { Route as IndexRouteImport } from './routes/index'
-import { Route as StudioSlugRouteRouteImport } from './routes/$studioSlug/route'
-import { Route as AuthenticatedRouteRouteImport } from './routes/_authenticated/route'
-import { Route as AuthRouteImport } from './routes/auth'
-import { Route as DatenschutzRouteImport } from './routes/datenschutz'
-import { Route as HomeOfficeRouteImport } from './routes/home-office'
-import { Route as KontaktRouteImport } from './routes/kontakt'
 import { Route as SitemapDotxmlRouteImport } from './routes/sitemap[.]xml'
+import { Route as KontaktRouteImport } from './routes/kontakt'
+import { Route as HomeOfficeRouteImport } from './routes/home-office'
+import { Route as DatenschutzRouteImport } from './routes/datenschutz'
+import { Route as AuthRouteImport } from './routes/auth'
+import { Route as AuthenticatedRouteRouteImport } from './routes/_authenticated/route'
+import { Route as StudioSlugRouteRouteImport } from './routes/$studioSlug/route'
+import { Route as IndexRouteImport } from './routes/index'
 import { Route as StudioSlugIndexRouteImport } from './routes/$studioSlug/index'
-import { Route as StudioSlugHomeOfficeRouteImport } from './routes/$studioSlug/home-office'
 import { Route as StudioSlugKontaktRouteImport } from './routes/$studioSlug/kontakt'
+import { Route as StudioSlugHomeOfficeRouteImport } from './routes/$studioSlug/home-office'
 import { Route as AuthenticatedAdminRouteRouteImport } from './routes/_authenticated/admin/route'
-import { Route as StudioSlugBehandlungTreatmentKeyRouteImport } from './routes/$studioSlug/behandlung.$treatmentKey'
 import { Route as AuthenticatedAdminIndexRouteImport } from './routes/_authenticated/admin/index'
-import { Route as AuthenticatedAdminCalendarRouteImport } from './routes/_authenticated/admin/calendar'
-import { Route as AuthenticatedAdminClientsRouteImport } from './routes/_authenticated/admin/clients'
-import { Route as AuthenticatedAdminEinstellungenRouteImport } from './routes/_authenticated/admin/einstellungen'
-import { Route as AuthenticatedAdminMarketingRouteImport } from './routes/_authenticated/admin/marketing'
-import { Route as AuthenticatedAdminMediathekRouteImport } from './routes/_authenticated/admin/mediathek'
-import { Route as AuthenticatedAdminStudiosRouteImport } from './routes/_authenticated/admin/studios'
-import { Route as ApiPublicPingRouteImport } from './routes/api/public/ping'
 import { Route as ApiPublicWhatsappRouteImport } from './routes/api/public/whatsapp'
+import { Route as ApiPublicPingRouteImport } from './routes/api/public/ping'
+import { Route as AuthenticatedAdminStudiosRouteImport } from './routes/_authenticated/admin/studios'
+import { Route as AuthenticatedAdminMediathekRouteImport } from './routes/_authenticated/admin/mediathek'
+import { Route as AuthenticatedAdminMarketingRouteImport } from './routes/_authenticated/admin/marketing'
+import { Route as AuthenticatedAdminEinstellungenRouteImport } from './routes/_authenticated/admin/einstellungen'
+import { Route as AuthenticatedAdminClientsRouteImport } from './routes/_authenticated/admin/clients'
+import { Route as AuthenticatedAdminCalendarRouteImport } from './routes/_authenticated/admin/calendar'
+import { Route as StudioSlugBehandlungTreatmentKeyRouteImport } from './routes/$studioSlug/behandlung.$treatmentKey'
 import { Route as AuthenticatedAdminClientsIdRouteImport } from './routes/_authenticated/admin/clients.$id'
 
-const IndexRoute = IndexRouteImport.update({
-  id: '/',
-  path: '/',
-  getParentRoute: () => rootRouteImport,
-} as any)
-const StudioSlugRouteRoute = StudioSlugRouteRouteImport.update({
-  id: '/$studioSlug',
-  path: '/$studioSlug',
-  getParentRoute: () => rootRouteImport,
-} as any)
-const AuthenticatedRouteRoute = AuthenticatedRouteRouteImport.update({
-  id: '/_authenticated',
-  getParentRoute: () => rootRouteImport,
-} as any)
-const AuthRoute = AuthRouteImport.update({
-  id: '/auth',
-  path: '/auth',
-  getParentRoute: () => rootRouteImport,
-} as any)
-const DatenschutzRoute = DatenschutzRouteImport.update({
-  id: '/datenschutz',
-  path: '/datenschutz',
-  getParentRoute: () => rootRouteImport,
-} as any)
-const HomeOfficeRoute = HomeOfficeRouteImport.update({
-  id: '/home-office',
-  path: '/home-office',
+const SitemapDotxmlRoute = SitemapDotxmlRouteImport.update({
+  id: '/sitemap.xml',
+  path: '/sitemap.xml',
   getParentRoute: () => rootRouteImport,
 } as any)
 const KontaktRoute = KontaktRouteImport.update({
@@ -67,9 +43,33 @@ const KontaktRoute = KontaktRouteImport.update({
   path: '/kontakt',
   getParentRoute: () => rootRouteImport,
 } as any)
-const SitemapDotxmlRoute = SitemapDotxmlRouteImport.update({
-  id: '/sitemap.xml',
-  path: '/sitemap.xml',
+const HomeOfficeRoute = HomeOfficeRouteImport.update({
+  id: '/home-office',
+  path: '/home-office',
+  getParentRoute: () => rootRouteImport,
+} as any)
+const DatenschutzRoute = DatenschutzRouteImport.update({
+  id: '/datenschutz',
+  path: '/datenschutz',
+  getParentRoute: () => rootRouteImport,
+} as any)
+const AuthRoute = AuthRouteImport.update({
+  id: '/auth',
+  path: '/auth',
+  getParentRoute: () => rootRouteImport,
+} as any)
+const AuthenticatedRouteRoute = AuthenticatedRouteRouteImport.update({
+  id: '/_authenticated',
+  getParentRoute: () => rootRouteImport,
+} as any)
+const StudioSlugRouteRoute = StudioSlugRouteRouteImport.update({
+  id: '/$studioSlug',
+  path: '/$studioSlug',
+  getParentRoute: () => rootRouteImport,
+} as any)
+const IndexRoute = IndexRouteImport.update({
+  id: '/',
+  path: '/',
   getParentRoute: () => rootRouteImport,
 } as any)
 const StudioSlugIndexRoute = StudioSlugIndexRouteImport.update({
@@ -77,14 +77,14 @@ const StudioSlugIndexRoute = StudioSlugIndexRouteImport.update({
   path: '/',
   getParentRoute: () => StudioSlugRouteRoute,
 } as any)
-const StudioSlugHomeOfficeRoute = StudioSlugHomeOfficeRouteImport.update({
-  id: '/home-office',
-  path: '/home-office',
-  getParentRoute: () => StudioSlugRouteRoute,
-} as any)
 const StudioSlugKontaktRoute = StudioSlugKontaktRouteImport.update({
   id: '/kontakt',
   path: '/kontakt',
+  getParentRoute: () => StudioSlugRouteRoute,
+} as any)
+const StudioSlugHomeOfficeRoute = StudioSlugHomeOfficeRouteImport.update({
+  id: '/home-office',
+  path: '/home-office',
   getParentRoute: () => StudioSlugRouteRoute,
 } as any)
 const AuthenticatedAdminRouteRoute = AuthenticatedAdminRouteRouteImport.update({
@@ -92,39 +92,25 @@ const AuthenticatedAdminRouteRoute = AuthenticatedAdminRouteRouteImport.update({
   path: '/admin',
   getParentRoute: () => AuthenticatedRouteRoute,
 } as any)
-const StudioSlugBehandlungTreatmentKeyRoute =
-  StudioSlugBehandlungTreatmentKeyRouteImport.update({
-    id: '/behandlung/$treatmentKey',
-    path: '/behandlung/$treatmentKey',
-    getParentRoute: () => StudioSlugRouteRoute,
-  } as any)
 const AuthenticatedAdminIndexRoute = AuthenticatedAdminIndexRouteImport.update({
   id: '/',
   path: '/',
   getParentRoute: () => AuthenticatedAdminRouteRoute,
 } as any)
-const AuthenticatedAdminCalendarRoute =
-  AuthenticatedAdminCalendarRouteImport.update({
-    id: '/calendar',
-    path: '/calendar',
-    getParentRoute: () => AuthenticatedAdminRouteRoute,
-  } as any)
-const AuthenticatedAdminClientsRoute =
-  AuthenticatedAdminClientsRouteImport.update({
-    id: '/clients',
-    path: '/clients',
-    getParentRoute: () => AuthenticatedAdminRouteRoute,
-  } as any)
-const AuthenticatedAdminEinstellungenRoute =
-  AuthenticatedAdminEinstellungenRouteImport.update({
-    id: '/einstellungen',
-    path: '/einstellungen',
-    getParentRoute: () => AuthenticatedAdminRouteRoute,
-  } as any)
-const AuthenticatedAdminMarketingRoute =
-  AuthenticatedAdminMarketingRouteImport.update({
-    id: '/marketing',
-    path: '/marketing',
+const ApiPublicWhatsappRoute = ApiPublicWhatsappRouteImport.update({
+  id: '/api/public/whatsapp',
+  path: '/api/public/whatsapp',
+  getParentRoute: () => rootRouteImport,
+} as any)
+const ApiPublicPingRoute = ApiPublicPingRouteImport.update({
+  id: '/api/public/ping',
+  path: '/api/public/ping',
+  getParentRoute: () => rootRouteImport,
+} as any)
+const AuthenticatedAdminStudiosRoute =
+  AuthenticatedAdminStudiosRouteImport.update({
+    id: '/studios',
+    path: '/studios',
     getParentRoute: () => AuthenticatedAdminRouteRoute,
   } as any)
 const AuthenticatedAdminMediathekRoute =
@@ -133,22 +119,36 @@ const AuthenticatedAdminMediathekRoute =
     path: '/mediathek',
     getParentRoute: () => AuthenticatedAdminRouteRoute,
   } as any)
-const AuthenticatedAdminStudiosRoute =
-  AuthenticatedAdminStudiosRouteImport.update({
-    id: '/studios',
-    path: '/studios',
+const AuthenticatedAdminMarketingRoute =
+  AuthenticatedAdminMarketingRouteImport.update({
+    id: '/marketing',
+    path: '/marketing',
     getParentRoute: () => AuthenticatedAdminRouteRoute,
   } as any)
-const ApiPublicPingRoute = ApiPublicPingRouteImport.update({
-  id: '/api/public/ping',
-  path: '/api/public/ping',
-  getParentRoute: () => rootRouteImport,
-} as any)
-const ApiPublicWhatsappRoute = ApiPublicWhatsappRouteImport.update({
-  id: '/api/public/whatsapp',
-  path: '/api/public/whatsapp',
-  getParentRoute: () => rootRouteImport,
-} as any)
+const AuthenticatedAdminEinstellungenRoute =
+  AuthenticatedAdminEinstellungenRouteImport.update({
+    id: '/einstellungen',
+    path: '/einstellungen',
+    getParentRoute: () => AuthenticatedAdminRouteRoute,
+  } as any)
+const AuthenticatedAdminClientsRoute =
+  AuthenticatedAdminClientsRouteImport.update({
+    id: '/clients',
+    path: '/clients',
+    getParentRoute: () => AuthenticatedAdminRouteRoute,
+  } as any)
+const AuthenticatedAdminCalendarRoute =
+  AuthenticatedAdminCalendarRouteImport.update({
+    id: '/calendar',
+    path: '/calendar',
+    getParentRoute: () => AuthenticatedAdminRouteRoute,
+  } as any)
+const StudioSlugBehandlungTreatmentKeyRoute =
+  StudioSlugBehandlungTreatmentKeyRouteImport.update({
+    id: '/behandlung/$treatmentKey',
+    path: '/behandlung/$treatmentKey',
+    getParentRoute: () => StudioSlugRouteRoute,
+  } as any)
 const AuthenticatedAdminClientsIdRoute =
   AuthenticatedAdminClientsIdRouteImport.update({
     id: '/$id',
@@ -317,46 +317,11 @@ export interface RootRouteChildren {
 
 declare module '@tanstack/react-router' {
   interface FileRoutesByPath {
-    '/': {
-      id: '/'
-      path: '/'
-      fullPath: '/'
-      preLoaderRoute: typeof IndexRouteImport
-      parentRoute: typeof rootRouteImport
-    }
-    '/$studioSlug': {
-      id: '/$studioSlug'
-      path: '/$studioSlug'
-      fullPath: '/$studioSlug'
-      preLoaderRoute: typeof StudioSlugRouteRouteImport
-      parentRoute: typeof rootRouteImport
-    }
-    '/_authenticated': {
-      id: '/_authenticated'
-      path: ''
-      fullPath: '/'
-      preLoaderRoute: typeof AuthenticatedRouteRouteImport
-      parentRoute: typeof rootRouteImport
-    }
-    '/auth': {
-      id: '/auth'
-      path: '/auth'
-      fullPath: '/auth'
-      preLoaderRoute: typeof AuthRouteImport
-      parentRoute: typeof rootRouteImport
-    }
-    '/datenschutz': {
-      id: '/datenschutz'
-      path: '/datenschutz'
-      fullPath: '/datenschutz'
-      preLoaderRoute: typeof DatenschutzRouteImport
-      parentRoute: typeof rootRouteImport
-    }
-    '/home-office': {
-      id: '/home-office'
-      path: '/home-office'
-      fullPath: '/home-office'
-      preLoaderRoute: typeof HomeOfficeRouteImport
+    '/sitemap.xml': {
+      id: '/sitemap.xml'
+      path: '/sitemap.xml'
+      fullPath: '/sitemap.xml'
+      preLoaderRoute: typeof SitemapDotxmlRouteImport
       parentRoute: typeof rootRouteImport
     }
     '/kontakt': {
@@ -366,11 +331,46 @@ declare module '@tanstack/react-router' {
       preLoaderRoute: typeof KontaktRouteImport
       parentRoute: typeof rootRouteImport
     }
-    '/sitemap.xml': {
-      id: '/sitemap.xml'
-      path: '/sitemap.xml'
-      fullPath: '/sitemap.xml'
-      preLoaderRoute: typeof SitemapDotxmlRouteImport
+    '/home-office': {
+      id: '/home-office'
+      path: '/home-office'
+      fullPath: '/home-office'
+      preLoaderRoute: typeof HomeOfficeRouteImport
+      parentRoute: typeof rootRouteImport
+    }
+    '/datenschutz': {
+      id: '/datenschutz'
+      path: '/datenschutz'
+      fullPath: '/datenschutz'
+      preLoaderRoute: typeof DatenschutzRouteImport
+      parentRoute: typeof rootRouteImport
+    }
+    '/auth': {
+      id: '/auth'
+      path: '/auth'
+      fullPath: '/auth'
+      preLoaderRoute: typeof AuthRouteImport
+      parentRoute: typeof rootRouteImport
+    }
+    '/_authenticated': {
+      id: '/_authenticated'
+      path: ''
+      fullPath: '/'
+      preLoaderRoute: typeof AuthenticatedRouteRouteImport
+      parentRoute: typeof rootRouteImport
+    }
+    '/$studioSlug': {
+      id: '/$studioSlug'
+      path: '/$studioSlug'
+      fullPath: '/$studioSlug'
+      preLoaderRoute: typeof StudioSlugRouteRouteImport
+      parentRoute: typeof rootRouteImport
+    }
+    '/': {
+      id: '/'
+      path: '/'
+      fullPath: '/'
+      preLoaderRoute: typeof IndexRouteImport
       parentRoute: typeof rootRouteImport
     }
     '/$studioSlug/': {
@@ -380,18 +380,18 @@ declare module '@tanstack/react-router' {
       preLoaderRoute: typeof StudioSlugIndexRouteImport
       parentRoute: typeof StudioSlugRouteRoute
     }
-    '/$studioSlug/home-office': {
-      id: '/$studioSlug/home-office'
-      path: '/home-office'
-      fullPath: '/$studioSlug/home-office'
-      preLoaderRoute: typeof StudioSlugHomeOfficeRouteImport
-      parentRoute: typeof StudioSlugRouteRoute
-    }
     '/$studioSlug/kontakt': {
       id: '/$studioSlug/kontakt'
       path: '/kontakt'
       fullPath: '/$studioSlug/kontakt'
       preLoaderRoute: typeof StudioSlugKontaktRouteImport
+      parentRoute: typeof StudioSlugRouteRoute
+    }
+    '/$studioSlug/home-office': {
+      id: '/$studioSlug/home-office'
+      path: '/home-office'
+      fullPath: '/$studioSlug/home-office'
+      preLoaderRoute: typeof StudioSlugHomeOfficeRouteImport
       parentRoute: typeof StudioSlugRouteRoute
     }
     '/_authenticated/admin': {
@@ -401,13 +401,6 @@ declare module '@tanstack/react-router' {
       preLoaderRoute: typeof AuthenticatedAdminRouteRouteImport
       parentRoute: typeof AuthenticatedRouteRoute
     }
-    '/$studioSlug/behandlung/$treatmentKey': {
-      id: '/$studioSlug/behandlung/$treatmentKey'
-      path: '/behandlung/$treatmentKey'
-      fullPath: '/$studioSlug/behandlung/$treatmentKey'
-      preLoaderRoute: typeof StudioSlugBehandlungTreatmentKeyRouteImport
-      parentRoute: typeof StudioSlugRouteRoute
-    }
     '/_authenticated/admin/': {
       id: '/_authenticated/admin/'
       path: '/'
@@ -415,32 +408,25 @@ declare module '@tanstack/react-router' {
       preLoaderRoute: typeof AuthenticatedAdminIndexRouteImport
       parentRoute: typeof AuthenticatedAdminRouteRoute
     }
-    '/_authenticated/admin/calendar': {
-      id: '/_authenticated/admin/calendar'
-      path: '/calendar'
-      fullPath: '/admin/calendar'
-      preLoaderRoute: typeof AuthenticatedAdminCalendarRouteImport
-      parentRoute: typeof AuthenticatedAdminRouteRoute
+    '/api/public/whatsapp': {
+      id: '/api/public/whatsapp'
+      path: '/api/public/whatsapp'
+      fullPath: '/api/public/whatsapp'
+      preLoaderRoute: typeof ApiPublicWhatsappRouteImport
+      parentRoute: typeof rootRouteImport
     }
-    '/_authenticated/admin/clients': {
-      id: '/_authenticated/admin/clients'
-      path: '/clients'
-      fullPath: '/admin/clients'
-      preLoaderRoute: typeof AuthenticatedAdminClientsRouteImport
-      parentRoute: typeof AuthenticatedAdminRouteRoute
+    '/api/public/ping': {
+      id: '/api/public/ping'
+      path: '/api/public/ping'
+      fullPath: '/api/public/ping'
+      preLoaderRoute: typeof ApiPublicPingRouteImport
+      parentRoute: typeof rootRouteImport
     }
-    '/_authenticated/admin/einstellungen': {
-      id: '/_authenticated/admin/einstellungen'
-      path: '/einstellungen'
-      fullPath: '/admin/einstellungen'
-      preLoaderRoute: typeof AuthenticatedAdminEinstellungenRouteImport
-      parentRoute: typeof AuthenticatedAdminRouteRoute
-    }
-    '/_authenticated/admin/marketing': {
-      id: '/_authenticated/admin/marketing'
-      path: '/marketing'
-      fullPath: '/admin/marketing'
-      preLoaderRoute: typeof AuthenticatedAdminMarketingRouteImport
+    '/_authenticated/admin/studios': {
+      id: '/_authenticated/admin/studios'
+      path: '/studios'
+      fullPath: '/admin/studios'
+      preLoaderRoute: typeof AuthenticatedAdminStudiosRouteImport
       parentRoute: typeof AuthenticatedAdminRouteRoute
     }
     '/_authenticated/admin/mediathek': {
@@ -450,26 +436,40 @@ declare module '@tanstack/react-router' {
       preLoaderRoute: typeof AuthenticatedAdminMediathekRouteImport
       parentRoute: typeof AuthenticatedAdminRouteRoute
     }
-    '/_authenticated/admin/studios': {
-      id: '/_authenticated/admin/studios'
-      path: '/studios'
-      fullPath: '/admin/studios'
-      preLoaderRoute: typeof AuthenticatedAdminStudiosRouteImport
+    '/_authenticated/admin/marketing': {
+      id: '/_authenticated/admin/marketing'
+      path: '/marketing'
+      fullPath: '/admin/marketing'
+      preLoaderRoute: typeof AuthenticatedAdminMarketingRouteImport
       parentRoute: typeof AuthenticatedAdminRouteRoute
     }
-    '/api/public/ping': {
-      id: '/api/public/ping'
-      path: '/api/public/ping'
-      fullPath: '/api/public/ping'
-      preLoaderRoute: typeof ApiPublicPingRouteImport
-      parentRoute: typeof rootRouteImport
+    '/_authenticated/admin/einstellungen': {
+      id: '/_authenticated/admin/einstellungen'
+      path: '/einstellungen'
+      fullPath: '/admin/einstellungen'
+      preLoaderRoute: typeof AuthenticatedAdminEinstellungenRouteImport
+      parentRoute: typeof AuthenticatedAdminRouteRoute
     }
-    '/api/public/whatsapp': {
-      id: '/api/public/whatsapp'
-      path: '/api/public/whatsapp'
-      fullPath: '/api/public/whatsapp'
-      preLoaderRoute: typeof ApiPublicWhatsappRouteImport
-      parentRoute: typeof rootRouteImport
+    '/_authenticated/admin/clients': {
+      id: '/_authenticated/admin/clients'
+      path: '/clients'
+      fullPath: '/admin/clients'
+      preLoaderRoute: typeof AuthenticatedAdminClientsRouteImport
+      parentRoute: typeof AuthenticatedAdminRouteRoute
+    }
+    '/_authenticated/admin/calendar': {
+      id: '/_authenticated/admin/calendar'
+      path: '/calendar'
+      fullPath: '/admin/calendar'
+      preLoaderRoute: typeof AuthenticatedAdminCalendarRouteImport
+      parentRoute: typeof AuthenticatedAdminRouteRoute
+    }
+    '/$studioSlug/behandlung/$treatmentKey': {
+      id: '/$studioSlug/behandlung/$treatmentKey'
+      path: '/behandlung/$treatmentKey'
+      fullPath: '/$studioSlug/behandlung/$treatmentKey'
+      preLoaderRoute: typeof StudioSlugBehandlungTreatmentKeyRouteImport
+      parentRoute: typeof StudioSlugRouteRoute
     }
     '/_authenticated/admin/clients/$id': {
       id: '/_authenticated/admin/clients/$id'
