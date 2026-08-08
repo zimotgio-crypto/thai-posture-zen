@@ -200,13 +200,7 @@ export function BookingModal({
     }
   }, [open, initialTreatment, treatments, resetForm]);
 
-  const codeMessages: Record<string, string> = {
-    unbekannt: "Code unbekannt",
-    abgelaufen: "Aktion abgelaufen",
-    ausgebucht: "Aktion ausgebucht",
-    andere_behandlung: "Code gilt für eine andere Behandlung",
-    nur_neukunden: "Code gilt nur für Erstbuchungen",
-  };
+  const codeMessages: Record<string, string> = t.booking.codeErrors;
 
   // Ein über die Adresse übergebener Code (?code=…) wird beim Öffnen des
   // Modals automatisch übernommen.
@@ -343,9 +337,7 @@ export function BookingModal({
   async function submit(e: React.FormEvent) {
     e.preventDefault();
     if (availabilityError) {
-      toast.error(
-        "Verfügbarkeiten konnten nicht geladen werden. Bitte lade die Seite neu oder kontaktiere uns telefonisch.",
-      );
+      toast.error(t.booking.availabilityError);
       return;
     }
     const nextErrors: Record<string, boolean> = {
@@ -365,12 +357,12 @@ export function BookingModal({
       return;
     }
     if (!day) {
-      toast.error("Bitte wähle ein Datum.");
+      toast.error(t.booking.errDate);
       dateSectionRef.current?.scrollIntoView({ behavior: "smooth", block: "center" });
       return;
     }
     if (!time) {
-      toast.error("Bitte wähle eine Uhrzeit.");
+      toast.error(t.booking.errTime);
       timeSectionRef.current?.scrollIntoView({ behavior: "smooth", block: "center" });
       return;
     }
@@ -399,9 +391,9 @@ export function BookingModal({
         if (reason.startsWith("code_")) {
           const key = reason.slice(5);
           if (key === "ausgebucht") {
-            toast.error("Die Aktion ist inzwischen ausgebucht. Bitte ohne Code buchen.");
+            toast.error(t.booking.codeSoldOutSwitch);
           } else {
-            toast.error(codeMessages[key] ?? "Der Gutscheincode ist ungültig.");
+            toast.error(codeMessages[key] ?? t.booking.codeInvalid);
           }
           setCode("");
           setCodeState(null);
@@ -421,11 +413,7 @@ export function BookingModal({
       onOpenChange(false);
     } catch (err) {
       console.error(err);
-      toast.error(
-        err instanceof Error
-          ? err.message
-          : "Buchung fehlgeschlagen. Bitte später erneut versuchen."
-      );
+      toast.error(err instanceof Error ? err.message : t.booking.submitFailed);
     } finally {
       setSubmitting(false);
     }
@@ -471,7 +459,7 @@ export function BookingModal({
 
           <section className="space-y-3">
             <Label className="text-xs uppercase tracking-[0.2em] text-charcoal-soft">
-              Dauer · Preis
+              {t.booking.durationPrice}
             </Label>
             <div className="grid grid-cols-2 gap-2 sm:grid-cols-4">
               {durationOptions.map((opt) => {
@@ -502,9 +490,7 @@ export function BookingModal({
                       );
                       if (!stillAvailable) {
                         setTime(null);
-                        toast.message(
-                          "Bitte Uhrzeit erneut wählen – die verfügbaren Zeiten haben sich durch die neue Dauer geändert."
-                        );
+                        toast.message(t.booking.reselectTime);
                       }
                     }}
                     aria-pressed={selected}
@@ -635,8 +621,7 @@ export function BookingModal({
                 role="alert"
                 className="rounded-sm border border-destructive/60 bg-destructive/5 px-4 py-4 text-sm text-charcoal"
               >
-                Verfügbarkeiten konnten nicht geladen werden. Bitte lade die Seite neu oder
-                kontaktiere uns telefonisch.
+                {t.booking.availabilityError}
               </p>
             ) : slots.filter((s) => !s.disabled).length === 0 ? (
               <p className="rounded-sm border border-dashed border-border/70 px-4 py-6 text-center text-sm text-charcoal-soft">
@@ -693,18 +678,18 @@ export function BookingModal({
 
           <section className="space-y-3">
             <Label htmlFor="campaign-code" className="text-xs uppercase tracking-[0.2em] text-charcoal-soft">
-              Gutscheincode (optional)
+              {t.booking.codeLabel}
             </Label>
             <Input
               id="campaign-code"
               value={code}
               onChange={(e) => setCode(e.target.value)}
-              placeholder="z. B. HERBST25"
+              placeholder={t.booking.codePh}
               autoComplete="off"
               className="uppercase"
             />
             {code.trim() && codeChecking && (
-              <p className="text-sm text-charcoal-soft">Code wird geprüft …</p>
+              <p className="text-sm text-charcoal-soft">{t.booking.codeChecking}</p>
             )}
             {code.trim() && !codeChecking && codeState?.valid && (
               <div className="rounded-sm border border-gold/40 bg-gold-soft/20 px-4 py-3 text-sm text-charcoal">
@@ -717,7 +702,9 @@ export function BookingModal({
                 </p>
                 {typeof codeState.remaining === "number" && codeState.maxRedemptions != null && (
                   <p className="mt-1 text-xs text-charcoal-soft">
-                    Noch {codeState.remaining} von {codeState.maxRedemptions} Plätzen
+                    {t.booking.codeRemaining
+                      .replace("{n}", String(codeState.remaining))
+                      .replace("{max}", String(codeState.maxRedemptions))}
                   </p>
                 )}
               </div>
