@@ -7,6 +7,7 @@ export async function listBookedTimesForDay(
   studioId: string,
   day: string,
   calendarId?: string | null,
+  timezone?: string | null,
 ): Promise<BookedTime[]> {
   const { supabaseAdmin } = await import("@/integrations/supabase/client.server");
   const { data: rows, error } = await supabaseAdmin
@@ -20,7 +21,7 @@ export async function listBookedTimesForDay(
     time: r.time as string,
     duration: (r as { duration_minutes?: number | null }).duration_minutes ?? 60,
   }));
-  const googleSlots = await getGoogleBusyIntervals(day, calendarId);
+  const googleSlots = await getGoogleBusyIntervals(day, calendarId, timezone);
 
   const seen = new Set<string>();
   const out: BookedTime[] = [];

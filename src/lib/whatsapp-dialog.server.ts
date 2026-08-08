@@ -114,10 +114,12 @@ async function loadBusyRange(st: StudioCtx, from: string, to: string): Promise<B
       .eq("studio_id", st.studio.id)
       .gte("day", from)
       .lte("day", to),
-    getGoogleBusyIntervalsInRange(from, to, st.studio.google_calendar_id).catch((err) => {
-      console.error("[whatsapp-dialog] google range error", err);
-      return [] as Busy[];
-    }),
+    getGoogleBusyIntervalsInRange(from, to, st.studio.google_calendar_id, st.studio.timezone).catch(
+      (err) => {
+        console.error("[whatsapp-dialog] google range error", err);
+        return [] as Busy[];
+      },
+    ),
   ]);
   if (error) console.error("[whatsapp-dialog] loadBusyRange db error", error.message);
   const dbBusy: Busy[] = (rows ?? []).map((r) => ({
@@ -128,7 +130,8 @@ async function loadBusyRange(st: StudioCtx, from: string, to: string): Promise<B
   return [...dbBusy, ...(google as Busy[])];
 }
 
-function freeStartsForDay(
+// Exported for tests (tests/multi-day-busy.test.ts).
+export function freeStartsForDay(
   st: StudioCtx,
   day: string,
   duration: number,
@@ -176,7 +179,12 @@ async function availableDays(st: StudioCtx, duration: number): Promise<string[]>
 
 async function availableTimes(st: StudioCtx, day: string, duration: number): Promise<string[]> {
   const { listBookedTimesForDay } = await import("@/lib/booking-availability.server");
-  const rows = await listBookedTimesForDay(st.studio.id, day, st.studio.google_calendar_id);
+  const rows = await listBookedTimesForDay(
+    st.studio.id,
+    day,
+    st.studio.google_calendar_id,
+    st.studio.timezone,
+  );
   const busy: Busy[] = rows.map((r) => ({ day, time: r.time, duration: r.duration }));
   return freeStartsForDay(st, day, duration, busy, new Date());
 }

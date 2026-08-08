@@ -307,10 +307,13 @@ export const listGoogleBusyInRange = createServerFn({ method: "GET" })
     const { studioId } = await studioContext(context.userId, data.studioId);
     try {
       const { getGoogleBusyIntervalsInRange } = await import("@/lib/google-calendar.server");
+      const { getStudioById } = await import("@/lib/studio.server");
+      const studio = await getStudioById(studioId);
       return await getGoogleBusyIntervalsInRange(
         data.from,
         data.to,
-        await studioCalendar(studioId),
+        studio?.google_calendar_id ?? null,
+        studio?.timezone,
       );
     } catch (err) {
       console.error("[listGoogleBusyInRange] failed", err);

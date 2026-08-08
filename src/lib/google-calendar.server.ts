@@ -198,36 +198,120 @@ function normalizeException(err: unknown): GoogleException {
   return { message: String(err), stack: null };
 }
 
-function freeBusyRequestBody(day: string, calendarId?: string | null) {
-  // Generous UTC window that safely covers the full Zurich day regardless of DST.
-  const timeMin = new Date(`${day}T00:00:00Z`);
-  timeMin.setUTCHours(timeMin.getUTCHours() - 3);
-  const timeMax = new Date(`${day}T23:59:59Z`);
-  timeMax.setUTCHours(timeMax.getUTCHours() + 3);
+const DEFAULT_TIMEZONE = "Europe/Zurich";
+
+function studioTimeZone(timeZone?: string | null): string {
+  return timeZone?.trim() || DEFAULT_TIMEZONE;
+}
+
+const dayTimeFormatters = new Map<string, Intl.DateTimeFormat>();
+
+function dayTimeFormatter(timeZone: string): Intl.DateTimeFormat {
+  let fmt = dayTimeFormatters.get(timeZone);
+  if (!fmt) {
+    fmt = new Intl.DateTimeFormat("en-CA", {
+      timeZone,
+      year: "numeric",
+      month: "2-digit",
+      day: "2-digit",
+      hour: "2-digit",
+      minute: "2-digit",
+      second: "2-digit",
+      hourCycle: "h23",
+    });
+    dayTimeFormatters.set(timeZone, fmt);
+  }
+  return fmt;
+}
+
+function localDayTime(date: Date, timeZone: string): { day: string; time: string } {
+  const parts = dayTimeFormatter(timeZone).formatToParts(date);
+  const get = (t: string) => parts.find((p) => p.type === t)?.value ?? "";
   return {
-    timeMin: timeMin.toISOString(),
-    timeMax: timeMax.toISOString(),
-    timeZone: "Europe/Zurich",
+    day: `${get("year")}-${get("month")}-${get("day")}`,
+    time: `${get("hour")}:${get("minute")}`,
+  };
+}
+
+// Offset between the wall clock in `timeZone` and UTC at the given instant.
+function timeZoneOffsetMs(date: Date, timeZone: string): number {
+  const parts = dayTimeFormatter(timeZone).formatToParts(date);
+  const get = (t: string) => Number(parts.find((p) => p.type === t)?.value ?? "0");
+  const asUtc = Date.UTC(
+    get("year"),
+    get("month") - 1,
+    get("day"),
+    get("hour"),
+    get("minute"),
+    get("second"),
+  );
+  return asUtc - date.getTime();
+}
+
+// Wall-clock time in `timeZone` → UTC instant. The second probe corrects the
+// guess when the first one lands on the other side of a DST transition.
+function wallTimeToUtc(day: string, time: string, timeZone: string): Date {
+  const naive = Date.parse(`${day}T${time}:00Z`);
+  const first = naive - timeZoneOffsetMs(new Date(naive), timeZone);
+  return new Date(naive - timeZoneOffsetMs(new Date(first), timeZone));
+}
+
+function nextDayYmd(day: string): string {
+  const d = new Date(`${day}T00:00:00Z`);
+  d.setUTCDate(d.getUTCDate() + 1);
+  return d.toISOString().slice(0, 10);
+}
+
+// A busy period can span several studio-local days (vacations, overnight
+// blocks). Emit one segment per touched local day so day-keyed slot filters
+// see every affected day, not just the start day.
+export function splitBusyIntervalIntoDaySegments(
+  start: Date,
+  end: Date,
+  timeZone?: string | null,
+): { day: string; time: string; duration: number }[] {
+  const tz = studioTimeZone(timeZone);
+  const endMs = end.getTime();
+  const out: { day: string; time: string; duration: number }[] = [];
+  let cursor = start.getTime();
+  if (!Number.isFinite(cursor) || !Number.isFinite(endMs)) return out;
+  // 400-day guard against malformed events.
+  for (let guard = 0; cursor < endMs && guard < 400; guard += 1) {
+    const { day, time } = localDayTime(new Date(cursor), tz);
+    const nextMidnight = wallTimeToUtc(nextDayYmd(day), "00:00", tz).getTime();
+    if (nextMidnight <= cursor) break;
+    const segmentEnd = Math.min(endMs, nextMidnight);
+    out.push({
+      day,
+      time,
+      duration: Math.max(1, Math.round((segmentEnd - cursor) / 60000)),
+    });
+    cursor = nextMidnight;
+  }
+  return out;
+}
+
+function freeBusyRangeRequestBody(
+  from: string,
+  to: string,
+  calendarId?: string | null,
+  timeZone?: string | null,
+) {
+  // Exact studio-local day window. Google clamps busy periods to it, so a
+  // multi-day event queried mid-range still yields segments for these days.
+  const tz = studioTimeZone(timeZone);
+  return {
+    timeMin: wallTimeToUtc(from, "00:00", tz).toISOString(),
+    timeMax: wallTimeToUtc(nextDayYmd(to), "00:00", tz).toISOString(),
+    timeZone: tz,
     items: [{ id: calId(calendarId) }],
   };
 }
 
-function freeBusyRangeRequestBody(from: string, to: string, calendarId?: string | null) {
-  const timeMin = new Date(`${from}T00:00:00Z`);
-  timeMin.setUTCHours(timeMin.getUTCHours() - 3);
-  const timeMax = new Date(`${to}T23:59:59Z`);
-  timeMax.setUTCHours(timeMax.getUTCHours() + 3);
-  return {
-    timeMin: timeMin.toISOString(),
-    timeMax: timeMax.toISOString(),
-    timeZone: "Europe/Zurich",
-    items: [{ id: calId(calendarId) }],
-  };
-}
-
-function deriveRangeIntervalsFromFreeBusy(
+export function deriveRangeIntervalsFromFreeBusy(
   json: unknown,
   calendarId?: string | null,
+  timeZone?: string | null,
 ): { day: string; time: string; duration: number }[] {
   if (!json || typeof json !== "object") return [];
   const target = calId(calendarId);
@@ -235,29 +319,9 @@ function deriveRangeIntervalsFromFreeBusy(
     calendars?: Record<string, { busy?: { start: string; end: string }[] }>;
   };
   const busy = root.calendars?.[target]?.busy ?? [];
-  const fmt = new Intl.DateTimeFormat("de-CH", {
-    timeZone: "Europe/Zurich",
-    hour: "2-digit",
-    minute: "2-digit",
-    hour12: false,
-    year: "numeric",
-    month: "2-digit",
-    day: "2-digit",
-  });
   const out: { day: string; time: string; duration: number }[] = [];
   for (const b of busy) {
-    const start = new Date(b.start);
-    const end = new Date(b.end);
-    const parts = fmt.formatToParts(start);
-    const get = (t: string) => parts.find((p) => p.type === t)?.value ?? "";
-    const day = `${get("year")}-${get("month")}-${get("day")}`;
-    const hh = get("hour");
-    const mm = get("minute");
-    const duration = Math.max(
-      1,
-      Math.round((end.getTime() - start.getTime()) / 60000),
-    );
-    out.push({ day, time: `${hh}:${mm}`, duration });
+    out.push(...splitBusyIntervalIntoDaySegments(new Date(b.start), new Date(b.end), timeZone));
   }
   return out;
 }
@@ -266,6 +330,7 @@ export async function getGoogleBusyIntervalsInRange(
   from: string,
   to: string,
   calendarId?: string | null,
+  timeZone?: string | null,
 ): Promise<{ day: string; time: string; duration: number }[]> {
   if (!isGoogleConfigured(calendarId)) return [];
   try {
@@ -277,7 +342,7 @@ export async function getGoogleBusyIntervalsInRange(
         Authorization: `Bearer ${token}`,
         "Content-Type": "application/json",
       },
-      body: JSON.stringify(freeBusyRangeRequestBody(from, to, calendarId)),
+      body: JSON.stringify(freeBusyRangeRequestBody(from, to, calendarId, timeZone)),
       signal: AbortSignal.timeout(5000),
     });
     const text = await res.text().catch(() => "");
@@ -293,7 +358,7 @@ export async function getGoogleBusyIntervalsInRange(
         rawResponse: json ?? text,
       });
     }
-    return deriveRangeIntervalsFromFreeBusy(json, calendarId);
+    return deriveRangeIntervalsFromFreeBusy(json, calendarId, timeZone);
   } catch (err) {
     console.error("[google-calendar] freeBusy range error", normalizeException(err));
     return [];
@@ -308,41 +373,15 @@ function parseJsonBody(text: string): JsonValue | null {
   }
 }
 
-function deriveIntervalsFromFreeBusy(
+export function deriveIntervalsFromFreeBusy(
   day: string,
   json: unknown,
   calendarId?: string | null,
+  timeZone?: string | null,
 ): { time: string; duration: number }[] {
-  if (!json || typeof json !== "object") return [];
-  const target = calId(calendarId);
-  const root = json as {
-    calendars?: Record<string, { busy?: { start: string; end: string }[] }>;
-  };
-  const busy = root.calendars?.[target]?.busy ?? [];
-  const fmt = new Intl.DateTimeFormat("de-CH", {
-    timeZone: "Europe/Zurich",
-    hour: "2-digit",
-    minute: "2-digit",
-    hour12: false,
-    year: "numeric",
-    month: "2-digit",
-    day: "2-digit",
-  });
   const out: { time: string; duration: number }[] = [];
-  for (const b of busy) {
-    const start = new Date(b.start);
-    const end = new Date(b.end);
-    const parts = fmt.formatToParts(start);
-    const get = (t: string) => parts.find((p) => p.type === t)?.value ?? "";
-    const localDay = `${get("year")}-${get("month")}-${get("day")}`;
-    if (localDay !== day) continue;
-    const hh = get("hour");
-    const mm = get("minute");
-    const duration = Math.max(
-      1,
-      Math.round((end.getTime() - start.getTime()) / 60000),
-    );
-    out.push({ time: `${hh}:${mm}`, duration });
+  for (const seg of deriveRangeIntervalsFromFreeBusy(json, calendarId, timeZone)) {
+    if (seg.day === day) out.push({ time: seg.time, duration: seg.duration });
   }
   return out;
 }
@@ -421,6 +460,7 @@ export async function deleteGoogleEvent(
 export async function getGoogleBusyIntervals(
   day: string,
   calendarId?: string | null,
+  timeZone?: string | null,
 ): Promise<{ time: string; duration: number }[]> {
   if (!isGoogleConfigured(calendarId)) return [];
   try {
@@ -432,7 +472,7 @@ export async function getGoogleBusyIntervals(
         Authorization: `Bearer ${token}`,
         "Content-Type": "application/json",
       },
-      body: JSON.stringify(freeBusyRequestBody(day, calendarId)),
+      body: JSON.stringify(freeBusyRangeRequestBody(day, day, calendarId, timeZone)),
       signal: AbortSignal.timeout(5000),
     });
     const text = await res.text().catch(() => "");
@@ -448,7 +488,7 @@ export async function getGoogleBusyIntervals(
         rawResponse: json ?? text,
       });
     }
-    return deriveIntervalsFromFreeBusy(day, json, calendarId);
+    return deriveIntervalsFromFreeBusy(day, json, calendarId, timeZone);
   } catch (err) {
     console.error("[google-calendar] freeBusy error", normalizeException(err));
     return [];

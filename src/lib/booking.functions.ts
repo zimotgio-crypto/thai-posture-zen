@@ -83,7 +83,7 @@ export const submitBooking = createServerFn({ method: "POST" })
     // silent, but it also must not block the booking.
     let gBusy: { time: string; duration: number }[] = [];
     try {
-      gBusy = await getGoogleBusyIntervals(data.day, studio.google_calendar_id);
+      gBusy = await getGoogleBusyIntervals(data.day, studio.google_calendar_id, studio.timezone);
     } catch (err) {
       console.error("[submitBooking] google availability check failed", err);
     }
@@ -258,7 +258,7 @@ export const listBookedTimes = createServerFn({ method: "GET" })
     const { listBookedTimesForDay } = await import("@/lib/booking-availability.server");
     const { requireStudioBySlug } = await import("@/lib/studio.server");
     const studio = await requireStudioBySlug(data.studioSlug);
-    return listBookedTimesForDay(studio.id, data.day, studio.google_calendar_id);
+    return listBookedTimesForDay(studio.id, data.day, studio.google_calendar_id, studio.timezone);
   });
 
 function toMinutes(hhmm: string): number {
