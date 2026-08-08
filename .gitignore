@@ -24,6 +24,9 @@ dist-ssr
 graphify-out/
 *.graphify-bak
 
+# Playwright test artifacts (screenshots from booking-flow tests)
+test-results/
+
 # npm lockfile — the project uses bun (bun.lock/bunfig.toml are managed by Lovable)
 package-lock.json
 
