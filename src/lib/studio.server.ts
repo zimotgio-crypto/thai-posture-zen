@@ -91,6 +91,23 @@ export async function resolveStudioContext(
   throw new Error("Forbidden");
 }
 
+// Guards client-sent foreign ids: the referenced row must belong to the
+// caller's studio, otherwise the request is rejected. `extra` narrows further
+// (e.g. a booking must also belong to a given client).
+export async function assertStudioOwned(
+  supabaseAdmin: DbAdmin,
+  table: "clients" | "bookings" | "campaigns" | "treatments",
+  id: string,
+  studioId: string,
+  extra?: { column: "client_id"; value: string },
+): Promise<void> {
+  let query = supabaseAdmin.from(table).select("id").eq("id", id).eq("studio_id", studioId);
+  if (extra) query = query.filter(extra.column, "eq", extra.value);
+  const { data, error } = await query.maybeSingle();
+  if (error) throw new Error(error.message);
+  if (!data) throw new Error("Forbidden");
+}
+
 export async function getStudioById(studioId: string): Promise<StudioRecord | null> {
   const supabaseAdmin = await admin();
   const { data, error } = await supabaseAdmin

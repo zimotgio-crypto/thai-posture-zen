@@ -9,6 +9,12 @@ async function studioContext(userId: string, studioId?: string | null) {
   return resolveStudioContext(userId, studioId ?? null);
 }
 
+// PostgREST parses commas and parentheses inside .or() as filter syntax.
+// Double-quoting the pattern keeps a search term from injecting conditions.
+function postgrestLikePattern(term: string): string {
+  return `"%${term.replace(/[\\"]/g, (c) => `\\${c}`)}%"`;
+}
+
 async function studioCalendar(studioId: string): Promise<string | null> {
   const { getStudioById } = await import("@/lib/studio.server");
   const studio = await getStudioById(studioId);
@@ -21,9 +27,7 @@ export const getCurrentStudio = createServerFn({ method: "GET" })
   .inputValidator((data: unknown) => studioScopeInput.parse(data ?? {}))
   .handler(async ({ data, context }) => {
     const { studioId } = await studioContext(context.userId, data.studioId);
-    const { getStudioById, listTreatments, treatmentOptions } = await import(
-      "@/lib/studio.server"
-    );
+    const { getStudioById, listTreatments, treatmentOptions } = await import("@/lib/studio.server");
     const studio = await getStudioById(studioId);
     if (!studio) throw new Error("Studio not found");
     const treatments = await listTreatments(studioId);
@@ -98,7 +102,9 @@ export const listBookingsInRange = createServerFn({ method: "GET" })
     const { supabaseAdmin: admin, studioId } = await studioContext(context.userId, data.studioId);
     const { data: rows, error } = await admin
       .from("bookings")
-      .select("id, day, time, treatment, duration_minutes, silent, source, notes, client_id, price_chf, clients:client_id (id, first_name, last_name, phone, email, street, zip, city)")
+      .select(
+        "id, day, time, treatment, duration_minutes, silent, source, notes, client_id, price_chf, clients:client_id (id, first_name, last_name, phone, email, street, zip, city)",
+      )
       .eq("studio_id", studioId)
       .gte("day", data.from)
       .lte("day", data.to)
@@ -131,7 +137,7 @@ export const addBooking = createServerFn({ method: "POST" })
   .inputValidator((data: unknown) => addBookingInput.parse(data))
   .handler(async ({ data, context }) => {
     const { supabaseAdmin: admin, studioId } = await studioContext(context.userId, data.studioId);
-    const { getStudioById } = await import("@/lib/studio.server");
+    const { getStudioById, assertStudioOwned } = await import("@/lib/studio.server");
     const studio = await getStudioById(studioId);
     const { createGoogleEvent } = await import("@/lib/google-calendar.server");
     let clientId: string | null = data.clientId ?? null;
@@ -139,8 +145,18 @@ export const addBooking = createServerFn({ method: "POST" })
     let clientPhone: string | null = null;
     if (data.block) {
       clientId = null;
-    } else if (!clientId) {
-      if (!data.email || !data.firstName || !data.lastName || !data.phone || !data.street || !data.zip || !data.city) {
+    } else if (clientId) {
+      await assertStudioOwned(admin, "clients", clientId, studioId);
+    } else {
+      if (
+        !data.email ||
+        !data.firstName ||
+        !data.lastName ||
+        !data.phone ||
+        !data.street ||
+        !data.zip ||
+        !data.city
+      ) {
         throw new Error("Missing client details");
       }
       const client = await getOrCreateClient(
@@ -214,10 +230,7 @@ export const addBooking = createServerFn({ method: "POST" })
         studioName: studio?.name ?? null,
       });
       if (eventId && insert.data?.id) {
-        await admin
-          .from("bookings")
-          .update({ google_event_id: eventId })
-          .eq("id", insert.data.id);
+        await admin.from("bookings").update({ google_event_id: eventId }).eq("id", insert.data.id);
       }
     } catch (err) {
       console.error("[addBooking] google mirror failed", err);
@@ -225,7 +238,10 @@ export const addBooking = createServerFn({ method: "POST" })
     return { ok: true as const };
   });
 
-const deleteBookingInput = z.object({ id: z.string().uuid(), studioId: z.string().uuid().optional() });
+const deleteBookingInput = z.object({
+  id: z.string().uuid(),
+  studioId: z.string().uuid().optional(),
+});
 export const deleteBooking = createServerFn({ method: "POST" })
   .middleware([requireSupabaseAuth])
   .inputValidator((data: unknown) => deleteBookingInput.parse(data))
@@ -290,9 +306,7 @@ export const listGoogleBusyInRange = createServerFn({ method: "GET" })
   .handler(async ({ data, context }) => {
     const { studioId } = await studioContext(context.userId, data.studioId);
     try {
-      const { getGoogleBusyIntervalsInRange } = await import(
-        "@/lib/google-calendar.server"
-      );
+      const { getGoogleBusyIntervalsInRange } = await import("@/lib/google-calendar.server");
       return await getGoogleBusyIntervalsInRange(
         data.from,
         data.to,
@@ -320,9 +334,9 @@ export const listClients = createServerFn({ method: "GET" })
       .order("last_name", { ascending: true })
       .order("first_name", { ascending: true });
     if (data.q) {
-      const like = `%${data.q}%`;
+      const like = postgrestLikePattern(data.q);
       query = query.or(
-        `first_name.ilike.${like},last_name.ilike.${like},email.ilike.${like},phone.ilike.${like},street.ilike.${like},zip.ilike.${like},city.ilike.${like}`
+        `first_name.ilike.${like},last_name.ilike.${like},email.ilike.${like},phone.ilike.${like},street.ilike.${like},zip.ilike.${like},city.ilike.${like}`,
       );
     }
     const { data: rows, error } = await query;
@@ -414,7 +428,9 @@ export const getClient = createServerFn({ method: "GET" })
         .order("time", { ascending: false }),
       admin
         .from("session_logs")
-        .select("id, body_html, created_at, booking_id, treatment_date, treatment_name, duration_minutes, body_map, pain_level, mobility, tension, bookings:booking_id (day, treatment, duration_minutes)")
+        .select(
+          "id, body_html, created_at, booking_id, treatment_date, treatment_name, duration_minutes, body_map, pain_level, mobility, tension, bookings:booking_id (day, treatment, duration_minutes)",
+        )
         .eq("client_id", data.id)
         .eq("studio_id", studioId)
         .order("created_at", { ascending: false }),
@@ -440,7 +456,10 @@ const addNoteInput = z.object({
   clientId: z.string().uuid(),
   bookingId: z.string().uuid().nullish(),
   bodyHtml: z.string().trim().min(1).max(20000),
-  treatmentDate: z.string().regex(/^\d{4}-\d{2}-\d{2}$/).nullish(),
+  treatmentDate: z
+    .string()
+    .regex(/^\d{4}-\d{2}-\d{2}$/)
+    .nullish(),
   treatmentName: z.string().trim().max(100).nullish(),
   durationMinutes: z.number().int().min(15).max(240).nullish(),
   bodyMap: bodyMapSchema.optional(),
@@ -452,13 +471,14 @@ export const addSessionLog = createServerFn({ method: "POST" })
   .inputValidator((data: unknown) => addNoteInput.parse(data))
   .handler(async ({ data, context }) => {
     const { supabaseAdmin: admin, studioId } = await studioContext(context.userId, data.studioId);
-    const owner = await admin
-      .from("clients")
-      .select("id")
-      .eq("id", data.clientId)
-      .eq("studio_id", studioId)
-      .maybeSingle();
-    if (!owner.data) throw new Error("Client not found");
+    const { assertStudioOwned } = await import("@/lib/studio.server");
+    await assertStudioOwned(admin, "clients", data.clientId, studioId);
+    if (data.bookingId) {
+      await assertStudioOwned(admin, "bookings", data.bookingId, studioId, {
+        column: "client_id",
+        value: data.clientId,
+      });
+    }
     const tensionValues = Object.values(data.tensionZones ?? {});
     const maxTension = tensionValues.length > 0 ? Math.max(...tensionValues) : null;
     const { error } = await admin.from("session_logs").insert({
