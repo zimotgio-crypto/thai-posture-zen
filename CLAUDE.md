@@ -127,6 +127,12 @@ eintragen, nie hart im JSX.
 ## Supabase und Datenschutz
 
 - Migrationen nur **additiv** anlegen, nie bestehende Dateien ändern.
+- **Migrationen werden durch den Git-Push NICHT automatisch angewendet**
+  (bestätigt 08.08.2026). Nach jedem Merge mit Schema-Änderung das SQL
+  zusätzlich ausrollen: idempotent formulieren (`if not exists`-Guards,
+  `create or replace`) und über einen Lovable-Prompt („nur dieses SQL
+  ausführen, keine Code-Änderungen") oder den Supabase SQL Editor einspielen,
+  mit Kontrollabfrage am Ende.
 - Jede neue Tabelle mit Kundendaten braucht **Row Level Security** plus Policy.
 - Massagetagebuch, Schmerzskala und Behandlungsprotokolle sind besonders
   schützenswerte Gesundheitsdaten (revDSG). Kunden dürfen ausschliesslich
