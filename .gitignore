@@ -20,6 +20,16 @@ dist-ssr
 .wrangler/
 .dev.vars
 
+# graphify (generated knowledge graph + backups)
+graphify-out/
+*.graphify-bak
+
+# npm lockfile — the project uses bun (bun.lock/bunfig.toml are managed by Lovable)
+package-lock.json
+
+# internal planning notes — never publish (public repo)
+00/
+
 # Editor directories and files
 .vscode/*
 !.vscode/extensions.json

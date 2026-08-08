@@ -1,0 +1,11 @@
+﻿bun.lock
+.lovable/
+src/routeTree.gen.ts
+src/integrations/supabase/types.ts
+src/assets/
+public/images/
+test-results/
+.claude/
+tsconfig.json
+components.json
+eslint.config.js
