@@ -2,6 +2,16 @@ import { getGoogleBusyIntervals } from "@/lib/google-calendar.server";
 
 export type BookedTime = { time: string; duration: number };
 
+// The bookings table carries an EXCLUDE constraint (bookings_no_overlap_excl) that
+// rejects overlapping bookings per studio and day — the DB-level backstop for
+// the race between availability check and insert. 23P01 = exclusion_violation,
+// 23505 = unique_violation.
+export function isBookingConflictError(
+  error: { code?: string | null } | null | undefined,
+): boolean {
+  return error?.code === "23P01" || error?.code === "23505";
+}
+
 // Busy intervals for one studio on one day: DB bookings + that studio's Google calendar.
 export async function listBookedTimesForDay(
   studioId: string,

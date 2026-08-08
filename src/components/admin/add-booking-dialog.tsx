@@ -55,7 +55,7 @@ export function AddBookingDialog({
     try {
       const treatmentLabel =
         treatments.find((tr) => tr.key === treatmentId)?.label ?? treatments[0]?.label ?? "";
-      await addBookingFn({
+      const res = await addBookingFn({
         data: {
           studioId,
           treatment: treatmentLabel,
@@ -73,6 +73,10 @@ export function AddBookingDialog({
           city: block ? undefined : city,
         },
       });
+      if (!res.ok) {
+        toast.error(t.addBooking.conflict);
+        return;
+      }
       toast.success(block ? t.addBooking.blockSaved : t.addBooking.bookingSaved);
       qc.invalidateQueries({ queryKey: ["admin", "bookings"] });
       qc.invalidateQueries({ queryKey: ["admin", "clients"] });

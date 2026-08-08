@@ -164,6 +164,11 @@ export const submitBooking = createServerFn({ method: "POST" })
         const { releaseCampaign } = await import("@/lib/campaign.server");
         await releaseCampaign(supabaseAdmin, campaignId).catch(() => {});
       }
+      // A concurrent booking won the race; the DB constraint caught it.
+      const { isBookingConflictError } = await import("@/lib/booking-availability.server");
+      if (isBookingConflictError(insert.error)) {
+        return { ok: false as const, reason: "conflict" as const };
+      }
       throw new Error(insert.error.message);
     }
 

@@ -549,6 +549,16 @@ async function handleConfirm(
     .select("id")
     .single();
   if (insert.error) {
+    const { isBookingConflictError } = await import("@/lib/booking-availability.server");
+    if (isBookingConflictError(insert.error)) {
+      // A concurrent booking won the race; offer fresh times instead of failing.
+      await sendText(
+        from,
+        "Diese Zeit ist inzwischen leider vergeben. Ich zeige dir aktuelle Zeiten für diesen Tag.",
+      );
+      await saveSession(st.studio.id, from, "choose_time", { ...session.draft, timePage: 0 });
+      return sendTimeList(st, from, day, durationMinutes, 0);
+    }
     console.error("[whatsapp-dialog] booking insert failed", insert.error.message);
     await sendText(from, "Die Buchung konnte nicht gespeichert werden. Bitte versuch es später erneut.");
     await resetSession(st.studio.id, from);

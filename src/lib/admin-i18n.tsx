@@ -155,6 +155,7 @@ export const adminTranslations = {
       silent: "Silent Treatment",
       blockSaved: "Zeit blockiert",
       bookingSaved: "Termin gespeichert",
+      conflict: "Dieser Zeitraum ist inzwischen belegt. Bitte eine andere Zeit wählen.",
     },
     addClient: {
       title: "Neuen Kunden anlegen",
@@ -619,6 +620,7 @@ export const adminTranslations = {
       silent: "นวดแบบเงียบ",
       blockSaved: "ปิดคิวเรียบร้อย",
       bookingSaved: "บันทึกนัดหมายเรียบร้อย",
+      conflict: "ช่วงเวลานี้ถูกจองไปแล้ว กรุณาเลือกเวลาอื่น",
     },
     addClient: {
       title: "เพิ่มลูกค้าใหม่",

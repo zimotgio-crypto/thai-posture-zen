@@ -216,7 +216,14 @@ export const addBooking = createServerFn({ method: "POST" })
       })
       .select("id")
       .single();
-    if (insert.error) throw new Error(insert.error.message);
+    if (insert.error) {
+      // A concurrent or overlapping booking hit the DB EXCLUDE constraint.
+      const { isBookingConflictError } = await import("@/lib/booking-availability.server");
+      if (isBookingConflictError(insert.error)) {
+        return { ok: false as const, reason: "conflict" as const };
+      }
+      throw new Error(insert.error.message);
+    }
     try {
       const eventId = await createGoogleEvent({
         day: data.day,
